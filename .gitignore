@@ -1,0 +1,55 @@
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Build results
+debug.log
+*.exp
+*.d
+*.o
+*.obj
+[Dd]ebug/
+[Dd]ebugPublic/
+Properties/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Visual Studio 2015 cache/options directory
+.vs/
+_ReSharper.Caches/
+
+# NuGet Packages
+*.nupkg
+*.config
+packages/
+tessdata/
+
+# Profiler files
+*.psess
+*.vsp
+
+# Project specific
+lib/
+sln/
