@@ -1,31 +1,34 @@
 #include "esvm.h"
 #include <iterator>
 
-ESVM::ESVM(std::vector< std::vector<double> > positives, std::vector< std::vector<double> > negatives)
+ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id)
 {
     if (positives.size() <= 0 && negatives.size() <= 0)
         throw new std::exception("Exemplar-SVM cannot initialize without positive and negative feature vectors");
-
+    
+    targetID = id;
     int posSamples = positives.size();
     int negSamples = negatives.size();
     int allSamples = posSamples + negSamples;
         
-    std::vector<double> outputs(allSamples, -1);
+    std::vector<int> outputs(allSamples, -1);
     for (int p = 0; p < posSamples; p++)
         outputs[p] = 1;
 
-    std::vector< std::vector<double> > samples(allSamples);
+    std::vector< FeatureVector > samples(allSamples);
     samples.insert(samples.end(), positives.begin(), positives.end());
     samples.insert(samples.end(), negatives.begin(), negatives.end());
         
     trainEnsembleModel(samples, outputs);    
 }
 
-void ESVM::trainEnsembleModel(std::vector< std::vector<double> > samples, std::vector<double> outputs)
+void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs)
 {    
-    svm_problem* prob;
+    svm_problem* prob;    
     prob->l = samples.size();       // number of training data        
-    prob->y = &outputs[0];          // target values for classification    
+    
+    // convert target values for classification 
+    prob->y = &std::vector<double>(outputs.begin(), outputs.end())[0];   
     
     // convert training vectors 
     svm_node** arrSamples = new svm_node*[prob->l];
@@ -36,12 +39,12 @@ void ESVM::trainEnsembleModel(std::vector< std::vector<double> > samples, std::v
 
     svm_parameter* param;
     param->probability = 1;
-    param->C = 1;                   // cost constraint violation used for w*C
-    param->p = 0.5;                 // sensitiveness of loss of support vector regression
-    param->eps = 0.00001;           // stopping criterion
-    param->nr_weight = 2;           // number of weights
-    param->weight = new double[] { 100, 1 };    // class weights
-    param->weight_label = new int[] { 1, -1 };  // class labels
+    param->C = 1;                               // cost constraint violation used for w*C
+    param->p = 0.5;                             // sensitiveness of loss of support vector regression
+    param->eps = 0.00001;                       // stopping criterion
+    param->nr_weight = 2;                       // number of weights
+    param->weight = new double[2] { 100, 1 };   // class weights
+    param->weight_label = new int[2] { 1, -1 }; // class labels
     param->kernel_type = LINEAR;
     
     const char* msg = svm_check_parameter(prob, param);
@@ -52,6 +55,9 @@ void ESVM::trainEnsembleModel(std::vector< std::vector<double> > samples, std::v
 
 double ESVM::predict(std::vector<double> sample)
 {    
+    if (ensembleModel == nullptr)
+        throw new std::exception("Ensemble model of Exemplar-SVM is not initialized");
+
     if (ensembleModel->param.probability)
     {
         double* probEstimates = new double[ensembleModel->nr_class];

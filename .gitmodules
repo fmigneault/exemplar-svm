@@ -3,4 +3,4 @@
 	url = C:\\Users\\Francis\\Programs\\DEVELOPMENT\\Face Recognition\\LIBSVM
 [submodule "FeatureExtractorHOG"]
 	path = FeatureExtractorHOG
-	url = C:\\Users\\Francis\\Programs\\DEVELOPMENT\\Face Recognition\\FeatureExtractorHOG
+url=https://bitbucket.org/KenjiKyoTeam/FeatureExtractorHOG

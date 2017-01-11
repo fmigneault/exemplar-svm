@@ -6,18 +6,22 @@
 #include "opencv2/highgui/highgui.hpp"
 
 #include "svm.h"
+#include "esvmTypesDef.h"
 
 class ESVM
 {
 public:
-    ESVM(std::vector< std::vector<double> > positives, std::vector< std::vector<double> > negatives);
-    double predict(std::vector<double> sample);
+    inline ESVM() {}
+    ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id);
+    double predict(FeatureVector sample);
+    inline std::string getTargetID() { return targetID; }
 
-private:
-    void trainEnsembleModel(std::vector< std::vector<double> > samples, std::vector<double> outputs);
-    svm_node* getFeatureVector(std::vector<double> features);
+private:    
+    void trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs);
+    svm_node* getFeatureVector(FeatureVector features);
     svm_node* getFeatureVector(double* features, int featureCount);
     svm_model* ensembleModel;
+    std::string targetID;
 };
 
 #endif/*ESVM_LIBLINEAR_H*/
