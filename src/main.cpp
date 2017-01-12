@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     //################################################################################ NO PATCH
     /* NO PATCHES TEST */
     cv::Size patchCounts = cv::Size(1, 1);
-    cv::Size imageSize = cv::Size(96, 96);
+    cv::Size imageSize = cv::Size(64, 64);
     bool useSyntheticPositives = true;
     int err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
     if (err)

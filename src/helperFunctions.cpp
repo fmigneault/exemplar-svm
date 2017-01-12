@@ -69,6 +69,34 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
     return imSplitPatches(img, patchCounts);
 }
 
+std::vector< FeatureVector > normalizeFeatures(std::vector< FeatureVector > featureVectors)
+{
+    // initialize with first vector
+    int nFeatures = featureVectors[0].size();
+    FeatureVector min = featureVectors[0];
+    FeatureVector max = featureVectors[0];
+
+    // find min/max values
+    #pragma omp parallel for
+    for (int v = 1; v < featureVectors.size(); v++)
+    {
+        for (int f = 0; f < nFeatures; f++)
+        {
+            if (featureVectors[v][f] < min[f])
+                min[f] = featureVectors[v][f];
+            if (featureVectors[v][f] > max[f])
+                max[f] = featureVectors[v][f];
+        }
+    }
+
+    // normalize values
+    #pragma omp parallel for
+    for (int v = 0; v < featureVectors.size(); v++)
+        for (int f = 0; f < nFeatures; f++)
+            featureVectors[v][f] = featureVectors[v][f] - min[f] / (max[f] - min[f]);
+    return featureVectors;
+}
+
 std::string currentTimeStamp()
 {
     time_t now = time(0);

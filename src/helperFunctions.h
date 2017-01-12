@@ -9,13 +9,19 @@
     #pragma warning( disable : 4996 )
 #endif
 
-// Paths
-const std::string roiVideoImagesPath = "../images/roi/images/";         // ROIs obtained from the face detection + tracking
-const std::string refStillImagesPath = "../images/ref/";                // Reference high quality still ROIs for enrollment in SSPP
+/* -------------------- 
+Image paths 
+-------------------- */
+
+const std::string roiVideoImagesPath = "../img/roi/";                   // Person ROI tracks obtained from face detection + tracking
+const std::string refStillImagesPath = "../img/ref/";                   // Reference high quality still ROIs for enrollment in SSPP
 const std::string rootChokePointPath = std::getenv("CHOKEPOINT_ROOT");  // ChokePoint dataset folders location
 const std::string roiChokePointPath = rootChokePointPath + "/Cropped face images/"; // Path of extracted 96x96 ROI from all videos 
 
-/* Image operations */
+/* --------------------
+Image operations 
+-------------------- */
+
 // Reads an image from file and displays it in a small window at the same time
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 // Translation of an image with XY pixel offset
@@ -31,6 +37,15 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Si
 std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, 
                                   std::string windowName, cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
+/* --------------------
+Normalization oprations 
+-------------------- */
+
+// Normalization [0, 1] of a list of feature vectors per corresponding features
+std::vector< FeatureVector > normalizeFeatures(std::vector< FeatureVector > featureVectors, 
+                                               FeatureVector minFeatures = FeatureVector(), 
+                                               FeatureVector maxFeatures = FeatureVector());
+
 // Similarity [0, 1] equivalent of class prediction score [-1, 1] by Min-Max rule
 inline double normalizeClassScoreToSimilarity(double score) { return (score + 1) / 2; }
 
@@ -38,7 +53,10 @@ inline double normalizeClassScoreToSimilarity(double score) { return (score + 1)
 template<class C, class T>
 inline bool contains(const C& v, const T& x) { return end(v) != std::find(begin(v), end(v), x); }
 
-/* Logging */
+/* -------------------- 
+Logging operations 
+-------------------- */
+
 const std::string WINDOW_NAME = "Display";
 const std::string LOGGER_FILE = "output.txt";
 

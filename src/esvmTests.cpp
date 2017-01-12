@@ -789,7 +789,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     
     // Samples container with [target][roi/representation][patch] indexes
     int nbPositives = positivesID.size();
-    int nbPositiveRepresentations = 1;
+    int nbRepresentations = 1;
     std::vector< std::vector< std::vector<cv::Mat> > > cvPositiveSamples(nbPositives);  // [positive][representation][patch](Mat[x,y])
     std::vector< std::string > probeGroundTruthID;                                      // [positive]
     
@@ -809,10 +809,10 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                        imageSize, cv::Size(1,1), WINDOW_NAME, cv::IMREAD_COLOR)[0];
             // Get synthetic representations from original and apply patches splitting each one
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
-            nbPositiveRepresentations = representations.size();
-            cvPositiveSamples[i] = std::vector< std::vector< cv::Mat> >(nbPositiveRepresentations);
+            nbRepresentations = representations.size();
+            cvPositiveSamples[i] = std::vector< std::vector< cv::Mat> >(nbRepresentations);
             #pragma omp parallel for
-            for (int r = 0; r < nbPositiveRepresentations; r++)
+            for (int r = 0; r < nbRepresentations; r++)
                 cvPositiveSamples[i][r] = imSplitPatches(representations[r], patchCounts);
         }
         // Only original representation otherwise (no synthetic images)
@@ -853,18 +853,23 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     std::vector< std::vector< ESVM > > esvmModels(nbPositives);                                     // [positive][patch]
 
     FeatureExtractorHOG hog;
-    cv::Size hogBlock = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
-    cv::Size hogCell = cv::Size(hogBlock.width / 2, hogBlock.height / 2);
+    cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
+    cv::Size hogBlock = cv::Size(patchSize.width / 2, patchSize.height / 2);
+    cv::Size hogCell = cv::Size(hogBlock.width / 4, hogBlock.height / 4);
     int nbBins = 8;
-    hog.initialize(imageSize, hogBlock, hogBlock, hogCell, nbBins);
+    hog.initialize(patchSize, hogBlock, hogBlock, hogCell, nbBins);
     log << "HOG feature extraction initialized..." << std::endl
         << "   imageSize: " << imageSize << std::endl
+        << "   patchSize: " << patchSize << std::endl
         << "   hogBlock:  " << hogBlock << std::endl
         << "   hogCell:   " << hogCell << std::endl 
         << "   nbBins:    " << nbBins << std::endl;
     
     // Convert unique positive samples (or with synthetic representations)
     log << "Feature extraction of positive images for all test sequences..." << std::endl;
+    log << "   nbPositives:       " << nbPositives << std::endl;
+    log << "   nbPatches:         " << nbPatches << std::endl;
+    log << "   nbRepresentations: " << nbRepresentations << std::endl;
     #pragma omp parallel for
     for (int i = 0; i < nbPositives; i++)
     {
@@ -873,14 +878,14 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         #pragma omp parallel for
         for (int p = 0; p < nbPatches; p++)
         {            
-            fvPositiveSamples[i][p] = std::vector< FeatureVector >(nbPositiveRepresentations);
+            fvPositiveSamples[i][p] = std::vector< FeatureVector >(nbRepresentations);
             #pragma omp parallel for
-            for (int r = 0; r < nbPositiveRepresentations; r++)
+            for (int r = 0; r < nbRepresentations; r++)
                 fvPositiveSamples[i][p][r] = hog.compute(cvPositiveSamples[i][r][p]);   // switch to (i,p,r) order for patch-based training
         }
     }
     log << "HOG feature dimension: " << fvPositiveSamples[0][0][0].size() << std::endl;
-    
+
     // Tests divided per sequence information according to selected mode
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
@@ -1038,7 +1043,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     for (int j = 0; j < nbProbes; j++)
                     {
                         // score accumulation from patches with normalization
-                        double normPatchScore = normalizeClassScoreToSimilarity(patchScores[j]);
+                        double normPatchScore = patchScores[j]; /// normalizeClassScoreToSimilarity(patchScores[j]);
                         fusionScores[j] += normPatchScore;
                         std::string probeGT = (probeGroundTruthID[j] == positivesID[i] ? "positive" : "negative");
                         log << "Score for patch " << p << " of probe " << j << " (ID" << probeGroundTruthID[j] << ", " 

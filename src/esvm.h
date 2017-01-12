@@ -17,7 +17,7 @@ public:
     inline std::string getTargetID() { return targetID; }
 
 private:    
-    void trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs);
+    void trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs, double positiveWeight, double negativeWeight);
     svm_node* getFeatureVector(FeatureVector features);
     svm_node* getFeatureVector(double* features, int featureCount);
     svm_model* ensembleModel;
