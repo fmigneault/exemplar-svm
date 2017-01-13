@@ -211,6 +211,56 @@ int test_runBasicExemplarSvmFunctionalities(void)
 }
 #endif 
 
+int test_runBasicExemplarSvmClassification(void)
+{
+    // ------------------------------------------------------------------------------------------------------------------------
+    // stream for console+file output
+    // ------------------------------------------------------------------------------------------------------------------------        
+    logstream log(LOGGER_FILE);
+    log << "Starting basic Exemplar-SVM classification test..." << std::endl;
+
+    // ------------------------------------------------------------------------------------------------------------------------
+    // training ESVM with samples (XOR)
+    // ------------------------------------------------------------------------------------------------------------------------ 
+    log << "Training Exemplar-SVM with XOR samples..." << std::endl;
+    std::vector < FeatureVector > positives(2);
+    std::vector < FeatureVector > negatives(2);    
+    negatives[0] = FeatureVector(2);
+    negatives[0][0] = 0;
+    negatives[0][1] = 0;
+    negatives[1] = FeatureVector(2);
+    negatives[1][0] = 1;
+    negatives[1][1] = 1;
+    positives[0] = FeatureVector(2);
+    positives[0][0] = 0;
+    positives[0][1] = 1;
+    positives[1] = FeatureVector(2);
+    positives[1][0] = 1;
+    positives[1][1] = 0;
+    ESVM esvm = ESVM(positives, negatives, "XOR");
+
+    // ------------------------------------------------------------------------------------------------------------------------
+    // testing ESVM
+    // ------------------------------------------------------------------------------------------------------------------------  
+    log << "Testing Exemplar-SVM classification results..." << std::endl;
+    std::vector< FeatureVector > samples(4);    
+    samples[0] = { 0, 0 };          
+    samples[1] = { 0, 1 };
+    samples[2] = { 0.75, 0 };
+    samples[3] = { 0.90, 0.75 };    
+    for (int s = 0; s < samples.size(); s++)
+    {
+        double prediction = esvm.predict(samples[s]);
+        log << "  Prediction result for {" << samples[s][0] << "," << samples[s][1] << "}: " << prediction << std::endl;
+    }
+    assert(esvm.predict(samples[0]) == -1);
+    assert(esvm.predict(samples[1]) == +1);
+    assert(esvm.predict(samples[2]) > 0.5);
+    assert(esvm.predict(samples[3]) < 0.5);
+
+    return 0;
+}
+
 #if 0
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
 {

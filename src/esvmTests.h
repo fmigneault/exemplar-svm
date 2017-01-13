@@ -27,6 +27,7 @@ std::string buildChokePointIndividualID(int id);
 /* Tests */
 int test_imagePatchExtraction(void);
 int test_runBasicExemplarSvmFunctionalities(void);
+int test_runBasicExemplarSvmClassification(void);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 

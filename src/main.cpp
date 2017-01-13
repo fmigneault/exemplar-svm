@@ -2,33 +2,12 @@
 #include "helperFunctions.h"
 #include "esvmTests.h"
 
-/*
-int main(void)
-{
-    cv::Size imgSize = cv::Size(96, 96);
-    cv::Size patchSize = cv::Size(imgSize.width / 3, imgSize.height / 3);
-    cv::Size patchCell = cv::Size(imgSize.width / 2, imgSize.height / 2);
-
-    cv::Mat img;
-    cv::resize(img, img, imgSize, 0, 0, CV_INTER_CUBIC);
-
-    FeatureExtractorHOG hog;
-    hog.initialize(img.size(), patchSize, patchSize, patchCell, 8);
-    
-        
-    ESVM esvm(hog.compute(img), )
-
-
-    return 0;
-}
-*/
-
-
 int main(int argc, char* argv[])
 {
     logstream log(LOGGER_FILE);
     log << "=================================================================" << std::endl
         << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
+    int err;
 
     //################################################################################ DEBUG
     /*
@@ -45,7 +24,18 @@ int main(int argc, char* argv[])
     log << "Test 'runBasicExemplarSvmFunctionalities' failed." << std::endl;
     return err;
     }
+    */
+    //################################################################################ DEBUG
 
+    err = test_runBasicExemplarSvmClassification();
+    if (err)
+    {
+        log << "Test 'test_runBasicExemplarSvmClassification' failed." << std::endl;
+        return err;
+    }
+
+    //################################################################################ DEBUG
+    /*
     // Number of patches to use in each direction, must fit within the ROIs (ex: 4x4 patches & ROI 128x128 -> 16 patches of 32x32)
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
     cv::Size patchCounts = cv::Size(4, 4);
@@ -64,7 +54,7 @@ int main(int argc, char* argv[])
     cv::Size patchCounts = cv::Size(1, 1);
     cv::Size imageSize = cv::Size(64, 64);
     bool useSyntheticPositives = true;
-    int err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
+    err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
     if (err)
     {
         log << "Test 'runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
