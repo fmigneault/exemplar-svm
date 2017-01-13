@@ -14,8 +14,8 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     int posSamples = positives.size();
     int negSamples = negatives.size();    
     int allSamples = posSamples + negSamples;    
-    int posOutput = +1;
-    int negOutput = -1;
+    int posOutput = 1;
+    int negOutput = 0;
 
     std::vector<int> outputs(posSamples + negSamples, negOutput);
     for (int s = 0; s < posSamples; s++)
@@ -25,10 +25,10 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     samples.insert(samples.end(), positives.begin(), positives.end());
     samples.insert(samples.end(), negatives.begin(), negatives.end());
     
-    // train with penalty weights ( Wp = Nn / [Np+Nn], Wn = Np / [Np+Nn] )
+    // train with penalty weights
     // greater penalty attributed to incorrectly classifying a positive vs the many negatives
-    double negWeight = (double)posSamples / (double)allSamples;
-    double posWeight = (double)negSamples / (double)allSamples;
+    double negWeight = (double)allSamples / (double)negSamples;
+    double posWeight = (double)allSamples / (double)posSamples;
 
     /// ################################################ DEBUG
     logstream log(LOGGER_FILE);
@@ -61,16 +61,34 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     svm_problem prob;    
     prob.l = samples.size();    // number of training data        
     
-    // convert and assign target values for classification 
-    prob.y = &std::vector<double>(outputs.begin(), outputs.end())[0];
-    
-    // convert and assign training vectors
+    // convert and assign training vectors and corresponding target values for classification 
+    prob.y = new double[prob.l];
     prob.x = new svm_node*[prob.l];
-    int nPos = 0;
-    int nNeg = 0;
     #pragma omp parallel for
     for (int s = 0; s < prob.l; s++)
+    {
+        prob.y[s] = outputs[s];
         prob.x[s] = getFeatureVector(samples[s]);
+    }
+
+    /// ################################################ DEBUG
+    /*logstream log(LOGGER_FILE);
+    log << "ESVM training" << std::endl;
+    for (int s = 0; s < samples.size(); s++)
+    {
+        std::string ss = "{";
+        for (int f = 0; f < samples[s].size()+1; f++)
+        {
+            if (f != 0) ss += ",";
+            ss += "(";
+            ss += std::to_string(prob.x[s][f].index);
+            ss += ": ";
+            ss += std::to_string(prob.x[s][f].value);
+            ss += ")";
+        }
+        log << "      " << s << ": " << ss << "} | " << prob.y[s] << std::endl;
+    }*/
+    /// ################################################ DEBUG
 
     // set training parameters    
     svm_parameter param;
@@ -99,7 +117,18 @@ double ESVM::predict(std::vector<double> sample)
     if (ensembleModel->param.probability)
     {
         double* probEstimates = new double[ensembleModel->nr_class];
-        return svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
+        double p = svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
+
+        /// ################################################ DEBUG
+        /*logstream log(LOGGER_FILE);
+        log << "ESVM predict" << std::endl;
+        for (int s = 0; s < ensembleModel->nr_class; s++)
+        {
+            log << "probEstimates " << s << ": " << probEstimates[s] << std::endl;
+        }*/
+        /// ################################################ DEBUG
+
+        return p;
     }
     
     return svm_predict(ensembleModel, getFeatureVector(sample));
