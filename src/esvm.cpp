@@ -14,8 +14,8 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     int posSamples = positives.size();
     int negSamples = negatives.size();    
     int allSamples = posSamples + negSamples;    
-    int posOutput = 1;
-    int negOutput = 0;
+    int posOutput = +1;
+    int negOutput = -1;
 
     std::vector<int> outputs(posSamples + negSamples, negOutput);
     for (int s = 0; s < posSamples; s++)
@@ -26,20 +26,27 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     samples.insert(samples.end(), negatives.begin(), negatives.end());
     
     // train with penalty weights
-    // greater penalty attributed to incorrectly classifying a positive vs the many negatives
-    double negWeight = (double)allSamples / (double)negSamples;
+    // greater penalty attributed to incorrectly classifying a positive vs the many negatives    
     double posWeight = (double)allSamples / (double)posSamples;
+    double negWeight = (double)allSamples / (double)negSamples;
+    double maxWeight = std::max(posWeight, negWeight);
+    posWeight /= maxWeight;
+    negWeight /= maxWeight;
+    /// ################################################ OVERWRITE FOR NOW
+    posWeight = 1;
+    negWeight = 0.01;
+    /// ################################################ OVERWRITE FOR NOW
 
     /// ################################################ DEBUG
     logstream log(LOGGER_FILE);
-    log << "ESVM initialization" << std::endl;
-    log << "   posSamples: " << posSamples << std::endl;
-    log << "   negSamples: " << negSamples << std::endl;
-    log << "   posWeight:  " << posWeight << std::endl;
-    log << "   negWeight:  " << negWeight << std::endl;
-    log << "   posOutput:  " << posOutput << std::endl;
-    log << "   negOutput:  " << negOutput << std::endl;
-    log << "   samples | outputs:  " << std::endl;
+    log << "ESVM initialization" << std::endl
+        << "   posSamples: " << posSamples << std::endl
+        << "   negSamples: " << negSamples << std::endl
+        << "   posWeight:  " << posWeight << std::endl
+        << "   negWeight:  " << negWeight << std::endl
+        << "   posOutput:  " << posOutput << std::endl
+        << "   negOutput:  " << negOutput << std::endl
+        << "   samples | outputs:  " << std::endl;
     for (int s = 0; s < allSamples; s++)
     {
         std::string ss = "{";
@@ -92,15 +99,15 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     // set training parameters    
     svm_parameter param;
-    param.C = 1000;                // cost constraint violation used for w*C
+    param.C = 1;                // cost constraint violation used for w*C
     param.kernel_type = LINEAR;
     /// NOT USED BY C-SVM ####  param.p = 0.1;              // sensitiveness of loss of support vector regression
     param.eps = 0.00001;        // stopping criterion
     param.nr_weight = 2;        // number of weights
     param.weight = new double[2] { positiveWeight, negativeWeight };    // class weights (positive, negative)
     param.weight_label = new int[2] { positiveOutput, negativeOutput }; // class labels
-    param.probability = 0;      // probability outputs instead of (+1,-1) classes    
-    param.shrinking = 0;    
+    param.probability = 1;      // use probability outputs instead of (+1,-1) classes    
+    param.shrinking = 0;        // use problem shrinking heuristics
     param.cache_size = 10000;
     
     // validate parameters and train models
@@ -111,25 +118,22 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     /// ################################################ DEBUG   
     logstream log(LOGGER_FILE);
-    log << "ESVM training" << std::endl;
-    log << "   C:      " << param.C << std::endl;
-    log << "   eps:    " << param.eps << std::endl;
-    log << "   nr W:   " << param.nr_weight << std::endl;
-    log << "   Wp:     " << param.weight[0] << std::endl;
-    log << "   Wn:     " << param.weight[1] << std::endl;
-    log << "   Wp lbl: " << param.weight_label[0] << std::endl;
-    log << "   Wn lbl: " << param.weight_label[1] << std::endl;
-    log << "   prob:   " << param.probability << std::endl;
-    log << "   shrink: " << param.shrinking << std::endl;
+    log << "ESVM training" << std::endl
+        << "   C:      " << param.C << std::endl
+        << "   eps:    " << param.eps << std::endl
+        << "   nr W:   " << param.nr_weight << std::endl
+        << "   Wp:     " << param.weight[0] << std::endl
+        << "   Wn:     " << param.weight[1] << std::endl
+        << "   Wp lbl: " << param.weight_label[0] << std::endl
+        << "   Wn lbl: " << param.weight_label[1] << std::endl
+        << "   prob:   " << param.probability << std::endl
+        << "   shrink: " << param.shrinking << std::endl;
     if (param.probability)
     {
         log << "   probA: " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
         log << "   probB: " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
     }
     /// ################################################ DEBUG
-
-    //delete[] prob.x;
-    //delete[] prob.y;    
 }
 
 double ESVM::predict(std::vector<double> sample)
@@ -174,12 +178,3 @@ svm_node* ESVM::getFeatureVector(double* features, int featureCount)
     fv[featureCount].index = -1;    // Additional feature value must be (-1,?) to end the vector (see LIBSVM README)
     return fv;
 }
-
-/// ###########################################################################
-/*
-ESVM::~ESVM()
-{    
-    if (ensembleModel != nullptr)
-        svm_free_and_destroy_model(&ensembleModel);
-}
-*/

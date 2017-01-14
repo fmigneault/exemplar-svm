@@ -12,7 +12,6 @@ class ESVM
 {
 public:
     inline ESVM() {}
-    /// ~ESVM();
     ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id);
     double predict(FeatureVector sample);
     inline std::string getTargetID() { return targetID; }
@@ -22,7 +21,7 @@ private:
                             int positiveOutput, int negativeOutput, double positiveWeight, double negativeWeight);
     svm_node* getFeatureVector(FeatureVector features);
     svm_node* getFeatureVector(double* features, int featureCount);
-    svm_model* ensembleModel;
+    svm_model* ensembleModel = nullptr;
     std::string targetID;
 };
 

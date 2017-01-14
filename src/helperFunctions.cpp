@@ -72,7 +72,7 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 double normalizeMinMax(double value, double min, double max)
 {
     assert(max > min);  // max value must be greater than min
-    return value - min / (max - min);
+    return (value - min) / (max - min);
 }
 
 void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
@@ -145,11 +145,11 @@ logstream& logstream::operator<< (std::ostream& (*pfun)(std::ostream&))
 
 std::string featuresToString(FeatureVector features)
 {
-    std::string s = "{";
-    for (int f = 0; f < s.size(); f++)
+    std::string s = "[" + std::to_string(features.size()) + "] {";
+    for (int f = 0; f < features.size(); f++)
     {
         if (f != 0) s += ", ";
-        s += std::to_string(s[f]);
+        s += std::to_string(features[f]);
     }
     s += "}";
     return s;
