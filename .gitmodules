@@ -1,6 +1,12 @@
 [submodule "LIBSVM"]
 	path = LIBSVM
 	url = C:\\Users\\Francis\\Programs\\DEVELOPMENT\\Face Recognition\\LIBSVM
+    branch = master
 [submodule "FeatureExtractorHOG"]
 	path = FeatureExtractorHOG
-url=https://bitbucket.org/KenjiKyoTeam/FeatureExtractorHOG
+	url=https://bitbucket.org/KenjiKyoTeam/FeatureExtractorHOG
+    branch = master
+[submodule "FeatureExtractorLBP"]
+	path = FeatureExtractorLBP
+	url = https://bitbucket.org/KenjiKyoTeam/FeatureExtractorLBP
+    branch = master

@@ -2,6 +2,7 @@
 #define EXAMPLAR_SVM_TESTS_H
 
 #include "feHOG.h"
+#include "feLBP.h"
 #include "esvm.h"
 #include "esvmTypesDef.h"
 #include "helperFunctions.h"

@@ -64,7 +64,7 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     // convert and assign training vectors and corresponding target values for classification 
     prob.y = new double[prob.l];
     prob.x = new svm_node*[prob.l];
-    #pragma omp parallel for
+    /// ############################################# #pragma omp parallel for
     for (int s = 0; s < prob.l; s++)
     {
         prob.y[s] = outputs[s];
@@ -92,14 +92,15 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     // set training parameters    
     svm_parameter param;
-    param.probability = 1;      // probability outputs instead of (+1,-1) classes
-    param.C = 1;                // cost constraint violation used for w*C
-    param.p = 0.1;              // sensitiveness of loss of support vector regression
+    param.C = 1000;                // cost constraint violation used for w*C
+    param.kernel_type = LINEAR;
+    /// NOT USED BY C-SVM ####  param.p = 0.1;              // sensitiveness of loss of support vector regression
     param.eps = 0.00001;        // stopping criterion
     param.nr_weight = 2;        // number of weights
     param.weight = new double[2] { positiveWeight, negativeWeight };    // class weights (positive, negative)
     param.weight_label = new int[2] { positiveOutput, negativeOutput }; // class labels
-    param.kernel_type = LINEAR;
+    param.probability = 0;      // probability outputs instead of (+1,-1) classes    
+    param.shrinking = 0;    
     param.cache_size = 10000;
     
     // validate parameters and train models
@@ -107,6 +108,28 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     if (msg == NULL)
         throw new std::exception(msg);
     ensembleModel = svm_train(&prob, &param);
+
+    /// ################################################ DEBUG   
+    logstream log(LOGGER_FILE);
+    log << "ESVM training" << std::endl;
+    log << "   C:      " << param.C << std::endl;
+    log << "   eps:    " << param.eps << std::endl;
+    log << "   nr W:   " << param.nr_weight << std::endl;
+    log << "   Wp:     " << param.weight[0] << std::endl;
+    log << "   Wn:     " << param.weight[1] << std::endl;
+    log << "   Wp lbl: " << param.weight_label[0] << std::endl;
+    log << "   Wn lbl: " << param.weight_label[1] << std::endl;
+    log << "   prob:   " << param.probability << std::endl;
+    log << "   shrink: " << param.shrinking << std::endl;
+    if (param.probability)
+    {
+        log << "   probA: " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
+        log << "   probB: " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
+    }
+    /// ################################################ DEBUG
+
+    //delete[] prob.x;
+    //delete[] prob.y;    
 }
 
 double ESVM::predict(std::vector<double> sample)
@@ -120,12 +143,12 @@ double ESVM::predict(std::vector<double> sample)
         double p = svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
 
         /// ################################################ DEBUG
-        /*logstream log(LOGGER_FILE);
+        logstream log(LOGGER_FILE);
         log << "ESVM predict" << std::endl;
         for (int s = 0; s < ensembleModel->nr_class; s++)
         {
-            log << "probEstimates " << s << ": " << probEstimates[s] << std::endl;
-        }*/
+            log << "   probEstimates " << s << ": " << probEstimates[s] << std::endl;
+        }
         /// ################################################ DEBUG
 
         return p;
@@ -142,7 +165,7 @@ svm_node* ESVM::getFeatureVector(std::vector<double> features)
 svm_node* ESVM::getFeatureVector(double* features, int featureCount)
 {
     svm_node* fv = new svm_node[featureCount+1];
-    #pragma omp parallel for
+    /// ############################################# #pragma omp parallel for
     for (int f = 0; f < featureCount; f++)
     {
         fv[f].index = f + 1;        // indexes should be one based
@@ -151,3 +174,12 @@ svm_node* ESVM::getFeatureVector(double* features, int featureCount)
     fv[featureCount].index = -1;    // Additional feature value must be (-1,?) to end the vector (see LIBSVM README)
     return fv;
 }
+
+/// ###########################################################################
+/*
+ESVM::~ESVM()
+{    
+    if (ensembleModel != nullptr)
+        svm_free_and_destroy_model(&ensembleModel);
+}
+*/

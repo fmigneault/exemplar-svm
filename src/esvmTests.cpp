@@ -224,23 +224,29 @@ int test_runBasicExemplarSvmClassification(void)
     // ------------------------------------------------------------------------------------------------------------------------ 
     log << "Training Exemplar-SVM with XOR samples..." << std::endl;
     std::vector < FeatureVector > positives(20);
-    std::vector < FeatureVector > negatives(20);    
+    std::vector < FeatureVector > negatives(20);  
+    std::srand(std::time(0));
     for (int i = 0; i < 10; i++)
     {
         int i1 = 2 * i;
         int i2 = 2 * i + 1;
+        double r = (double)(std::rand() % 50 - 25) / 100.0;
+        // points around (0,0) -> 0
         negatives[i1] = FeatureVector(2);
-        negatives[i1][0] = 0;
-        negatives[i1][1] = 0;
+        negatives[i1][0] = 0 + r;
+        negatives[i1][1] = 0 + r;
+        // points around (1,1) -> 0
         negatives[i2] = FeatureVector(2);
-        negatives[i2][0] = 1;
-        negatives[i2][1] = 1;
+        negatives[i2][0] = 1 + r;
+        negatives[i2][1] = 1 + r;
+        // points around (0,1) -> 1
         positives[i1] = FeatureVector(2);
-        positives[i1][0] = 0;
-        positives[i1][1] = 1;
+        positives[i1][0] = 0 + r;
+        positives[i1][1] = 1 + r;
+        // points around (1,0) -> 1
         positives[i2] = FeatureVector(2);
-        positives[i2][0] = 1;
-        positives[i2][1] = 0;
+        positives[i2][0] = 1 + r;
+        positives[i2][1] = 0 + r;
     }
     ESVM esvm = ESVM(positives, negatives, "XOR");
 
@@ -248,21 +254,26 @@ int test_runBasicExemplarSvmClassification(void)
     // testing ESVM
     // ------------------------------------------------------------------------------------------------------------------------  
     log << "Testing Exemplar-SVM classification results..." << std::endl;
-    std::vector< FeatureVector > samples(4);
+    std::vector< FeatureVector > samples(6);
     samples[0] = { 0, 0 };          
     samples[1] = { 0, 1 };
     samples[2] = { 0.75, 0 };
-    samples[3] = { 0.90, 0.75 };    
+    samples[3] = { 0.90, 0.75 };
+    samples[4] = { 1, 0.75 };
+    samples[5] = { 1, 1 };
     for (int s = 0; s < samples.size(); s++)
     {
         double prediction = esvm.predict(samples[s]);
         log << "  Prediction result for {" << samples[s][0] << "," << samples[s][1] << "}: " << prediction << std::endl;
     }
+
     /*
     assert(esvm.predict(samples[0]) == -1);
     assert(esvm.predict(samples[1]) == +1);
     assert(esvm.predict(samples[2]) > 0.5);
-    assert(esvm.predict(samples[3]) < 0.5);
+    assert(esvm.predict(samples[3]) > 0.5);
+    assert(esvm.predict(samples[4]) > 0.5);
+    assert(esvm.predict(samples[4]) == -1);
     */
 
     return 0;
@@ -868,7 +879,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
             nbRepresentations = representations.size();
             cvPositiveSamples[i] = std::vector< std::vector< cv::Mat> >(nbRepresentations);
-            #pragma omp parallel for
+            /// ############################################# #pragma omp parallel for
             for (int r = 0; r < nbRepresentations; r++)
                 cvPositiveSamples[i][r] = imSplitPatches(representations[r], patchCounts);
         }
@@ -901,7 +912,9 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     //################################################################################ DEBUG
     
     // Destroy viewing window not required anymore
-    cv::destroyWindow(WINDOW_NAME);
+    /// ################################################################################ DEBUG
+    // cv::destroyWindow(WINDOW_NAME);
+    /// ################################################################################ DEBUG
             
     // Containers for feature vectors extracted from samples        
     std::vector< std::vector <FeatureVector > > fvNegativeSamples(nbPatches);                       // [patch][negative][feature]
@@ -922,26 +935,57 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         << "   hogCell:   " << hogCell << std::endl 
         << "   nbBins:    " << nbBins << std::endl;
     
+    FeatureExtractorLBP lbp;
+    int points = 8;
+    int radius = 8;
+    MappingType map = LBP_MAPPING_U2;
+    lbp.initialize(points, radius, map);
+    log << "LBP feature extraction initialized..." << std::endl
+        << "   imageSize: " << imageSize << std::endl
+        << "   points:    " << points << std::endl
+        << "   radius:    " << radius << std::endl
+        << "   mapping:   " << lbp::MappingTypeStr[map] << std::endl;
+
     // Convert unique positive samples (or with synthetic representations)
     log << "Feature extraction of positive images for all test sequences..." << std::endl;
     log << "   nbPositives:       " << nbPositives << std::endl;
     log << "   nbPatches:         " << nbPatches << std::endl;
     log << "   nbRepresentations: " << nbRepresentations << std::endl;
-    #pragma omp parallel for
+    /// ################################################## #pragma omp parallel for
     for (int i = 0; i < nbPositives; i++)
     {
         // Initialize vector for all positive representations per patch
         fvPositiveSamples[i] = std::vector< std::vector< FeatureVector > >(nbPatches);
-        #pragma omp parallel for
+        /// ################################################## #pragma omp parallel for
         for (int p = 0; p < nbPatches; p++)
         {            
             fvPositiveSamples[i][p] = std::vector< FeatureVector >(nbRepresentations);
-            #pragma omp parallel for
+            /// ################################################## #pragma omp parallel for
             for (int r = 0; r < nbRepresentations; r++)
-                fvPositiveSamples[i][p][r] = hog.compute(cvPositiveSamples[i][r][p]);   // switch to (i,p,r) order for patch-based training
+            {
+                // switch to (i,p,r) order for patch-based training
+                fvPositiveSamples[i][p][r] = lbp.compute(cvPositiveSamples[i][r][p]);
+                /// fvPositiveSamples[i][p][r] = hog.compute(cvPositiveSamples[i][r][p]);
+
+                /// ################################################## DEBUG CHECK INPUT IMAGE / VECTORS
+                /*
+                cv::imshow(WINDOW_NAME, cvPositiveSamples[i][r][p]);
+                log << "v (i=" << i << ",r=" << r << ",p=" << p << "): ";
+                FeatureVector s = fvPositiveSamples[i][p][r];
+                std::string ss = "{";
+                for (int f = 0; f < s.size(); f++)
+                {
+                    if (f != 0) ss += ",";
+                    ss += std::to_string(s[f]);
+                }
+                log << ss << "} | " << 1 << std::endl;
+                while (cv::waitKey(10) != 'k');
+                */
+                /// ################################################## DEBUG 
+            }
         }
     }
-    log << "HOG feature dimension: " << fvPositiveSamples[0][0][0].size() << std::endl;
+    log << "Features dimension: " << fvPositiveSamples[0][0][0].size() << std::endl;
 
     // Tests divided per sequence information according to selected mode
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
@@ -1016,19 +1060,25 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             int nbNegatives = cvNegativeSamples.size();
             log << "Feature extraction of negative and probe samples (total negatives: " << nbNegatives 
                 << ", total probes: " << nbProbes << ")..." << std::endl;
-            #pragma omp parallel for
+            /// ############################################# #pragma omp parallel for
             for (int p = 0; p < nbPatches; p++)
             {                  
                 fvNegativeSamples[p] = std::vector< FeatureVector >(nbNegatives);
                 fvProbeSamples[p] = std::vector< FeatureVector >(nbProbes);
 
                 // switch to (p,i) order for patch-based training
-                #pragma omp parallel for
+                /// ############################################# #pragma omp parallel for
                 for (int i = 0; i < nbNegatives; i++)
-                    fvNegativeSamples[p][i] = hog.compute(cvNegativeSamples[i][p]);
-                #pragma omp parallel for
+                {
+                    fvNegativeSamples[p][i] = lbp.compute(cvNegativeSamples[i][p]);
+                    /// fvNegativeSamples[p][i] = hog.compute(cvNegativeSamples[i][p]);
+                }
+                /// ############################################# #pragma omp parallel for
                 for (int i = 0; i < nbProbes; i++)
-                    fvProbeSamples[p][i] = hog.compute(cvProbeSamples[i][p]);
+                {
+                    fvProbeSamples[p][i] = lbp.compute(cvProbeSamples[i][p]);
+                    /// fvProbeSamples[p][i] = hog.compute(cvProbeSamples[i][p]);
+                }
             }
 
             // Enroll positive individuals with Exemplar-SVMs  
@@ -1064,8 +1114,43 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             }*/
             //############################################################################################## DEBUG
 
+            // Feature normalization
+            log << "Running feature normalization..." << std::endl;
+            FeatureVector minFeatures, maxFeatures;
+            std::vector< FeatureVector > allFeatureVectors;
+            /// ############################################# #pragma omp parallel for
+            for (int p = 0; p < nbPatches; p++)
+            {
+                for (int i = 0; i < nbPositives; i++)
+                    for (int r = 0; r < nbRepresentations; r++)
+                        allFeatureVectors.push_back(fvPositiveSamples[i][p][r]);
+                for (int i = 0; i < nbNegatives; i++)
+                    allFeatureVectors.push_back(fvNegativeSamples[p][i]);
+                for (int i = 0; i < nbProbes; i++)
+                    allFeatureVectors.push_back(fvProbeSamples[p][i]);
+            }
+            findMinMaxFeatures(allFeatureVectors, &minFeatures, &maxFeatures);
+            for (int p = 0; p < nbPatches; p++)
+            {
+                for (int i = 0; i < nbPositives; i++)                  
+                    for (int r = 0; r < nbRepresentations; r++)
+                    {
+                        fvPositiveSamples[i][p][r] = normalizeFeatures(fvPositiveSamples[i][p][r], minFeatures, maxFeatures);
+                        log << "POS: " << featuresToString(fvPositiveSamples[i][p][r]) << std::endl;    /// ################################ DEBUG
+                    }
+                for (int i = 0; i < nbNegatives; i++)
+                {
+                    fvNegativeSamples[p][i] = normalizeFeatures(fvNegativeSamples[p][i], minFeatures, maxFeatures);
+                    log << "NEG: " << featuresToString(fvNegativeSamples[p][i]) << std::endl;           /// ################################ DEBUG
+                }
+                for (int i = 0; i < nbProbes; i++)
+                {
+                    fvProbeSamples[p][i] = normalizeFeatures(fvProbeSamples[p][i], minFeatures, maxFeatures);
+                    log << "PRB: " << featuresToString(fvProbeSamples[p][i]) << std::endl;              /// ################################ DEBUG
+                }
+            }
 
-
+            // Classifiers training and testing
             for (int i = 0; i < nbPositives; i++)
             {                        
                 log << "Starting for individual " << i << ": " + positivesID[i] << std::endl;
@@ -1091,7 +1176,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
                     log << "Running Exemplar-SVM testing..." << std::endl;
                     std::vector<double> patchScores(nbProbes, 0.0);
-                    #pragma omp parallel for
+                    /// ############################################# #pragma omp parallel for
                     for (int j = 0; j < nbProbes; j++)
                     {
                         patchScores[j] = esvmModels[i][p].predict(fvProbeSamples[p][j]);

@@ -69,15 +69,24 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
     return imSplitPatches(img, patchCounts);
 }
 
-std::vector< FeatureVector > normalizeFeatures(std::vector< FeatureVector > featureVectors)
+double normalizeMinMax(double value, double min, double max)
 {
+    assert(max > min);  // max value must be greater than min
+    return value - min / (max - min);
+}
+
+void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
+{
+    assert(minFeatures != nullptr);
+    assert(maxFeatures != nullptr);
+
     // initialize with first vector
     int nFeatures = featureVectors[0].size();
     FeatureVector min = featureVectors[0];
     FeatureVector max = featureVectors[0];
 
     // find min/max values
-    #pragma omp parallel for
+    /// ############################################# #pragma omp parallel for
     for (int v = 1; v < featureVectors.size(); v++)
     {
         for (int f = 0; f < nFeatures; f++)
@@ -89,11 +98,22 @@ std::vector< FeatureVector > normalizeFeatures(std::vector< FeatureVector > feat
         }
     }
 
-    // normalize values
-    #pragma omp parallel for
-    for (int v = 0; v < featureVectors.size(); v++)
-        for (int f = 0; f < nFeatures; f++)
-            featureVectors[v][f] = featureVectors[v][f] - min[f] / (max[f] - min[f]);
+    // update values
+    *minFeatures = min;
+    *maxFeatures = max;
+}
+
+FeatureVector normalizeFeatures(FeatureVector featureVectors, FeatureVector minFeatures, FeatureVector maxFeatures)
+{
+    // check number of features
+    int nFeatures = featureVectors.size();    
+    assert(minFeatures.size() == nFeatures);
+    assert(maxFeatures.size() == nFeatures);
+
+    // normalize values    
+    for (int f = 0; f < nFeatures; f++)
+        featureVectors[f] = normalizeMinMax(featureVectors[f], minFeatures[f], maxFeatures[f]);
+
     return featureVectors;
 }
 
@@ -121,4 +141,16 @@ logstream& logstream::operator<< (std::ostream& (*pfun)(std::ostream&))
     pfun(coss);
     pfun(std::cout);
     return *this;
+}
+
+std::string featuresToString(FeatureVector features)
+{
+    std::string s = "{";
+    for (int f = 0; f < s.size(); f++)
+    {
+        if (f != 0) s += ", ";
+        s += std::to_string(s[f]);
+    }
+    s += "}";
+    return s;
 }

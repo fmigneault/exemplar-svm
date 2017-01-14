@@ -41,13 +41,18 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 Normalization oprations 
 -------------------- */
 
-// Normalization [0, 1] of a list of feature vectors per corresponding features
-std::vector< FeatureVector > normalizeFeatures(std::vector< FeatureVector > featureVectors, 
-                                               FeatureVector minFeatures = FeatureVector(), 
-                                               FeatureVector maxFeatures = FeatureVector());
-
+// Min-Max normalization formula
+double normalizeMinMax(double value, double min, double max);
+// Find the min/max per feature across a whole list of feature vectors
+void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures);
+// Normalization [0, 1] across a feature vector using the corresponding min/max features
+FeatureVector normalizeFeatures(FeatureVector featureVectors, FeatureVector minFeatures, FeatureVector maxFeatures);
 // Similarity [0, 1] equivalent of class prediction score [-1, 1] by Min-Max rule
 inline double normalizeClassScoreToSimilarity(double score) { return (score + 1) / 2; }
+
+/* --------------------
+Data Containers
+---------------------*/
 
 // Search container for value
 template<class C, class T>
@@ -78,5 +83,7 @@ logstream& operator<< (logstream& st, T val)
     std::cout << val;
     return st;
 }
+
+std::string featuresToString(FeatureVector features);
 
 #endif/*HELPER_FUNCTIONS_H*/

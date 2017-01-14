@@ -12,6 +12,7 @@ class ESVM
 {
 public:
     inline ESVM() {}
+    /// ~ESVM();
     ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id);
     double predict(FeatureVector sample);
     inline std::string getTargetID() { return targetID; }
