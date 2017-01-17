@@ -99,21 +99,29 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     // set training parameters    
     svm_parameter param;
-    param.C = 1;                // cost constraint violation used for w*C
+    param.C = 10;               // cost constraint violation used for w*C
     param.kernel_type = LINEAR;
     /// NOT USED BY C-SVM ####  param.p = 0.1;              // sensitiveness of loss of support vector regression
     param.eps = 0.00001;        // stopping criterion
-    param.nr_weight = 2;        // number of weights
-    param.weight = new double[2] { positiveWeight, negativeWeight };    // class weights (positive, negative)
-    param.weight_label = new int[2] { positiveOutput, negativeOutput }; // class labels
     param.probability = 1;      // use probability outputs instead of (+1,-1) classes    
     param.shrinking = 0;        // use problem shrinking heuristics
     param.cache_size = 10000;
+
+    #if USE_WEIGHTS
+    param.nr_weight = 2;        // number of weights
+    param.weight = new double[2]{ positiveWeight, negativeWeight };    // class weights (positive, negative)
+    param.weight_label = new int[2]{ positiveOutput, negativeOutput }; // class labels
+    #else/*!USE_WEIGHTS*/
+    param.nr_weight = 0;
+    param.weight = nullptr;
+    param.weight_label = nullptr;
+    #endif/*USE_WEIGHTS*/
     
     // validate parameters and train models
     const char* msg = svm_check_parameter(&prob, &param);
     if (msg == NULL)
         throw new std::exception(msg);
+    
     ensembleModel = svm_train(&prob, &param);
 
     /// ################################################ DEBUG   
@@ -121,18 +129,26 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     log << "ESVM training" << std::endl
         << "   C:      " << param.C << std::endl
         << "   eps:    " << param.eps << std::endl
+        << "   prob:   " << param.probability << std::endl
+        << "   shrink: " << param.shrinking << std::endl
+        #if USE_WEIGHTS
         << "   nr W:   " << param.nr_weight << std::endl
         << "   Wp:     " << param.weight[0] << std::endl
         << "   Wn:     " << param.weight[1] << std::endl
         << "   Wp lbl: " << param.weight_label[0] << std::endl
-        << "   Wn lbl: " << param.weight_label[1] << std::endl
-        << "   prob:   " << param.probability << std::endl
-        << "   shrink: " << param.shrinking << std::endl;
+        << "   Wn lbl: " << param.weight_label[1] << std::endl;
+        #else/*!USE_WEIGHTS*/
+        << "   nr W:   " << param.nr_weight << std::endl;
+        #endif/*USE_WEIGHTS*/
     if (param.probability)
     {
         log << "   probA: " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
         log << "   probB: " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
     }
+
+    ensembleModel->probA[0] = -4.8;
+    ensembleModel->probB[0] = 1.20;
+
     /// ################################################ DEBUG
 }
 
@@ -143,7 +159,7 @@ double ESVM::predict(std::vector<double> sample)
 
     if (ensembleModel->param.probability)
     {
-        double* probEstimates = new double[ensembleModel->nr_class];
+        double* probEstimates = (double *)malloc(ensembleModel->nr_class * sizeof(double)); // = new double[ensembleModel->nr_class];
         double p = svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
 
         /// ################################################ DEBUG

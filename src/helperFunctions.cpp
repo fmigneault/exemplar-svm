@@ -143,7 +143,7 @@ logstream& logstream::operator<< (std::ostream& (*pfun)(std::ostream&))
     return *this;
 }
 
-std::string featuresToString(FeatureVector features)
+std::string featuresToVectorString(FeatureVector features)
 {
     std::string s = "[" + std::to_string(features.size()) + "] {";
     for (int f = 0; f < features.size(); f++)
@@ -152,5 +152,17 @@ std::string featuresToString(FeatureVector features)
         s += std::to_string(features[f]);
     }
     s += "}";
+    return s;
+}
+
+std::string featuresToSvmString(FeatureVector features, int label)
+{
+    std::string s = std::to_string(label) + " ";
+    for (int f = 0; f < features.size(); f++)
+    {
+        if (f != 0) s += " ";
+        s += std::to_string(f + 1) + ":";
+        s += std::to_string(features[f]);
+    }
     return s;
 }

@@ -3,7 +3,7 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
-// Builds the string as "P#T_S#_C#", if the individual is non-zero, it adds the sub folder as "P#T_S#_C#\ID"
+// Builds the string as "P#T_S#_C#", if the individual is non-zero, it adds the sub folder as "P#T_S#_C#/ID#"
 std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id)
 {
     std::string dir = "P" + std::to_string(portal) + (type == ENTER ? "E" : type == LEAVE ? "L" : "") +
@@ -923,6 +923,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     std::vector< std::vector < std::vector< FeatureVector > > > fvPositiveSamples(nPositives);      // [positive][patch][representation][feature]
     std::vector< std::vector < ESVM > > esvmModels(nPositives);                                     // [positive][patch]
 
+    #if USE_HOG
     FeatureExtractorHOG hog;
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
     cv::Size hogBlock = cv::Size(patchSize.width / 2, patchSize.height / 2);
@@ -936,6 +937,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         << "   hogCell:   " << hogCell << std::endl 
         << "   nBins:    " << nBins << std::endl;
     
+    #elif USE_LBP
     FeatureExtractorLBP lbp;
     int points = 8;
     int radius = 8;
@@ -946,6 +948,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         << "   points:    " << points << std::endl
         << "   radius:    " << radius << std::endl
         << "   mapping:   " << lbp::MappingTypeStr[map] << std::endl;
+    
+    #endif/* USE_HOG || USE_LBP */
 
     // Convert unique positive samples (or with synthetic representations)
     log << "Feature extraction of positive images for all test sequences..." << std::endl
@@ -966,8 +970,11 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             for (int r = 0; r < nRepresentations; r++)
             {
                 // switch to (i,p,r) order for patch-based training
+                #if USE_HOG
+                fvPositiveSamples[i][p][r] = hog.compute(cvPositiveSamples[i][r][p]);
+                #elif USE_LBP
                 fvPositiveSamples[i][p][r] = lbp.compute(cvPositiveSamples[i][r][p]);
-                /// fvPositiveSamples[i][p][r] = hog.compute(cvPositiveSamples[i][r][p]);
+                #endif/* USE_HOG || USE_LBP */
 
                 /// ################################################## DEBUG CHECK INPUT IMAGE / VECTORS
                 /*
@@ -1081,14 +1088,20 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 /// ############################################# #pragma omp parallel for
                 for (int i = 0; i < nNegatives; i++)
                 {
+                    #if USE_HOG
+                    fvNegativeSamples[p][i] = hog.compute(cvNegativeSamples[i][p]);
+                    #elif USE_LBP
                     fvNegativeSamples[p][i] = lbp.compute(cvNegativeSamples[i][p]);
-                    /// fvNegativeSamples[p][i] = hog.compute(cvNegativeSamples[i][p]);
+                    #endif/* USE_HOG || USE_LBP */
                 }
                 /// ############################################# #pragma omp parallel for
                 for (int i = 0; i < nProbes; i++)
                 {
+                    #if USE_HOG
+                    fvProbeSamples[p][i] = hog.compute(cvProbeSamples[i][p]);
+                    #elif USE_LBP
                     fvProbeSamples[p][i] = lbp.compute(cvProbeSamples[i][p]);
-                    /// fvProbeSamples[p][i] = hog.compute(cvProbeSamples[i][p]);
+                    #endif/* USE_HOG || USE_LBP */
                 }
             }
 
@@ -1142,8 +1155,18 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             }
             findMinMaxFeatures(allFeatureVectors, &minFeatures, &maxFeatures);
             log << "Found min/max features" << std::endl
-                << "   MIN: " << featuresToString(minFeatures) << std::endl
-                << "   MAX: " << featuresToString(maxFeatures) << std::endl;
+                << "   MIN: " << featuresToVectorString(minFeatures) << std::endl
+                << "   MAX: " << featuresToVectorString(maxFeatures) << std::endl;
+            
+            // Normalization and Output vectors to file for SVM cross-validation
+            std::string strSeq = std::to_string(sn);            
+            #if USE_HOG
+            logstream data("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-hog-train.data");  
+            logstream test("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-hog-test.data");
+            #elif USE_LBP
+            logstream data("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-lbp-train.data");  
+            logstream test("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-lbp-test.data");
+            #endif/* USE_HOG || USE_LBP */
             log << "Applying min/max features..." << std::endl;
             for (int p = 0; p < nPatches; p++)
             {
@@ -1151,20 +1174,23 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     for (int r = 0; r < nRepresentations; r++)
                     {
                         fvPositiveSamples[i][p][r] = normalizeFeatures(fvPositiveSamples[i][p][r], minFeatures, maxFeatures);
-                        log << "   POS: " << featuresToString(fvPositiveSamples[i][p][r]) << std::endl;
+                        /// log << "   POS: " << featuresToString(fvPositiveSamples[i][p][r]) << std::endl;
+                        data << featuresToSvmString(fvPositiveSamples[i][p][r], i == 0 ? 1 : -1) << std::endl;
                     }
                 for (int i = 0; i < nNegatives; i++)
                 {
                     fvNegativeSamples[p][i] = normalizeFeatures(fvNegativeSamples[p][i], minFeatures, maxFeatures);
-                    log << "   NEG: " << featuresToString(fvNegativeSamples[p][i]) << std::endl;
+                    /// log << "   NEG: " << featuresToString(fvNegativeSamples[p][i]) << std::endl;
+                    data << featuresToSvmString(fvNegativeSamples[p][i], -1) << std::endl;
                 }
                 for (int i = 0; i < nProbes; i++)
                 {
                     fvProbeSamples[p][i] = normalizeFeatures(fvProbeSamples[p][i], minFeatures, maxFeatures);
-                    log << "   PRB: " << featuresToString(fvProbeSamples[p][i]) << std::endl;
+                    /// log << "   PRB: " << featuresToString(fvProbeSamples[p][i]) << std::endl;
+                    test << featuresToSvmString(fvProbeSamples[p][i], probeGroundTruthID[i] == positivesID[0] ? 1 : -1) << std::endl;
                 }
             }
-
+            
             // Classifiers training and testing
             for (int i = 0; i < nPositives; i++)
             {                        

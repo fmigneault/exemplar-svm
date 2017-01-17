@@ -84,6 +84,7 @@ logstream& operator<< (logstream& st, T val)
     return st;
 }
 
-std::string featuresToString(FeatureVector features);
+std::string featuresToVectorString(FeatureVector features);
+std::string featuresToSvmString(FeatureVector features, int label);
 
 #endif/*HELPER_FUNCTIONS_H*/
