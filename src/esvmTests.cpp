@@ -847,10 +847,10 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
-    logstream log(LOGGER_FILE);
+    logstream logger(LOGGER_FILE);
     int nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;    
-    log << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
+    logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
         << "   useSyntheticPositives: " << useSyntheticPositives << std::endl
         << "   imageSize:             " << imageSize << std::endl
         << "   patchCounts:           " << patchCounts << std::endl;
@@ -867,7 +867,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     std::vector< std::vector<cv::Mat> > cvProbeSamples;                                 // [probe][patch](Mat[x,y])    
 
     // Add samples to containers
-    log << "Loading positives image for all test sequences..." << std::endl;    
+    logger << "Loading positives image for all test sequences..." << std::endl;
     for (int i = 0; i < nPositives; i++)
     {        
         // Add additional positive representations as requested
@@ -930,7 +930,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     cv::Size hogCell = cv::Size(hogBlock.width / 4, hogBlock.height / 4);
     int nBins = 8;
     hog.initialize(patchSize, hogBlock, hogBlock, hogCell, nBins);
-    log << "HOG feature extraction initialized..." << std::endl
+    logger << "HOG feature extraction initialized..." << std::endl
         << "   imageSize: " << imageSize << std::endl
         << "   patchSize: " << patchSize << std::endl
         << "   hogBlock:  " << hogBlock << std::endl
@@ -943,16 +943,16 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     int radius = 8;
     MappingType map = LBP_MAPPING_U2;
     lbp.initialize(points, radius, map);
-    log << "LBP feature extraction initialized..." << std::endl
+    logger << "LBP feature extraction initialized..." << std::endl
         << "   imageSize: " << imageSize << std::endl
         << "   points:    " << points << std::endl
         << "   radius:    " << radius << std::endl
         << "   mapping:   " << lbp::MappingTypeStr[map] << std::endl;
     
     #endif/* USE_HOG || USE_LBP */
-
+    
     // Convert unique positive samples (or with synthetic representations)
-    log << "Feature extraction of positive images for all test sequences..." << std::endl
+    logger << "Feature extraction of positive images for all test sequences..." << std::endl
         << "   nPositives:       " << nPositives << std::endl
         << "   nPatches:         " << nPatches << std::endl
         << "   nRepresentations: " << nRepresentations << std::endl
@@ -1003,35 +1003,44 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         }
     }
     nRepresentations *= nDuplications;
-    log << "Features dimension: " << fvPositiveSamples[0][0][0].size() << std::endl;
+    logger << "Features dimension: " << fvPositiveSamples[0][0][0].size() << std::endl;
+    #if USE_HOG
+    std::string feName = "hog";
+    #elif USE_LBP
+    std::string feName = "lbp";
+    #endif/*USE_HOG || USE_LBP*/
 
     // Tests divided per sequence information according to selected mode
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
+    std::string seq;
     for (int sn = 1; sn <= SESSION_NUMBER; sn++)
     {
-        #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 0
+        #if CHOKEPOINT_TEST_SEQUENCES_MODE == 0
         cv::namedWindow(WINDOW_NAME);
-        #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/
-        
+        #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/
+
         for (int pn = 1; pn <= PORTAL_NUMBER; pn++) {
         for (auto it = types.begin(); it != types.end(); ++it) {
         for (int cn = 1; cn <= CAMERA_NUMBER; cn++)
         {     
-            #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 1
+            #if CHOKEPOINT_TEST_SEQUENCES_MODE == 1
             cv::namedWindow(WINDOW_NAME);
             // Reset vectors for next test sequences                    
             cvNegativeSamples.clear();
             cvProbeSamples.clear();
             probeGroundTruthID.clear();
-            #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/
+            #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/
 
-            std::string seq = buildChokePointSequenceString(pn, *it, sn, cn);
-            log << "Loading negative and probe images for sequence " << seq << "..." << std::endl;                    
+            seq = buildChokePointSequenceString(pn, *it, sn, cn);
+            logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
+            #if CHOKEPOINT_TEST_SEQUENCES_MODE == 0
+            seq = "S" + std::to_string(sn);
+            #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/
 
             // Add ROI to corresponding sample vectors according to individual IDs            
             for (int id = 1; id <= INDIVIDUAL_NUMBER; id++)
-            {            
+            {
                 std::string dirPath = roiChokePointPath + buildChokePointSequenceString(pn, *it, sn, cn, id) + "/";
                 if (bfs::is_directory(dirPath))
                 {
@@ -1065,10 +1074,10 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }                        
             }
 
-        // Add end of loops if sequences must be combined per session
-        #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 0
+        // Add end of loops if sequences must be combined per session (accumulate cameras and scenes)
+        #if CHOKEPOINT_TEST_SEQUENCES_MODE == 0
         } } }
-        #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/
+        #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/
         
             // Destroy viewing window not required while training/testing is in progress
             cv::destroyWindow(WINDOW_NAME);
@@ -1076,8 +1085,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             // Feature extraction of negatives and probes
             int nProbes = cvProbeSamples.size();
             int nNegatives = cvNegativeSamples.size();
-            log << "Feature extraction of negative and probe samples (total negatives: " << nNegatives 
-                << ", total probes: " << nProbes << ")..." << std::endl;
+            logger << "Feature extraction of negative and probe samples (total negatives: " << nNegatives
+                   << ", total probes: " << nProbes << ")..." << std::endl;
             /// ############################################# #pragma omp parallel for
             for (int p = 0; p < nPatches; p++)
             {                  
@@ -1105,14 +1114,17 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }
             }
 
-            // Enroll positive individuals with Exemplar-SVMs  
-            #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 0
-            log << "Starting enrollment for sequence: S" << sn << "..." << std::endl;
-            #elif CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 1
-            log << "Starting enrollment for sequence: " << seq << "..." << std::endl;
-            #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/
+            // Enroll positive individuals with Ensembles of Exemplar-SVM
+            logger << "Starting enrollment for sequence: " << seq << "..." << std::endl;
 
-
+            // SVM files for vector output
+            #if USE_HOG
+            fstream train("chokepoint-" + seq + "-id" + positivesID[0] + "-hog-train.data");  
+            fstream test("chokepoint-" + seq + "-id" + positivesID[0] + "-hog-test.data");
+            #elif USE_LBP
+            logstream data("chokepoint-" + strSeq + "-id" + positivesID[0] + "-lbp-train.data");  
+            logstream test("chokepoint-" + strSeq + "-id" + positivesID[0] + "-lbp-test.data");
+            #endif/* USE_HOG || USE_LBP */
 
             // ######################################################################################### DEBUG
             /*
@@ -1139,7 +1151,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             //############################################################################################## DEBUG
 
             // Feature normalization
-            log << "Running feature normalization..." << std::endl;
+            logger << "Running feature normalization..." << std::endl;
             FeatureVector minFeatures, maxFeatures;
             std::vector< FeatureVector > allFeatureVectors;
             /// ############################################# #pragma omp parallel for
@@ -1154,20 +1166,12 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     allFeatureVectors.push_back(fvProbeSamples[p][i]);
             }
             findMinMaxFeatures(allFeatureVectors, &minFeatures, &maxFeatures);
-            log << "Found min/max features" << std::endl
+            logger << "Found min/max features" << std::endl
                 << "   MIN: " << featuresToVectorString(minFeatures) << std::endl
                 << "   MAX: " << featuresToVectorString(maxFeatures) << std::endl;
             
-            // Normalization and Output vectors to file for SVM cross-validation
-            std::string strSeq = std::to_string(sn);            
-            #if USE_HOG
-            logstream data("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-hog-train.data");  
-            logstream test("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-hog-test.data");
-            #elif USE_LBP
-            logstream data("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-lbp-train.data");  
-            logstream test("chokepoint-S" + strSeq + "-id" + positivesID[0] + "-lbp-test.data");
-            #endif/* USE_HOG || USE_LBP */
-            log << "Applying min/max features..." << std::endl;
+            // Normalization and Output vectors to SVM files
+            logger << "Applying min/max features..." << std::endl;
             for (int p = 0; p < nPatches; p++)
             {
                 for (int i = 0; i < nPositives; i++)                  
@@ -1175,13 +1179,13 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     {
                         fvPositiveSamples[i][p][r] = normalizeFeatures(fvPositiveSamples[i][p][r], minFeatures, maxFeatures);
                         /// log << "   POS: " << featuresToString(fvPositiveSamples[i][p][r]) << std::endl;
-                        data << featuresToSvmString(fvPositiveSamples[i][p][r], i == 0 ? 1 : -1) << std::endl;
+                        train << featuresToSvmString(fvPositiveSamples[i][p][r], i == 0 ? 1 : -1) << std::endl;
                     }
                 for (int i = 0; i < nNegatives; i++)
                 {
                     fvNegativeSamples[p][i] = normalizeFeatures(fvNegativeSamples[p][i], minFeatures, maxFeatures);
                     /// log << "   NEG: " << featuresToString(fvNegativeSamples[p][i]) << std::endl;
-                    data << featuresToSvmString(fvNegativeSamples[p][i], -1) << std::endl;
+                    train << featuresToSvmString(fvNegativeSamples[p][i], -1) << std::endl;
                 }
                 for (int i = 0; i < nProbes; i++)
                 {
@@ -1194,28 +1198,28 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             // Classifiers training and testing
             for (int i = 0; i < nPositives; i++)
             {                        
-                log << "Starting for individual " << i << ": " + positivesID[i] << std::endl;
+                logger << "Starting for individual " << i << ": " + positivesID[i] << std::endl;
                 std::vector<double> fusionScores(nProbes, 0.0);
                 for (int p = 0; p < nPatches; p++)
                 {                    
                     esvmModels[i] = std::vector<ESVM>(nPatches);
                     try
                     {
-                        log << "Running Exemplar-SVM training..." << std::endl;
+                        logger << "Running Exemplar-SVM training..." << std::endl;
                         esvmModels[i][p] = ESVM(fvPositiveSamples[i][p], fvNegativeSamples[p], positivesID[i]);                        
                     }
                     catch (const std::exception& e)
                     {
-                        log << e.what() << std::endl;
+                        logger << e.what() << std::endl;
                         return -2;
                     }
                     catch (...)
                     {
-                        log << "Unexpected error thrown" << std::endl;
+                        logger << "Unexpected error thrown" << std::endl;
                         return -3;
                     }
 
-                    log << "Running Exemplar-SVM testing..." << std::endl;
+                    logger << "Running Exemplar-SVM testing..." << std::endl;
                     std::vector<double> patchScores(nProbes, 0.0);                    
                     for (int j = 0; j < nProbes; j++)
                     {
@@ -1226,8 +1230,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         double normPatchScore = patchScores[j]; /// normalizeClassScoreToSimilarity(patchScores[j]);
                         fusionScores[j] += normPatchScore;
                         std::string probeGT = (probeGroundTruthID[j] == positivesID[i] ? "positive" : "negative");
-                        log << "Score for patch " << p << " of probe " << j << " (ID" << probeGroundTruthID[j] << ", " 
-                            << probeGT << "): " << normPatchScore << std::endl;
+                        logger << "Score for patch " << p << " of probe " << j << " (ID" << probeGroundTruthID[j] << ", "
+                               << probeGT << "): " << normPatchScore << std::endl;
                     }
                 }
                 for (int j = 0; j < nProbes; j++)
@@ -1235,25 +1239,74 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     // average of score accumulation for fusion per patch
                     std::string probeGT = (probeGroundTruthID[j] == positivesID[i] ? "positive" : "negative");
                     fusionScores[j] = fusionScores[j] / nPatches;
-                    log << "Score fusion of probe " << j << " (ID" << probeGroundTruthID[j] << ", "
+                    logger << "Score fusion of probe " << j << " (ID" << probeGroundTruthID[j] << ", "
                         << probeGT << "): " << fusionScores[j] << std::endl;
                 }
-                log << "Completed for individual " << i << ": " + positivesID[i] << std::endl;
+                logger << "Completed for individual " << i << ": " + positivesID[i] << std::endl;
             }
 
-            #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 0
-            log << "Completed for sequence: S" << sn << "..." << std::endl;
-            #elif CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 1
-            log << "Completed for sequence: " << seq << std::endl;
-            #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/            
+            #if CHOKEPOINT_TEST_SEQUENCES_MODE == 0
+            logger << "Completed for sequence: S" << sn << "..." << std::endl;
+            #elif CHOKEPOINT_TEST_SEQUENCES_MODE == 1
+            logger << "Completed for sequence: " << seq << std::endl;
+            #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/            
         
         // Add end of loops if sequences must be separated per scene
-        #if CHOKEPOINT_FULL_TEST_SEQUENCES_MODE == 1
+        #if CHOKEPOINT_TEST_SEQUENCES_MODE == 1
         } } }
-        #endif/*CHOKEPOINT_FULL_TEST_SEQUENCES_MODE*/
+        #endif/*CHOKEPOINT_TEST_SEQUENCES_MODE*/
             
     } // End session loop 
 
-    log << "Test complete" << std::endl;
+    logger << "Test complete" << std::endl;
+    return 0;
+}
+
+
+int test_runSingleSamplePerPersonStillToVideo_DataFiles(std::string filename)
+{
+    /**************************************************************************************************************************
+    TEST DEFINITION
+    
+        Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
+        vectors stored in the data files.
+
+    NB:
+        Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
+        Changing any configuration will require a new data file to be generated by running the "FullChokePoint" at least once.
+    **************************************************************************************************************************/
+
+    logstream logger(LOGGER_FILE);
+
+    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }
+    filenames.push_back({ "data/chokepoint-S1-id0011-hog-train.data", "data/chokepoint-S1-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S2-id0011-hog-train.data", "data/chokepoint-S2-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S3-id0011-hog-train.data", "data/chokepoint-S3-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S4-id0011-hog-train.data", "data/chokepoint-S4-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S1-id0011-lbp-train.data", "data/chokepoint-S1-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S2-id0011-lbp-train.data", "data/chokepoint-S2-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S3-id0011-lbp-train.data", "data/chokepoint-S3-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ "data/chokepoint-S4-id0011-lbp-train.data", "data/chokepoint-S4-id0011-lbp-test.data", "id0011" });
+
+    for (auto itFileNames = filenames.begin(); itFileNames != filenames.end(); ++itFileNames)
+    {
+        std::string trainFileName = (*itFileNames)[0];
+        std::string testFileName = (*itFileNames)[1];
+        std::string id = (*itFileNames)[2];
+                
+        logger << "Training ESVM with data file: " << trainFileName << std::endl;
+        ESVM esvm = ESVM(trainFileName, id);
+        logger << "Testing ESVM with data file: " << testFileName << std::endl;
+        std::vector< std::tuple<double, int> > results = esvm.predict(testFileName);
+
+        for (auto res = results.begin(); res != results.end(); ++res)
+        {
+            
+            double score = (*res)[0];
+            int groundTruth = (*res)[1];
+        }
+    }
+
+    logger << "Test complete" << std::endl;
     return 0;
 }

@@ -45,21 +45,19 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
         << "   posWeight:  " << posWeight << std::endl
         << "   negWeight:  " << negWeight << std::endl
         << "   posOutput:  " << posOutput << std::endl
-        << "   negOutput:  " << negOutput << std::endl
-        << "   samples | outputs:  " << std::endl;
+        << "   negOutput:  " << negOutput << std::endl;
+    /*    << "   samples | outputs:  " << std::endl;
     for (int s = 0; s < allSamples; s++)
-    {
-        std::string ss = "{";
-        for (int f = 0; f < samples[s].size(); f++)
-        {
-            if (f!=0) ss += ",";
-            ss += std::to_string(samples[s][f]);            
-        }
-        log << "      " << s << ": " << ss << "} | " << outputs[s] << std::endl;
-    }
+        log << featuresToVectorString(samples[s]) << " | " << outputs[s] << std::endl;
+    */
     /// ################################################ DEBUG
 
     trainEnsembleModel(samples, outputs, posOutput, negOutput, posWeight, negWeight);
+}
+
+ESVM::ESVM(std::string filename, std::string id)
+{
+    
 }
 
 void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs, 
@@ -102,10 +100,10 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     param.C = 10;               // cost constraint violation used for w*C
     param.kernel_type = LINEAR;
     /// NOT USED BY C-SVM ####  param.p = 0.1;              // sensitiveness of loss of support vector regression
-    param.eps = 0.00001;        // stopping criterion
+    /// USE DEFAULT param.eps = 0.00001;        // stopping criterion
     param.probability = 1;      // use probability outputs instead of (+1,-1) classes    
     param.shrinking = 0;        // use problem shrinking heuristics
-    param.cache_size = 10000;
+    /// USE DEFAULT param.cache_size = 10000;
 
     #if USE_WEIGHTS
     param.nr_weight = 2;        // number of weights
@@ -125,8 +123,8 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     ensembleModel = svm_train(&prob, &param);
 
     /// ################################################ DEBUG   
-    logstream log(LOGGER_FILE);
-    log << "ESVM training" << std::endl
+    logstream logger(LOGGER_FILE);
+    logger << "ESVM training" << std::endl
         << "   C:      " << param.C << std::endl
         << "   eps:    " << param.eps << std::endl
         << "   prob:   " << param.probability << std::endl
@@ -142,12 +140,12 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
         #endif/*USE_WEIGHTS*/
     if (param.probability)
     {
-        log << "   probA: " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
-        log << "   probB: " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
+        logger << "   probA: " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
+        logger << "   probB: " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
     }
 
-    ensembleModel->probA[0] = -4.8;
-    ensembleModel->probB[0] = 1.20;
+    /// ensembleModel->probA[0] = -4.8;
+    /// ensembleModel->probB[0] = 1.20;
 
     /// ################################################ DEBUG
 }
@@ -175,6 +173,11 @@ double ESVM::predict(std::vector<double> sample)
     }
     
     return svm_predict(ensembleModel, getFeatureVector(sample));
+}
+
+std::vector< std::tuple<double, int> > predict(std::string filename)
+{
+    
 }
 
 svm_node* ESVM::getFeatureVector(std::vector<double> features)

@@ -51,15 +51,24 @@ int main(int argc, char* argv[])
 
     //################################################################################ NO PATCH
     /* NO PATCHES TEST */
+    #if USE_DATA_FILES == 0
     cv::Size patchCounts = cv::Size(1, 1);
     cv::Size imageSize = cv::Size(64, 64);
     bool useSyntheticPositives = true;
     err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
     if (err)
     {
-        log << "Test 'runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
+        log << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
         return err;
     }
+    #elif USE_DATA_FILES == 1
+    err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint_DataFiles();
+    if (err)
+    {
+        log << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles' failed." << std::endl;
+        return err;
+    }
+    #endif/*USE_DATA_FILES*/
     //################################################################################ NO PATCH
 
     /*------------------------------------------------------------------------------------------------

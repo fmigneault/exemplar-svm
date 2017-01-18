@@ -14,7 +14,7 @@
 // Specify how the training samples are regrouped into training sequences
 //    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
 //    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
-#define CHOKEPOINT_FULL_TEST_SEQUENCES_MODE 0
+#define CHOKEPOINT_TEST_SEQUENCES_MODE 0
 // Possible sequence information
 enum PORTAL_TYPE { ENTER, LEAVE };
 const int PORTAL_NUMBER = 2;
@@ -31,5 +31,6 @@ int test_runBasicExemplarSvmFunctionalities(void);
 int test_runBasicExemplarSvmClassification(void);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
+int test_runSingleSamplePerPersonStillToVideo_DataFiles(std::string filename);
 
 #endif/*EXAMPLAR_SVM_TESTS_H*/

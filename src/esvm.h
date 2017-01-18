@@ -13,10 +13,12 @@ class ESVM
 public:
     inline ESVM() {}
     ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id);
+    ESVM(std::string filename, std::string id);
     double predict(FeatureVector sample);
+    std::vector< std::tuple<double, int> > predict(std::string filename);
     inline std::string getTargetID() { return targetID; }
 
-private:    
+private:
     void trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> outputs,
                             int positiveOutput, int negativeOutput, double positiveWeight, double negativeWeight);
     svm_node* getFeatureVector(FeatureVector features);
