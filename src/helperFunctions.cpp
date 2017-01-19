@@ -1,5 +1,9 @@
 #include "helperFunctions.h"
 
+#define ASSERT_MSG(cond, msg) do \
+{ if (!(cond)) { std::ostringstream str; str << msg; std::cerr << str.str(); std::abort(); } \
+} while(0)
+
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode)
 {
     std::cout << "Reading image: " << imagePath << std::endl;
@@ -12,7 +16,7 @@ cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::Imre
 cv::Mat imTranslate(cv::Mat image, cv::Point offset)
 {
     cv::Rect source = cv::Rect(cv::max(0, -offset.x), cv::max(0, -offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
-    cv::Rect target = cv::Rect(cv::max(0,  offset.x), cv::max(0,  offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
+    cv::Rect target = cv::Rect(cv::max(0, offset.x), cv::max(0, offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
     cv::Mat trans = cv::Mat::zeros(image.size(), image.type());
     image(source).copyTo(trans(target));
     return trans;
@@ -39,7 +43,7 @@ std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image)
 
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
 {
-    if (patchCounts == cv::Size(0,0) || patchCounts == cv::Size(1,1))
+    if (patchCounts == cv::Size(0, 0) || patchCounts == cv::Size(1, 1))
     {
         std::vector<cv::Mat> vImg(1);
         vImg[0] = image;
@@ -49,7 +53,7 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
     {
         // Define and return image patches
         cv::Size patchSize(image.size().width / patchCounts.width, image.size().height / patchCounts.height);
-        std::vector<cv::Mat> patches(patchCounts.width*patchCounts.height);
+        std::vector<cv::Mat> patches(patchCounts.width * patchCounts.height);
         int i = 0;
         for (int r = 0; r < image.rows; r += patchSize.height)
             for (int c = 0; c < image.cols; c += patchSize.width)
@@ -62,7 +66,7 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
 std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, std::string windowName, cv::ImreadModes readMode)
 {
     cv::Mat img = imReadAndDisplay(imagePath, windowName, readMode);
-    if (readMode == cv::IMREAD_COLOR || img.channels() > 1) 
+    if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
         cv::cvtColor(img, img, CV_BGR2GRAY);
     cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);
     cv::equalizeHist(img, img);
@@ -71,14 +75,48 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 
 double normalizeMinMax(double value, double min, double max)
 {
-    assert(max > min);  // max value must be greater than min
+    ASSERT_MSG(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
     return (value - min) / (max - min);
 }
 
-void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
+void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int* posMax)
 {
-    assert(minFeatures != nullptr);
-    assert(maxFeatures != nullptr);
+    // check values/references
+    ASSERT_MSG(min != nullptr, "min reference not specified");
+    ASSERT_MSG(max != nullptr, "max reference not specified");
+
+    int nFeatures = vector.size();
+    ASSERT_MSG(nFeatures > 0, "vector cannot be empty");
+
+    // initialization
+    *min = vector[0] , *max = vector[0];
+    if (posMin != nullptr)
+        *posMin = 0;
+    if (posMax != nullptr)
+        *posMax = 0;
+
+    // update min/max
+    for (int f = 1; f < vector.size(); f++)
+    {
+        if (vector[f] < *min)
+        {
+            *min = vector[f];
+            if (posMax != nullptr)
+                *posMin = f;
+        }
+        else if(vector[f] > *max)
+        {
+            *max = vector[f];
+            if (posMax != nullptr)
+                *posMax = f;
+        }
+    }
+}
+
+void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
+{
+    ASSERT_MSG(minFeatures != nullptr, "feature vector for min features not specified");
+    ASSERT_MSG(maxFeatures != nullptr, "feature vector for max features not specified");
 
     // initialize with first vector
     int nFeatures = featureVectors[0].size();
@@ -103,18 +141,26 @@ void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVect
     *maxFeatures = max;
 }
 
-FeatureVector normalizeFeatures(FeatureVector featureVectors, FeatureVector minFeatures, FeatureVector maxFeatures)
+FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector, double min, double max)
+{
+    int nFeatures = featureVector.size();
+    for (int f = 0; f < nFeatures; f++)
+        featureVector[f] = normalizeMinMax(featureVector[f], min, max);
+    return featureVector;
+}
+
+FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVector minFeatures, FeatureVector maxFeatures)
 {
     // check number of features
-    int nFeatures = featureVectors.size();    
-    assert(minFeatures.size() == nFeatures);
-    assert(maxFeatures.size() == nFeatures);
+    int nFeatures = featureVector.size();
+    ASSERT_MSG(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
+    ASSERT_MSG(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
 
     // normalize values    
     for (int f = 0; f < nFeatures; f++)
-        featureVectors[f] = normalizeMinMax(featureVectors[f], minFeatures[f], maxFeatures[f]);
+        featureVector[f] = normalizeMinMax(featureVector[f], minFeatures[f], maxFeatures[f]);
 
-    return featureVectors;
+    return featureVector;
 }
 
 std::string currentTimeStamp()
@@ -136,7 +182,7 @@ logstream::~logstream(void)
     if (coss.is_open()) coss.close();
 }
 
-logstream& logstream::operator<< (std::ostream& (*pfun)(std::ostream&))
+logstream& logstream::operator<<(std::ostream& (*pfun)(std::ostream&))
 {
     pfun(coss);
     pfun(std::cout);

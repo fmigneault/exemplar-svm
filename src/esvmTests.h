@@ -1,11 +1,11 @@
 #ifndef EXAMPLAR_SVM_TESTS_H
 #define EXAMPLAR_SVM_TESTS_H
 
+#include "esvmTypesDef.h"
+#include "helperFunctions.h"
 #include "feHOG.h"
 #include "feLBP.h"
 #include "esvm.h"
-#include "esvmTypesDef.h"
-#include "helperFunctions.h"
 
 /* ChokePoint Dataset:
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, , 3 cameras = 48 video dirs
