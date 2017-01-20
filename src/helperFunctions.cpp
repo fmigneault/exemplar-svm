@@ -1,9 +1,5 @@
 #include "helperFunctions.h"
 
-#define ASSERT_MSG(cond, msg) do \
-{ if (!(cond)) { std::ostringstream str; str << msg; std::cerr << str.str(); std::abort(); } \
-} while(0)
-
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode)
 {
     std::cout << "Reading image: " << imagePath << std::endl;
@@ -75,18 +71,18 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 
 double normalizeMinMax(double value, double min, double max)
 {
-    ASSERT_MSG(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
+    ASSERT_LOG(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
     return (value - min) / (max - min);
 }
 
 void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int* posMax)
 {
     // check values/references
-    ASSERT_MSG(min != nullptr, "min reference not specified");
-    ASSERT_MSG(max != nullptr, "max reference not specified");
+    ASSERT_LOG(min != nullptr, "min reference not specified");
+    ASSERT_LOG(max != nullptr, "max reference not specified");
 
     int nFeatures = vector.size();
-    ASSERT_MSG(nFeatures > 0, "vector cannot be empty");
+    ASSERT_LOG(nFeatures > 0, "vector cannot be empty");
 
     // initialization
     *min = vector[0] , *max = vector[0];
@@ -115,8 +111,8 @@ void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int
 
 void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
 {
-    ASSERT_MSG(minFeatures != nullptr, "feature vector for min features not specified");
-    ASSERT_MSG(maxFeatures != nullptr, "feature vector for max features not specified");
+    ASSERT_LOG(minFeatures != nullptr, "feature vector for min features not specified");
+    ASSERT_LOG(maxFeatures != nullptr, "feature vector for max features not specified");
 
     // initialize with first vector
     int nFeatures = featureVectors[0].size();
@@ -153,8 +149,8 @@ FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVec
 {
     // check number of features
     int nFeatures = featureVector.size();
-    ASSERT_MSG(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
-    ASSERT_MSG(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
+    ASSERT_LOG(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
+    ASSERT_LOG(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
 
     // normalize values    
     for (int f = 0; f < nFeatures; f++)

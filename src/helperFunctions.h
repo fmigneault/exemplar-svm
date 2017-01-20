@@ -91,4 +91,14 @@ logstream& operator<< (logstream& st, T val)
 std::string featuresToVectorString(FeatureVector features);
 std::string featuresToSvmString(FeatureVector features, int label);
 
+// Assert with message printing
+#define ASSERT_MSG(cond, msg) do \
+{ if (!(cond)) { std::ostringstream str; str << msg; std::cerr << str.str(); std::abort(); } \
+} while(0)
+
+// Assert with message printing and logging
+#define ASSERT_LOG(cond, msg) do \
+{ if (!(cond)) { std::ostringstream str; logstream log(LOGGER_FILE); str << msg; log << str.str(); std::abort(); } \
+} while(0)
+
 #endif/*HELPER_FUNCTIONS_H*/
