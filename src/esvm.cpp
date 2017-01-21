@@ -1,5 +1,6 @@
 #include "esvm.h"
-#include "helperFunctions.h"
+#include "esvmOptions.h"
+#include "generic.h"
 #include <fstream>
 #include <sstream>
 
@@ -8,7 +9,7 @@
 */
 ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id)
 {
-    ASSERT_MSG(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
+    ASSERT_LOG(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
         
     int posSamples = positives.size();
     int negSamples = negatives.size();
@@ -32,12 +33,12 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     Initializes and trains an ESVM using a pre-generated file of feature vectors and correponding labels
     The file must be saved in the LIBSVM sample data format
 */
-ESVM::ESVM(std::string trainingFilePath, std::string id)
+ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
 {
     // get samples
     std::vector< FeatureVector > samples;
     std::vector< int > targets;
-    readSampleDataFile(trainingFilePath, samples, targets);
+    readSampleDataFile(trainingSamplesFilePath, samples, targets);
 
     int Np = std::count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
     int Nn = std::count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
@@ -54,8 +55,8 @@ ESVM::ESVM(std::string trainingFilePath, std::string id)
 */
 ESVM::ESVM(svm_model* trainedModel, std::string id)
 {        
-    std::string posStr = std::to_string(ESVM_POSITIVE_CLASS);
-    std::string negStr = std::to_string(ESVM_NEGATIVE_CLASS);
+    static std::string posStr = std::to_string(ESVM_POSITIVE_CLASS);
+    static std::string negStr = std::to_string(ESVM_NEGATIVE_CLASS);
     
     ASSERT_LOG(trainedModel != nullptr, "No SVM model reference specified to intialize ESVM");
     ASSERT_LOG(trainedModel->param.svm_type == C_SVC, "ESVM model must be a C-SVM classifier");
@@ -96,13 +97,13 @@ bool ESVM::saveModelFile(std::string modelFilePath)
 void ESVM::readSampleDataFile(std::string filePath, std::vector< FeatureVector >& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
     std::ifstream trainingFile(filePath);
-    ASSERT_LOG(trainingFile, "Could not open specified ESVM sample data file:\n    '" + filePath + "'");
+    ASSERT_LOG(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
 
     std::vector< FeatureVector > samples;
     std::vector< int > targets;
     int nFeatures = 0;
-    std::string delimiter = ":";
-    int offDelim = delimiter.length();
+    static std::string delimiter = ":";
+    static int offDelim = delimiter.length();
 
     // loop each line
     while (trainingFile)
@@ -121,14 +122,14 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector< FeatureVector >
         // loop each part delimited by a space
         while (ss)
         {
-            getline(ss, spart, ' ');
+            if (!getline(ss, spart, ' ')) break;
             if (firstPart)
             {
                 // Reading label
                 int target = 0;
                 std::istringstream(spart) >> target;
                 ASSERT_LOG(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS,
-                    "Invalid class label specified for ESVM training from file");
+                           "Invalid class label specified for ESVM training from file");
                 targets.push_back(target);
                 firstPart = false;
             }
@@ -136,9 +137,13 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector< FeatureVector >
             {
                 // Reading features
                 size_t offset = spart.find(delimiter);
-                ASSERT_LOG(offset != std::string::npos, "Couldn't feature index:value delimiter");
+                ASSERT_LOG(offset != std::string::npos, "Failed to find feature index:value delimiter");
                 std::istringstream(spart.substr(0, offset)) >> index;
                 std::istringstream(spart.erase(0, offset + offDelim)) >> value;
+                /// ################################################################################################################## DEBUG
+                /// logstream logger(LOGGER_FILE);
+                /// logger << "idx: " << index << " val: " << value << " prev: " << prev << " size: " << features.size() << " len: " << samples.size() << " out: " << targets[samples.size()] << std::endl;
+                /// ################################################################################################################## DEBUG
                 ASSERT_LOG(index - prev > 0, "Feature indexes must be in ascending order");
 
                 // Add omitted sparse features (zero value features)
@@ -189,18 +194,17 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     logstream logger(LOGGER_FILE);
     /// ################################################ DEBUG
     /*
-    log << "ESVM training samples | outputs" << std::endl;
+    logger << "ESVM training samples | outputs" << std::endl;
     for (int s = 0; s < samples.size(); s++)
-        log << "      " << featuresToVectorString(samples[s]) << " | " << prob.y[s] << std::endl;
+        logger << "      " << featuresToVectorString(samples[s]) << " | " << prob.y[s] << std::endl;
     */
     /// ################################################ DEBUG
 
     // set training parameters    
     svm_parameter param;
-    param.C = 10;               // cost constraint violation used for w*C
-    param.svm_type = C_SVC;
-    param.kernel_type = LINEAR;
-    /// NOT USED BY C-SVM ####  param.p = 0.1;              // sensitiveness of loss of support vector regression
+    param.C = 1;                // cost constraint violation used for w*C
+    param.svm_type = C_SVC;     // cost classifier SVM
+    param.kernel_type = LINEAR; // linear kernel
     param.eps = 0.001;          // stopping optimization criterion
     param.probability = 0;      // possibility to use probability outputs instead of (+1,-1) classes (adds extra training time)
     param.shrinking = 0;        // use problem shrinking heuristics
@@ -240,27 +244,23 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     /// ################################################ DEBUG
     logger << "ESVM trained with parameters:" << std::endl
-        << "   C:           " << param.C << std::endl
-        << "   eps:         " << param.eps << std::endl
-        << "   probability: " << param.probability << std::endl
-        << "   shrinking:   " << param.shrinking << std::endl
-        << "   W mode:      " << ESVM_WEIGHTS_MODE << std::endl
-        #if ESVM_WEIGHTS_MODE        
-        << "   Wp:          " << param.weight[0] << std::endl
-        << "   Wn:          " << param.weight[1] << std::endl
-        << "   Wp lbl:      " << param.weight_label[0] << std::endl
-        << "   Wn lbl:      " << param.weight_label[1] << std::endl;
-        #endif/*ESVM_WEIGHTS_MODE*/
-        << "   nr W:        " << param.nr_weight << std::endl;        
+           << "   C:           " << param.C << std::endl
+           << "   eps:         " << param.eps << std::endl
+           << "   probability: " << param.probability << std::endl
+           << "   shrinking:   " << param.shrinking << std::endl
+           << "   W mode:      " << ESVM_WEIGHTS_MODE << std::endl
+           #if ESVM_WEIGHTS_MODE        
+           << "   Wp:          " << param.weight[0] << std::endl
+           << "   Wn:          " << param.weight[1] << std::endl
+           << "   Wp lbl:      " << param.weight_label[0] << std::endl
+           << "   Wn lbl:      " << param.weight_label[1] << std::endl;
+           #endif/*ESVM_WEIGHTS_MODE*/
+           << "   nr W:        " << param.nr_weight << std::endl;        
     if (param.probability)
     {
-        logger << "   probA:      " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl;
-        logger << "   probB:      " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
+        logger << "   probA:       " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl
+               << "   probB:       " << ensembleModel->probB[0] << " | dummy check: " << ensembleModel->probB[1] << std::endl;  
     }
-
-    /// ensembleModel->probA[0] = -4.8;
-    /// ensembleModel->probB[0] = 1.20;
-
     /// ################################################ DEBUG
 }
 
@@ -275,10 +275,11 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 */
 std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesCount)
 {
-    int Np = positivesCount, Nn = negativesCount, N = Nn + Np;
+    int Np = positivesCount;
+    int Nn = negativesCount;
+    int N = Nn + Np;
     ASSERT_LOG(Np > 0, "Number of positives must be greater than zero");
     ASSERT_LOG(Nn > 0, "Number of negatives must be greater than zero");
-    ASSERT_LOG(Nn > Np, "Number of negatives should be (much) greater than postives for ESVM");
 
     #if ESVM_WEIGHTS_MODE == 0
     double Wp = 0;
@@ -295,13 +296,13 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
     #endif/*ESVM_WEIGHTS_MODE*/
 
     /// ################################################ DEBUG
-    logstream log(LOGGER_FILE);
-    log << "ESVM weight initialization" << std::endl
-        << "   N:  " << N  << std::endl
-        << "   Np: " << Np << std::endl
-        << "   Nn: " << Nn << std::endl
-        << "   Wp: " << Wp << std::endl
-        << "   Wn: " << Wn << std::endl;
+    logstream logger(LOGGER_FILE);
+    logger << "ESVM weight initialization" << std::endl
+           << "   N:  " << N  << std::endl
+           << "   Np: " << Np << std::endl
+           << "   Nn: " << Nn << std::endl
+           << "   Wp: " << Wp << std::endl
+           << "   Wn: " << Wn << std::endl;
     /// ################################################ DEBUG
 
     return { Wp, Wn };
@@ -313,7 +314,7 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
 double ESVM::predict(FeatureVector sample)
 {    
     if (ensembleModel == nullptr)
-        throw new std::exception("Ensemble model of Exemplar-SVM is not initialized");
+        throw std::exception("Ensemble model of Exemplar-SVM is not initialized");
 
     #if ESVM_USE_PREDICT_PROBABILITY
     if (ensembleModel->param.probability)
@@ -326,11 +327,11 @@ double ESVM::predict(FeatureVector sample)
         svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
 
         /// ################################################ DEBUG
-        logstream log(LOGGER_FILE);
-        log << "ESVM predict" << std::endl;
+        logstream logger(LOGGER_FILE);
+        logger << "ESVM predict" << std::endl;
         for (int s = 0; s < ensembleModel->nr_class; s++)
         {
-            log << "   probEstimates " << s << ": " << probEstimates[s] << std::endl;
+            logger << "   probEstimates " << s << ": " << probEstimates[s] << std::endl;
         }
         /// ################################################ DEBUG
 
@@ -352,10 +353,20 @@ double ESVM::predict(FeatureVector sample)
     Predicts all classification values for each of the feature vector samples within the file using the trained ESVM model
     The file must be saved in the LIBSVM sample data format
 */
-std::vector<double> ESVM::predict(std::string filename, std::vector<int>& classGroundTruths)
+std::vector<double> ESVM::predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths)
 {
-    classGroundTruths = std::vector<int>();
-    return std::vector<double>();
+    std::vector< int > classGroundTruths;
+    std::vector< FeatureVector > samples;
+    readSampleDataFile(probeSamplesFilePath, samples, classGroundTruths);
+
+    int nPredictions = samples.size();
+    std::vector< double > outputs(nPredictions);
+    for (int p = 0; p < nPredictions; p++)
+        outputs[p] = predict(samples[p]);
+
+    if (probeGroundTruths != nullptr)
+        *probeGroundTruths = classGroundTruths;
+    return outputs;
 }
 
 /*

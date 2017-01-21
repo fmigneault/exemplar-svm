@@ -1,7 +1,7 @@
 #ifndef ESVM_LIBSVM_H
 #define ESVM_LIBSVM_H
 
-#include "esvmTypesDef.h"
+#include "esvmTypes.h"
 #include "svm.h"
 
 #include "opencv2/opencv.hpp"
@@ -13,11 +13,11 @@ class ESVM
 public:
     inline ESVM() {}
     ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id = "");
-    ESVM(std::string trainingFilePath, std::string id = "");
+    ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");
     bool saveModelFile(std::string modelFilePath);
     double predict(FeatureVector sample);
-    std::vector<double> predict(std::string filename, std::vector<int>& classGroundTruths);
+    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr);
     inline std::string getTargetID() { return targetID; }
 
 private:

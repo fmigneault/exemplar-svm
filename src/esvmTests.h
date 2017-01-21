@@ -1,11 +1,7 @@
-#ifndef EXAMPLAR_SVM_TESTS_H
-#define EXAMPLAR_SVM_TESTS_H
+#ifndef ESVM_TESTS_H
+#define ESVM_TESTS_H
 
-#include "esvmTypesDef.h"
-#include "helperFunctions.h"
-#include "feHOG.h"
-#include "feLBP.h"
-#include "esvm.h"
+#include "opencv2/opencv.hpp"
 
 /* ChokePoint Dataset:
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, , 3 cameras = 48 video dirs
@@ -31,6 +27,6 @@ int test_runBasicExemplarSvmFunctionalities(void);
 int test_runBasicExemplarSvmClassification(void);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
-int test_runSingleSamplePerPersonStillToVideo_DataFiles(std::string filename);
+int test_runSingleSamplePerPersonStillToVideo_DataFiles();
 
-#endif/*EXAMPLAR_SVM_TESTS_H*/
+#endif/*ESVM_TESTS_H*/

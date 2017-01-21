@@ -1,5 +1,5 @@
-#include "esvmTypesDef.h"
-#include "helperFunctions.h"
+#include "logger.h"
+#include "esvmOptions.h"
 #include "esvmTests.h"
 
 int main(int argc, char* argv[])
@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     log << "=================================================================" << std::endl
         << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
     int err;
-
+    
     //################################################################################ DEBUG
     /*
     int err = test_imagePatchExtraction();
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
         return err;
     }
     #else/*ESVM_READ_DATA_FILES*/
-    err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint_DataFiles();
+    err = test_runSingleSamplePerPersonStillToVideo_DataFiles();
     if (err)
     {
         log << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles' failed." << std::endl;
