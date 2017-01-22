@@ -1320,7 +1320,6 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles()
         std::vector<int> probeGroundTruths;
         std::vector<double> scores = esvm.predict(testFileName, &probeGroundTruths);
         std::vector<double> normScores = normalizeMinMaxClassScores(scores);
-
         for (int r = 0; r < scores.size(); r++)
         {
             std::string probeGT = (probeGroundTruths[r] > 0 ? "positive" : "negative");
@@ -1329,22 +1328,23 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles()
 
         // Evaluate results
         std::vector<double> TPR, FPR;
-        for (double T = 0.0; T <= 1.0; T += 0.01)
+        int steps = 100;
+        for (int i = 0; i <= steps; i++)
         {
             int FP, FN, TP, TN;
-            countThresholdScores(normScores, probeGroundTruths, T, &FP, &FN, &TP, &TN);
+            double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
+            countConfusionMatrix(normScores, probeGroundTruths, T, &TP, &TN, &FP, &FN);
             TPR.push_back(calcTPR(TP, FN));
             FPR.push_back(calcFPR(FP, TN));
         }
-        double partialPercent = 10;
-        double pAUC = calcAUC(TPR, FPR, (double)partialPercent/100.0);
-        int Np = std::count(probeGroundTruths.begin(), probeGroundTruths.end(), ESVM_POSITIVE_CLASS);
-        int Nn = std::count(probeGroundTruths.begin(), probeGroundTruths.end(), ESVM_NEGATIVE_CLASS);
-        double wACC = calcACC(Np, Nn, TPR[partialPercent], FPR[partialPercent]);
-        for (int i = 0; i < FPR.size(); i++)
-            logger << "(FPR,TPR)[" << i << "] = " << FPR[i] << "," << TPR[i] << std::endl;
-        logger << "pAUC(" << partialPercent << "%) = " << pAUC << std::endl                 // Partial Area under ROC Curve
-               << "wACC(" << partialPercent << "%) = " << wACC << std::endl;                // Weighted Accuracy
+        double AUC = calcAUC(TPR, FPR);
+        double pAUC10 = calcAUC(TPR, FPR, 0.10);
+        double pAUC20 = calcAUC(TPR, FPR, 0.20);
+        for (int j = 0; j < FPR.size(); j++)
+            logger << "(FPR,TPR)[" << j << "] = " << FPR[j] << "," << TPR[j] << std::endl;
+        logger << "AUC = " << AUC << std::endl              // Area Under ROC Curve
+               << "pAUC(10%) = " << pAUC10 << std::endl     // Partial Area Under ROC Curve (FPR=10%)
+               << "pAUC(20%) = " << pAUC20 << std::endl;    // Partial Area Under ROC Curve (FPR=20%)
     }
 
     logger << "Test complete" << std::endl;
