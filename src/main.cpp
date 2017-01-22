@@ -1,5 +1,5 @@
-#include "esvmTypesDef.h"
-#include "helperFunctions.h"
+#include "logger.h"
+#include "esvmOptions.h"
 #include "esvmTests.h"
 
 int main(int argc, char* argv[])
@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     log << "=================================================================" << std::endl
         << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
     int err;
-
+    
     //################################################################################ DEBUG
     /*
     int err = test_imagePatchExtraction();
@@ -51,15 +51,24 @@ int main(int argc, char* argv[])
 
     //################################################################################ NO PATCH
     /* NO PATCHES TEST */
+    #if !ESVM_READ_DATA_FILES
     cv::Size patchCounts = cv::Size(1, 1);
     cv::Size imageSize = cv::Size(64, 64);
     bool useSyntheticPositives = true;
     err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
     if (err)
     {
-        log << "Test 'runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
+        log << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
         return err;
     }
+    #else/*ESVM_READ_DATA_FILES*/
+    err = test_runSingleSamplePerPersonStillToVideo_DataFiles();
+    if (err)
+    {
+        log << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles' failed." << std::endl;
+        return err;
+    }
+    #endif/*ESVM_READ_DATA_FILES*/
     //################################################################################ NO PATCH
 
     /*------------------------------------------------------------------------------------------------
