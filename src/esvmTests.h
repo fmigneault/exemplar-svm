@@ -27,6 +27,10 @@ int test_runBasicExemplarSvmFunctionalities(void);
 int test_runBasicExemplarSvmClassification(void);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
-int test_runSingleSamplePerPersonStillToVideo_DataFiles();
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_FeatureAndPatchBased(int nPatches);
+
+/* Performance Evaluation */
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
 
 #endif/*ESVM_TESTS_H*/
