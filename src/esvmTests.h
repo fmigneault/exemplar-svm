@@ -22,13 +22,15 @@ std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int sess
 std::string buildChokePointIndividualID(int id);
 
 /* Tests */
-int test_imagePatchExtraction(void);
-int test_runBasicExemplarSvmFunctionalities(void);
-int test_runBasicExemplarSvmClassification(void);
+int test_imagePatchExtraction();
+int test_multiLevelVectors();
+int test_normalizationFunctions();
+int test_runBasicExemplarSvmFunctionalities();
+int test_runBasicExemplarSvmClassification();
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_FeatureAndPatchBased(int nPatches);
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(int nPatches);
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);

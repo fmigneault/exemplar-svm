@@ -7,3 +7,6 @@
 [submodule "FeatureExtractorLBP"]
 	path = FeatureExtractorLBP
 	url = https://bitbucket.org/KenjiKyoTeam/FeatureExtractorLBP
+[submodule "mvector"]
+	path = mvector
+	url = https://github.com/carlobaldassi/mvector

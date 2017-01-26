@@ -13,8 +13,9 @@ double normalizeMinMax(double value, double min, double max);
 void findMinMax(FeatureVector vector, double* min, double* max, int* posMin = nullptr, int* posMax = nullptr);
 // Find the min/max per feature across a whole list of feature vectors
 void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures);
-// Normalization [0, 1] along a feature vector using the global min/max features
+// Normalization along a feature vector using the specified min/max features, min/max of vector are used if not specified
 FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector, double min, double max);
+FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector);
 // Normalization [0, 1] across a feature vector using the corresponding min/max features
 FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVector minFeatures, FeatureVector maxFeatures);
 // Normalization [0, 1] over all the scores specified in the vector using the found min/max values

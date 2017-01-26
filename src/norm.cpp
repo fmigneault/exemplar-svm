@@ -1,5 +1,6 @@
 #include "norm.h"
 #include "generic.h"
+#include <algorithm>
 
 double normalizeMinMax(double value, double min, double max)
 {
@@ -70,11 +71,18 @@ void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector
 }
 
 FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector, double min, double max)
-{
+{    
     int nFeatures = featureVector.size();
     for (int f = 0; f < nFeatures; f++)
         featureVector[f] = normalizeMinMax(featureVector[f], min, max);
     return featureVector;
+}
+
+FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector)
+{
+    double min, max;
+    findMinMax(featureVector, &min, &max);
+    return normalizeMinMaxAllFeatures(featureVector, min, max);
 }
 
 FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVector minFeatures, FeatureVector maxFeatures)
