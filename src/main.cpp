@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
     logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' completed." << std::endl;
     #endif/* (4) */
     #if ESVM_READ_DATA_FILES & 0b1000       // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
-    int nPatches = 16;
+    int nPatches = patchCounts.width * patchCounts.height;
     err = test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches);
     if (err)
     {        

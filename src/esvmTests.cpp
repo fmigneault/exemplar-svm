@@ -1010,7 +1010,12 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 {
     /**************************************************************************************************************************
     TEST DEFINITION        
+    
+        Enrolls the training target using their still image vs. non-targets of multiple video sequence from ChokePoint dataset.
+        The enrolled individuals are represented by ensembles of Exemplar-SVM and are afterward tested using the probe videos.
+        Classification performances are then evaluated each positive target vs. probe samples in term of FPR/TPR for ROC curbe.
     */
+
     /* Training Targets:        single high quality still image for enrollment (same as Saman paper) */
     std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };
     /* Training Non-Targets:    as many video negatives as possible */
@@ -1404,17 +1409,26 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             for (size_t pos = 0; pos < nPositives; pos++)
             {                        
                 logger << "Starting for individual " << pos << ": " + positivesID[pos] << std::endl;
-                std::vector<double> fusionScores(nProbes, 0.0);                
+                std::vector<double> fusionScores(nProbes, 0.0); 
+                std::vector<double> combinedScores(nProbes, 0.0);
                 for (size_t d = 0; d < nDescriptors; d++)
                 {     
                     std::vector<double> descriptorScores(nProbes, 0.0);
                     for (size_t p = 0; p < nPatches; p++)
-                    {
-                        //// esvmModels[pos][fe] = std::vector<ESVM>(nPatches);
+                    {                        
                         try
                         {
                             logger << "Running Exemplar-SVM training..." << std::endl;
                             esvmModels[pos][p][d] = ESVM(fvPositiveSamples[pos][p][d], fvNegativeSamples[p][d], positivesID[pos]);
+
+                            #if ESVM_WRITE_DATA_FILES
+                            std::string esvmModelFile = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
+                                                        descriptorNames[d] + "-patch" + std::to_string(p) + "-test.data";
+                            logger << "Saving Exemplar-SVM model to file..." << std::endl;
+                            bool isSaved = esvmModels[pos][p][d].saveModelFile(esvmModelFile);
+                            logger << std::string(isSaved ? "Saved" : "Failed to save") + 
+                                      " Exemplar-SVM model to file: '" + esvmModelFile + "'" << std::endl;                            
+                            #endif/*ESVM_WRITE_DATA_FILES*/
                         }
                         catch (const std::exception& e)
                         {
@@ -1441,9 +1455,10 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         /*########################################### DEBUG */                    
                     
                         for (size_t prb = 0; prb < nProbes; prb++)
-                        {                        
-                            // accumulation with normalized patch scores for patch-based score fusion
-                            descriptorScores[prb] += patchScoresNorm[prb];
+                        {                            
+                            descriptorScores[prb] += patchScoresNorm[prb];  // accumulation with normalized scores for patch-based score fusion
+                            combinedScores[prb] += patchScoresNorm[prb];    // accumulation of scores for (patch,descriptor)-based score fusion
+
                             std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
                             logger << "Score for patch " << p << " of probe " << prb << " (ID" << probeID[prb] << ", "
                                    << probeGT << "): " << patchScoresNorm[prb] << std::endl;
@@ -1452,21 +1467,25 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     for (size_t prb = 0; prb < nProbes; prb++)
                     {
                         // average of score accumulation for fusion per patch
-                        descriptorScores[prb] /= nPatches;
+                        descriptorScores[prb] /= (double)nPatches;
                         // accumulation with normalized patch-fusioned scores for descriptor-based score fusion
                         fusionScores[prb] = descriptorScores[prb];
                         std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
                         logger << "Score for descriptor " << descriptorNames[d] << " (patch-fusion) of probe " << prb
                                << " (ID" << probeID[prb] << ", " << probeGT << "): " << descriptorScores[prb] << std::endl;
                     }
-                    logger << "Performance evaluation of descriptor-based patch-fusion scores" << std::endl;
+                    logger << "Performance evaluation for patch-based score fusion for '" + descriptorNames[d] + "' descriptor:" << std::endl;
                     eval_PerformanceClassificationScores(descriptorScores, probeGroundTruth[pos]);
                 }
+
+                int nCombined = nDescriptors * nPatches;
                 for (size_t prb = 0; prb < nProbes; prb++)
                 {
                     // average of score accumulation for fusion per descriptor
                     std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
-                    fusionScores[prb] /= nDescriptors;
+                    fusionScores[prb] /= (double)nDescriptors;
+                    combinedScores[prb] /= (double)nCombined;
+
                     logger << "Score fusion (descriptor,patch) of probe " << prb << " (ID" << probeID[prb] << ", "
                            << probeGT << "): " << fusionScores[prb] << std::endl;
                 }
@@ -1476,8 +1495,10 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 /*########################################### DEBUG */
 
                 // Evaluate results
-                logger << "Performance evaluation of (descriptor,patch) fusion scores" << std::endl;
+                logger << "Performance evaluation for sequential patch-based + descriptor-based score fusion:" << std::endl;
                 eval_PerformanceClassificationScores(fusionScores, probeGroundTruth[pos]);
+                logger << "Performance evaluation for combined (patch,descriptor)-based score fusion:" << std::endl;
+                eval_PerformanceClassificationScores(combinedScores, probeGroundTruth[pos]);
 
                 logger << "Completed for individual " << pos << ": " + positivesID[pos] << std::endl;
             }
@@ -1562,7 +1583,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
         vectors stored in the data files.
 
-        This test allows score fusion first for patch-based files, and then for feature-based files.
+        This test allows score fusion first for patch-based files, and then for descriptor-based files.
             
             S_pos* = ∑_d [ ∑_p [ s_(p,d) ] / N_p ] / N_d     ∀pos positives (targets), ∀d descriptor, ∀p patches
 
@@ -1591,7 +1612,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         logger << "Starting training/testing ESVM evaluation for: '" << *posID << "'" << std::endl;
 
         std::vector<int> probeGroundTruths;
-        std::vector<double> patchFusionScores, descriptorFusionScores;
+        std::vector<double> patchFusionScores, descriptorFusionScores;  // score fusion of patches, then fusion over descriptors
+        std::vector<double> combinedFusionScores(nProbes, 0.0);         // simultaneous score fusion over patches and descriptors
         for (auto d = descriptorNames.begin(); d != descriptorNames.end(); ++d)
         {            
             for (size_t p = 0; p < nPatches; p++)
@@ -1618,30 +1640,37 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
                 for (size_t prb = 0; prb < nProbes; prb++)
                 {
                     patchFusionScores[prb] += normScores[prb];          // Accumulation of patch-based scores
+                    combinedFusionScores[prb] += normScores[prb];       // Accumulation of (patch,descriptor)-based scores
 
                     std::string probeGT = (probeGroundTruths[prb] > 0 ? "positive" : "negative");
                     logger << "Score for probe " << prb << " (" << probeGT << "): " << scores[prb] 
                            << " | normalized: " << normScores[prb] << std::endl;
-                }                
+                }
             }
             
             for (size_t prb = 0; prb < nProbes; prb++)
             {
-                patchFusionScores[prb] /= nPatches;                     // Average of accumulated patch-based scores
+                patchFusionScores[prb] /= (double)nPatches;             // Average of accumulated patch-based scores
                 descriptorFusionScores[prb] += patchFusionScores[prb];  // Accumulation of feature-based scores
             }
 
             // Evaluate results per feature extraction method
-            logger << "Performance evaluation for patch-based score fusion for '" + *d + "' feature extraction:" << std::endl;
+            logger << "Performance evaluation for patch-based score fusion of '" + *d + "' descriptor:" << std::endl;
             eval_PerformanceClassificationScores(patchFusionScores, probeGroundTruths);
         }
         
+        int nCombined = nDescriptors * nPatches;
         for (size_t prb = 0; prb < nProbes; prb++)
-            descriptorFusionScores[prb] /= nDescriptors;                // Average of accumulated patch-based scores
+        {
+            descriptorFusionScores[prb] /= (double)nDescriptors;        // Average of accumulated patch-based scores
+            combinedFusionScores[prb] /= (double)nCombined;             // Average of accumulated (patch,descriptor)-based scores
+        }
 
         // Evaluate results with fusioned descriptors and patches
-        logger << "Performance evaluation for (feature-based + patch-based) score fusion:" << std::endl;
+        logger << "Performance evaluation for sequential patch-based + descriptor-based score fusion:" << std::endl;
         eval_PerformanceClassificationScores(descriptorFusionScores, probeGroundTruths);
+        logger << "Performance evaluation for combined (patch,descriptor)-based score fusion:" << std::endl;
+        eval_PerformanceClassificationScores(combinedFusionScores, probeGroundTruths);
     }
     logger << "Test complete" << std::endl;
     return 0;

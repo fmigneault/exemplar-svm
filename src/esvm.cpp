@@ -249,13 +249,14 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
            << "   probability: " << param.probability << std::endl
            << "   shrinking:   " << param.shrinking << std::endl
            << "   W mode:      " << ESVM_WEIGHTS_MODE << std::endl
-           #if ESVM_WEIGHTS_MODE        
+           << "   nr W:        " << param.nr_weight << std::endl
+           #if ESVM_WEIGHTS_MODE
            << "   Wp:          " << param.weight[0] << std::endl
            << "   Wn:          " << param.weight[1] << std::endl
            << "   Wp lbl:      " << param.weight_label[0] << std::endl
-           << "   Wn lbl:      " << param.weight_label[1] << std::endl;
+           << "   Wn lbl:      " << param.weight_label[1] << std::endl
            #endif/*ESVM_WEIGHTS_MODE*/
-           << "   nr W:        " << param.nr_weight << std::endl;        
+           ;    // end line no matter if weights are used or not
     if (param.probability)
     {
         logger << "   probA:       " << ensembleModel->probA[0] << " | dummy check: " << ensembleModel->probA[1] << std::endl
@@ -289,10 +290,10 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
     double Wn = 0.01;
     #elif ESVM_WEIGHTS_MODE == 2
     double Wp = (double)N / (double)Np;
-    double Wn = (double)N / (double)Np;
+    double Wn = (double)N / (double)Nn;
     #elif ESVM_WEIGHTS_MODE == 3
     double Wp = 1;
-    double Wn = (double)Np / (double)Np;
+    double Wn = (double)Np / (double)Nn;
     #endif/*ESVM_WEIGHTS_MODE*/
 
     /// ################################################ DEBUG

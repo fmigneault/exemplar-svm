@@ -9,7 +9,7 @@
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
-#define ESVM_WEIGHTS_MODE 0                 // 0: (Wp = 0, Wn = 0), 1: (Wp = 1, Wn = 0.01), 2: (Wp = N/Np, Wn = N/Nn), 3: (Wp = 1, Wn = Np/Nn)
+#define ESVM_WEIGHTS_MODE 3                 // 0: (Wp = 0, Wn = 0), 1: (Wp = 1, Wn = 0.01), 2: (Wp = N/Np, Wn = N/Nn), 3: (Wp = 1, Wn = Np/Nn)
 
 /* Test options */
 #define TEST_IMAGE_PATHS 1
