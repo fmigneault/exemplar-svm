@@ -26,6 +26,50 @@ std::string buildChokePointIndividualID(int id)
     return std::string(id > 9 ? 2 : 3, '0').append(std::to_string(id));
 }
 
+bool checkPathEndSlash(std::string path)
+{
+    char end = *path.rbegin();
+    return end == '/' || end == '\\';
+}
+
+int test_imagePaths()
+{
+    // Local
+    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
+    ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
+    ASSERT_LOG(checkPathEndSlash(roiVideoImagesPath), "ROI directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
+    // ChokePoint
+    ASSERT_LOG(bfs::is_directory(rootChokePointPath), "Cannot find ChokePoint root directory");
+    ASSERT_LOG(bfs::is_directory(roiChokePointCroppedFacePath), "Cannot find ChokePoint cropped faces root directory");
+    ASSERT_LOG(bfs::is_directory(roiChokePointFastDTTrackPath), "Cannot find ChokePoint FAST-DT tracks root directory");
+    ASSERT_LOG(bfs::is_directory(roiChokePointEnrollStillPath), "Cannot find ChokePoint enroll stills root directory");
+    ASSERT_LOG(checkPathEndSlash(rootChokePointPath), "ChokePoint root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiChokePointCroppedFacePath), "ChokePoint cropped faces root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiChokePointFastDTTrackPath), "ChokePoint FAST-DT tracks root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiChokePointEnrollStillPath), "ChokePoint enroll stills root directory doesn't end with slash character");
+    // TITAN Unit
+    ASSERT_LOG(bfs::is_directory(rootTitanUnitPath), "Cannot find TITAN Unit root directory");
+    ASSERT_LOG(bfs::is_directory(roiTitanUnitFastDTTrackPath), "Cannot find TITAN Unit FAST-DT tracks root directory");
+    ASSERT_LOG(bfs::is_directory(roiTitanUnitEnrollStillPath), "Cannot find TITAN Unit enroll stills root directory");
+    ASSERT_LOG(checkPathEndSlash(rootTitanUnitPath), "TITAN Unit root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiTitanUnitFastDTTrackPath), "TITAN Unit FAST-DT tracks root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiTitanUnitEnrollStillPath), "TITAN Unit enroll stills root directory doesn't end with slash character");
+    // COX-S2V
+    ASSERT_LOG(bfs::is_directory(rootCOXS2VPath), "Cannot find COX-S2V root directory");
+    ASSERT_LOG(bfs::is_directory(roiCOXS2VTestingVideoPath), "Cannot find COX-S2V testing video root directory");
+    ASSERT_LOG(bfs::is_directory(roiCOXS2VEnrollStillsPath), "Cannot find COX-S2V enroll stills root directory");
+    ASSERT_LOG(bfs::is_directory(roiCOXS2VAllImgsStillPath), "Cannot find COX-S2V all image stills root directory");
+    ASSERT_LOG(bfs::is_directory(roiCOXS2VEyeLocaltionPath), "Cannot find COX-S2V eye location root directory");
+    ASSERT_LOG(checkPathEndSlash(rootCOXS2VPath), "COX-S2V root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiCOXS2VTestingVideoPath), "COX-S2V testing video root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiCOXS2VEnrollStillsPath), "COX-S2V enroll stills root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiCOXS2VAllImgsStillPath), "COX-S2V all image stills root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiCOXS2VEyeLocaltionPath), "COX-S2V eye location root directory doesn't end with slash character");
+    
+    return 0;
+}
+
 int test_imagePatchExtraction(void)
 {
     logstream logger(LOGGER_FILE);
@@ -457,50 +501,49 @@ int test_runBasicExemplarSvmClassification(void)
 }
 
 #if 0
+/**************************************************************************************************************************
+TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
+        
+    Targets:        single high quality still image for enrollment
+            
+        ID0011
+        ID0012
+        ID0013
+        ID0016
+        ID0020
+
+    Non-Targets:    counter example video ROIs, cannot correspond to probe nor positive target individual
+            
+        ID0001      person_23
+        ID0002      person_32
+        ID0006      person_45
+        ID0007      person_40
+        ID0010      person_6  & person_44
+        ID0017      person_41
+        ID0018      person_16
+        ID0019      person_9
+        ID0024      person_34
+        ID0025      person_33
+        ID0027      person_42 & person_46
+        ID0028      person_0
+        ID0030      person_28            
+
+    Probes:         positive and negative video ROIs for testing
+
+        ID0004      person_26                   negative -
+        ID0009      person_20 & person_25       negative -
+        ID0011      person_15                   positive +
+        ID0012      person_13                   positive +
+        ID0013      person_7                    positive +            
+        ID0016      person_19                   positive +
+        ID0020      person_36                   positive +
+        ID0023      person_37                   negative -
+        ID0026      person_39                   negative -
+        ID0029      person_18                   negative -
+        
+**************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
 {
-    /**************************************************************************************************************************
-    TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
-        
-        Targets:        single high quality still image for enrollment
-            
-            ID0011
-            ID0012
-            ID0013
-            ID0016
-            ID0020
-
-        Non-Targets:    counter example video ROIs, cannot correspond to probe nor positive target individual
-            
-            ID0001      person_23
-            ID0002      person_32
-            ID0006      person_45
-            ID0007      person_40
-            ID0010      person_6  & person_44
-            ID0017      person_41
-            ID0018      person_16
-            ID0019      person_9
-            ID0024      person_34
-            ID0025      person_33
-            ID0027      person_42 & person_46
-            ID0028      person_0
-            ID0030      person_28            
-
-        Probes:         positive and negative video ROIs for testing
-
-            ID0004      person_26                   negative -
-            ID0009      person_20 & person_25       negative -
-            ID0011      person_15                   positive +
-            ID0012      person_13                   positive +
-            ID0013      person_7                    positive +            
-            ID0016      person_19                   positive +
-            ID0020      person_36                   positive +
-            ID0023      person_37                   negative -
-            ID0026      person_39                   negative -
-            ID0029      person_18                   negative -
-        
-    **************************************************************************************************************************/
-    
     // ------------------------------------------------------------------------------------------------------------------------
     // window to display loaded images and stream for console+file output
     // ------------------------------------------------------------------------------------------------------------------------    
@@ -1006,16 +1049,15 @@ int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
 }
 #endif
 
+/**************************************************************************************************************************
+TEST DEFINITION        
+    
+    Enrolls the training target using their still image vs. non-targets of multiple video sequence from ChokePoint dataset.
+    The enrolled individuals are represented by ensembles of Exemplar-SVM and are afterward tested using the probe videos.
+    Classification performances are then evaluated each positive target vs. probe samples in term of FPR/TPR for ROC curbe.
+**************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
 {
-    /**************************************************************************************************************************
-    TEST DEFINITION        
-    
-        Enrolls the training target using their still image vs. non-targets of multiple video sequence from ChokePoint dataset.
-        The enrolled individuals are represented by ensembles of Exemplar-SVM and are afterward tested using the probe videos.
-        Classification performances are then evaluated each positive target vs. probe samples in term of FPR/TPR for ROC curbe.
-    */
-
     /* Training Targets:        single high quality still image for enrollment (same as Saman paper) */
     std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };
     /* Training Non-Targets:    as many video negatives as possible */
@@ -1024,8 +1066,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                              "0027", "0028", "0030" };
     /* Testing Probes:          some video positives and negatives */
     std::vector<std::string> probesID = { "0004", "0009", "0011", "0012", "0013",
-                                          "0016", "0020", "0023", "0026", "0029" };
-    /*************************************************************************************************************************/   
+                                          "0016", "0020", "0023", "0026", "0029" }; 
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
@@ -1379,14 +1420,20 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             for (size_t p = 0; p < nPatches; p++)
             {
                 std::string strPatch = std::to_string(p);
-                for (size_t pos = 0; pos < nPositives; pos++)
+                for (size_t d = 0; d < nDescriptors; d++)
                 {
-                    for (size_t d = 0; d < nDescriptors; d++)
-                    {
-                        std::ofstream trainFile("chokepoint-" + seq + "-id" + positivesID[pos] + "-" + 
-                                                descriptorNames[d] + "-patch" + strPatch + "-train.data");
-                        std::ofstream testFile("chokepoint-" + seq + "-id" + positivesID[pos] + "-" + 
-                                               descriptorNames[d] + "-patch" + strPatch + "-test.data");
+                    for (size_t pos = 0; pos < nPositives; pos++)
+                    {        
+                        std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
+                                                    descriptorNames[d] + "-patch" + strPatch;
+                        std::string trainFileName = fileTemplate + "-train.data";
+                        std::string testFileName = fileTemplate + "-test.data";
+                        logger << "   Writing ESVM files:" << std::endl
+                               << "      '" << trainFileName << "'" << std::endl
+                               << "      '" << testFileName << "'" << std::endl;
+
+                        std::ofstream trainFile(trainFileName);
+                        std::ofstream testFile(testFileName);
                 
                         // Add other gallery positives than the current one as additional negative representations (counter examples)                    
                         for (size_t galleryPos = 0; galleryPos < nPositives; galleryPos++)
@@ -1423,7 +1470,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
                             #if ESVM_WRITE_DATA_FILES
                             std::string esvmModelFile = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
-                                                        descriptorNames[d] + "-patch" + std::to_string(p) + "-test.data";
+                                                        descriptorNames[d] + "-patch" + std::to_string(p) + ".model";
                             logger << "Saving Exemplar-SVM model to file..." << std::endl;
                             bool isSaved = esvmModels[pos][p][d].saveModelFile(esvmModelFile);
                             logger << std::string(isSaved ? "Saved" : "Failed to save") + 
@@ -1520,32 +1567,31 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     return 0;
 }
 
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
-{
-    /**************************************************************************************************************************
-    TEST DEFINITION
+/**************************************************************************************************************************
+TEST DEFINITION
     
-        Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
-        vectors stored in the data files.
+    Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
+    vectors stored in the data files.
 
     NB:
         Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
-        Changing any configuration will require a new data file to be generated by running the "FullChokePoint" at least once.
-    **************************************************************************************************************************/
-
+        Changing any configuration will require new data file to be generated by running "FullChokePoint" at least once.
+**************************************************************************************************************************/
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
+{
     logstream logger(LOGGER_FILE);
 
-    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }
+    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }    
     #if ESVM_USE_HOG
-    filenames.push_back({ "data/chokepoint-S1-id0011-hog-train.data", "data/chokepoint-S1-id0011-hog-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S2-id0011-hog-train.data", "data/chokepoint-S2-id0011-hog-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S3-id0011-hog-train.data", "data/chokepoint-S3-id0011-hog-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S4-id0011-hog-train.data", "data/chokepoint-S4-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S1-id0011-hog-train.data", dataFilePath + "chokepoint-S1-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S2-id0011-hog-train.data", dataFilePath + "chokepoint-S2-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S3-id0011-hog-train.data", dataFilePath + "chokepoint-S3-id0011-hog-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S4-id0011-hog-train.data", dataFilePath + "chokepoint-S4-id0011-hog-test.data", "id0011" });
     #elif ESVM_USE_LBP
-    filenames.push_back({ "data/chokepoint-S1-id0011-lbp-train.data", "data/chokepoint-S1-id0011-lbp-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S2-id0011-lbp-train.data", "data/chokepoint-S2-id0011-lbp-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S3-id0011-lbp-train.data", "data/chokepoint-S3-id0011-lbp-test.data", "id0011" });
-    filenames.push_back({ "data/chokepoint-S4-id0011-lbp-train.data", "data/chokepoint-S4-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S1-id0011-lbp-train.data", dataFilePath + "chokepoint-S1-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S2-id0011-lbp-train.data", dataFilePath + "chokepoint-S2-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S3-id0011-lbp-train.data", dataFilePath + "chokepoint-S3-id0011-lbp-test.data", "id0011" });
+    filenames.push_back({ dataFilePath + "chokepoint-S4-id0011-lbp-train.data", dataFilePath + "chokepoint-S4-id0011-lbp-test.data", "id0011" });
     #endif/* ESVM_USE_HOG || ESVM_USE_LBP */
 
     for (auto itFileNames = filenames.begin(); itFileNames != filenames.end(); ++itFileNames)
@@ -1575,23 +1621,22 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
     return 0;
 }
 
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(int nPatches)
-{
-    /**************************************************************************************************************************
-    TEST DEFINITION
+/**************************************************************************************************************************
+TEST DEFINITION
     
-        Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
-        vectors stored in the data files.
+    Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
+    vectors stored in the data files.
 
-        This test allows score fusion first for patch-based files, and then for descriptor-based files.
+    This test allows score fusion first for patch-based files, and then for descriptor-based files.
             
-            S_pos* = ∑_d [ ∑_p [ s_(p,d) ] / N_p ] / N_d     ∀pos positives (targets), ∀d descriptor, ∀p patches
+        S_pos* = ∑_d [ ∑_p [ s_(p,d) ] / N_p ] / N_d     ∀pos positives (targets), ∀d descriptor, ∀p patches
 
     NB:
         Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
-        Changing any configuration will require a new data file to be generated by running the "FullChokePoint" at least once.
-    **************************************************************************************************************************/
-
+        Changing any configuration will require new data files to be generated by running "FullChokePoint" at least once.
+**************************************************************************************************************************/
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(int nPatches)
+{
     ASSERT_LOG(nPatches > 0, "Number of patches must be greater than zero");
 
     logstream logger(LOGGER_FILE);
@@ -1604,12 +1649,12 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
     #if ESVM_USE_LBP
     descriptorNames.push_back("lbp");
     #endif/*ESVM_USE_LBP*/
-        
+    
     size_t nDescriptors = descriptorNames.size();
     size_t nProbes = 0;     // Gets updated after first ESVM testing
     for (auto posID = positivesID.begin(); posID != positivesID.end(); ++posID)
     {
-        logger << "Starting training/testing ESVM evaluation for: '" << *posID << "'" << std::endl;
+        logger << "Starting training/testing ESVM evaluation for '" << *posID << "'..." << std::endl;
 
         std::vector<int> probeGroundTruths;
         std::vector<double> patchFusionScores, descriptorFusionScores;  // score fusion of patches, then fusion over descriptors
@@ -1619,13 +1664,13 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
             for (size_t p = 0; p < nPatches; p++)
             {    
                 std::string strPatch = std::to_string(p);
-                std::string trainFileName = "data/chokepoint-S1-id0011-" + *d + "-patch" + strPatch + "-train.data";
-                std::string testFileName = "data/chokepoint-S1-id0011-" + *d + "-patch" + strPatch + "-test.data";
+                std::string trainFileName = dataFilePath + "chokepoint-S1-id0011-" + *d + "-patch" + strPatch + "-train.data";
+                std::string testFileName = dataFilePath + "chokepoint-S1-id0011-" + *d + "-patch" + strPatch + "-test.data";
                
                 // Train/test ESVM from files
-                logger << "Training ESVM with data file: '" << trainFileName << "'" << std::endl;
+                logger << "Training ESVM with data file: '" << trainFileName << "'..." << std::endl;
                 ESVM esvm = ESVM(trainFileName, *posID);
-                logger << "Testing ESVM with data file: '" << testFileName << "'" << std::endl;                
+                logger << "Testing ESVM with data file: '" << testFileName << "'..." << std::endl;                
                 std::vector<double> scores = esvm.predict(testFileName, &probeGroundTruths);
                 std::vector<double> normScores = normalizeMinMaxClassScores(scores);
                 
@@ -1674,6 +1719,70 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
     }
     logger << "Test complete" << std::endl;
     return 0;
+}
+
+int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
+{
+    return -1;
+}
+
+/**************************************************************************************************************************
+TEST DEFINITION
+
+    Uses pre-generated sample feature train/test files from SAMAN MATLAB code to enroll targets and test against probes. 
+    Parameters are pre-defined according to MATLAB code. 
+    Sample features are pre-extracted with HOG+PCA and normalized.
+**************************************************************************************************************************/
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
+{
+    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
+    size_t nPositives = positivesID.size();
+    size_t nPatches = 9;
+    size_t nFeatures = 128;
+    size_t nProbes;         // set when read from testing file
+
+    std::string dataFileDir = "data_saman_48x48_HOG-PCA-descriptor+9-patches/";
+    size_t dimsESVM[2] = { nPositives, nPatches };
+    xstd::mvector<2, ESVM> esvm(dimsESVM);          // [positive][patch]
+
+    logstream logger(LOGGER_FILE);
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {
+        std::string posID = positivesID[pos];
+        logger << "Starting for '" << posID << "'..." << std::endl;
+
+        std::vector<int> probeGroundTruths;         // assigned when running prediction
+        std::vector<double> probeFusionScores;
+        for (size_t p = 0; p < nPatches; p++)
+        {
+            std::string strPatch = std::to_string(p);
+            logger << "Starting training/testing ESVM evaluation for '" << posID << "', patch " << strPatch << "..." << std::endl;
+
+            // run training / testing from files            
+            std::vector<double> probePatchScores;
+            std::string trainFile = dataFileDir + "train-target" + posID + "-patch" + strPatch + ".data";
+            std::string testFile = dataFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            esvm[pos][p] = ESVM(trainFile, posID);
+            probePatchScores = esvm[pos][p].predict(testFile, &probeGroundTruths);
+
+            // score fusion (accumulation of normalized patches scores)
+            std::vector<double> normPatchScores = normalizeMinMaxClassScores(probePatchScores);
+            nProbes = probeFusionScores.size();
+            if (nProbes == 0)
+                probeFusionScores = normPatchScores;
+            else                
+                for (size_t prb = 0; prb < nProbes; prb++)
+                    probeFusionScores[prb] += normPatchScores[prb];
+        } 
+        // average of accumulated scores
+        for (size_t prb = 0; prb < nProbes; prb++)
+            probeFusionScores[prb] /= (double)nProbes;
+        logger << "Score fusion for '" << posID << "':" << std::endl << featuresToVectorString(probeFusionScores) << std::endl;
+
+        // performance evaluation
+        logger << "Performance evaluation for '" << posID << "':" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScores, probeGroundTruths);
+    }
 }
 
 /*

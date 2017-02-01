@@ -8,33 +8,18 @@ namespace bfs = boost::filesystem;
 
 int main(int argc, char* argv[])
 {
+    int err;
     logstream logger(LOGGER_FILE);
     logger << "=================================================================" << std::endl
            << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
     
-    // Check image paths for tests
+    // Check paths for tests
     #if TEST_IMAGE_PATHS
-    // Local
-    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
-    ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
-    // ChokePoint
-    ASSERT_LOG(bfs::is_directory(rootChokePointPath), "Cannot find ChokePoint root directory");    
-    ASSERT_LOG(bfs::is_directory(roiChokePointCroppedFacePath), "Cannot find ChokePoint cropped faces root directory");
-    ASSERT_LOG(bfs::is_directory(roiChokePointFastDTTrackPath), "Cannot find ChokePoint FAST-DT tracks root directory");
-    ASSERT_LOG(bfs::is_directory(roiChokePointEnrollStillPath), "Cannot find ChokePoint enroll stills root directory");
-    // TITAN Unit
-    ASSERT_LOG(bfs::is_directory(rootTitanUnitPath), "Cannot find TITAN Unit root directory");
-    ASSERT_LOG(bfs::is_directory(roiTitanUnitFastDTTrackPath), "Cannot find TITAN Unit FAST-DT tracks root directory");
-    ASSERT_LOG(bfs::is_directory(roiTitanUnitEnrollStillPath), "Cannot find TITAN Unit enroll stills root directory");  
-    // COX-S2V
-    ASSERT_LOG(bfs::is_directory(rootCOXS2VPath), "Cannot find COX-S2V root directory");    
-    ASSERT_LOG(bfs::is_directory(roiCOXS2VTestingVideoPath), "Cannot find COX-S2V testing video root directory");
-    ASSERT_LOG(bfs::is_directory(roiCOXS2VEnrollStillsPath), "Cannot find COX-S2V enroll stills root directory");
-    ASSERT_LOG(bfs::is_directory(roiCOXS2VAllImgsStillPath), "Cannot find COX-S2V all image stills root directory");
-    ASSERT_LOG(bfs::is_directory(roiCOXS2VEyeLocaltionPath), "Cannot find COX-S2V eye location root directory");
+    test_imagePaths();
     #endif/*TEST_IMAGE_PATHS*/
-
-    int err;
+    #if ESVM_READ_DATA_FILES != 0b0000 || ESVM_WRITE_DATA_FILES != 0
+    ASSERT_LOG(checkPathEndSlash(dataFilePath), "Data file path doesn't end with slash character");
+    #endif/*ESVM_READ_DATA_FILES | ESVM_WRITE_DATA_FILES*/
     
     #if TEST_IMAGE_PROCESSING
     err = test_imagePatchExtraction();
@@ -135,6 +120,29 @@ int main(int argc, char* argv[])
     }
     logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
     #endif/* (8) */
+
+    #if TEST_ESVM_TITAN
+    cv::Size patchCounts = cv::Size(3, 3);
+    cv::Size imageSize = cv::Size(48, 48);
+    bool useSyntheticPositives = true;
+    err = test_runSingleSamplePerPersonStillToVideo_TITAN(imageSize, patchCounts, useSyntheticPositives);
+    if (err)
+    {
+        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_TITAN' failed." << std::endl;
+        return err;
+    }
+    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_TITAN' completed." << std::endl;
+    #endif/*TEST_ESVM_TITAN*/
+
+    #if TEST_ESVM_SAMAN
+    err = test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
+    if (err)
+    {
+        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' failed." << std::endl;
+        return err;
+    }
+    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' completed." << std::endl;
+    #endif/*TEST_ESVM_SAMAN*/
 
     logger << "All tests completed. " << currentTimeStamp() << std::endl;
     return 0;
