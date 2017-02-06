@@ -5,7 +5,7 @@
 
 /* ESVM options */
 #define ESVM_USE_HOG 1
-#define ESVM_USE_LBP 1
+#define ESVM_USE_LBP 0
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -18,19 +18,9 @@
         4: (Wp = 1, Wn = Np/Nn)     ratio of sample counts normalized for positives (Np/Nn = [N/Nn]/[N/Np])
 */
 #define ESVM_WEIGHTS_MODE 2
-
-/* Test options */
-#define TEST_IMAGE_PATHS 1
-#define TEST_IMAGE_PROCESSING 0
-#define TEST_MULTI_LEVEL_VECTORS 1
-#define TEST_NORMALIZATION 1
-#define TEST_ESVM_BASIC_FUNCTIONALITY 0
-#define TEST_ESVM_BASIC_STILL2VIDEO 0
-#define TEST_ESVM_TITAN 0
-#define TEST_ESVM_SAMAN 1
 #define ESVM_WRITE_DATA_FILES 1
 /*
-    ESVM_READ_DATA_FILES
+    ESVM_READ_DATA_FILES:
         (0) 0b0000:     no test 
         (1) 0b0001:     images + extract features (whole-image) 
         (2) 0b0010:     images + extract features (patch-based)
@@ -40,7 +30,17 @@
          * (1) XOR (2), (2) remains if both specified
 */
 #define ESVM_READ_DATA_FILES 0 //0b1010
-const std::string dataFilePath = "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+const std::string dataFilePath = "data_TITAN_48x48_HOG-descriptor+9-patches"; // "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+
+/* Test options - Enable/Disable a specific test execution */
+#define TEST_IMAGE_PATHS 1
+#define TEST_IMAGE_PROCESSING 0
+#define TEST_MULTI_LEVEL_VECTORS 1
+#define TEST_NORMALIZATION 1
+#define TEST_ESVM_BASIC_FUNCTIONALITY 0
+#define TEST_ESVM_BASIC_STILL2VIDEO 0
+#define TEST_ESVM_TITAN 1
+#define TEST_ESVM_SAMAN 0
 
 /* Image paths */
 // Local
@@ -53,7 +53,9 @@ const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "Results/f
 const std::string roiChokePointEnrollStillPath = rootChokePointPath + "Enroll Images/";         // Path of enroll still images for ChokePoint
 // TITAN Unit
 const std::string rootTitanUnitPath = std::string(std::getenv("TITAN_UNIT_ROOT")) + "/";        // TITAN Unit dataset root 
-const std::string roiTitanUnitFastDTTrackPath = rootTitanUnitPath + "Results/";                 // Path of person track ROIs found with FAST-DT
+const std::string roiTitanUnitResultTrackPath = rootTitanUnitPath + "Results/";                 // Result's path on TITAN Unit of various algorithms
+const std::string roiTitanUnitFastDTTrackPath = roiTitanUnitResultTrackPath +                   // Path of person track ROIs found with:
+                                                "FAST-DT-compressive-3cascades/";               //   FAST-DT + CompressiveTracking + 3 HaarCascades
 const std::string roiTitanUnitEnrollStillPath = rootTitanUnitPath + "Enroll Stills/";           // Path of enroll still images for TITAN Unit
 // COX-S2V
 const std::string rootCOXS2VPath = std::string(std::getenv("COX_S2V_ROOT")) + "/";              // COX-S2V dataset root

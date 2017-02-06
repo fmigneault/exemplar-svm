@@ -50,9 +50,11 @@ int test_imagePaths()
     ASSERT_LOG(checkPathEndSlash(roiChokePointEnrollStillPath), "ChokePoint enroll stills root directory doesn't end with slash character");
     // TITAN Unit
     ASSERT_LOG(bfs::is_directory(rootTitanUnitPath), "Cannot find TITAN Unit root directory");
+    ASSERT_LOG(bfs::is_directory(roiTitanUnitResultTrackPath), "Cannot find TITAN Unit results root directory");
     ASSERT_LOG(bfs::is_directory(roiTitanUnitFastDTTrackPath), "Cannot find TITAN Unit FAST-DT tracks root directory");
     ASSERT_LOG(bfs::is_directory(roiTitanUnitEnrollStillPath), "Cannot find TITAN Unit enroll stills root directory");
     ASSERT_LOG(checkPathEndSlash(rootTitanUnitPath), "TITAN Unit root directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(roiTitanUnitResultTrackPath), "TITAN Unit results root directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(roiTitanUnitFastDTTrackPath), "TITAN Unit FAST-DT tracks root directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(roiTitanUnitEnrollStillPath), "TITAN Unit enroll stills root directory doesn't end with slash character");
     // COX-S2V
@@ -1721,8 +1723,210 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
     return 0;
 }
 
+/**************************************************************************************************************************
+TEST DEFINITION
+    
+    Use person-based track ROIs obtained from (FD+FT) of 'Fast-DT + CompressiveTracking + 3 Haar Cascades' extracted from
+    TITAN Unit's videos dataset to enroll ESVM and test against probes under the same environment.
+**************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
 {
+    /* Training Targets:        single high quality still image for enrollment */
+    std::vector<std::string> positivesID = 
+    {   
+        "01 Eric",
+        "02 Ferry", 
+        "03 Ghena", 
+        "04 Irina",
+        "05 Rene",
+        "06 Roman"
+    };
+    /* Training Non-Targets:    as many video negatives as possible */
+    std::vector<std::string> negativesID = 
+    { 
+    };
+    /* Testing Probes:          some video positives and negatives */
+    std::vector<std::string> probesID = 
+    {
+    };
+
+    // Display and output
+    cv::namedWindow(WINDOW_NAME);
+    logstream logger(LOGGER_FILE);
+    size_t nPatches = patchCounts.width * patchCounts.height;
+    if (nPatches == 0) nPatches = 1;    
+    logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
+           << "   useSyntheticPositives: " << useSyntheticPositives << std::endl
+           << "   imageSize:             " << imageSize << std::endl
+           << "   patchCounts:           " << patchCounts << std::endl;
+    
+    size_t nDescriptors = 0;
+    std::vector<std::string> descriptorNames;
+    #if ESVM_USE_HOG
+    nDescriptors++;
+    std::string descriptorHOG = "hog";
+    descriptorNames.push_back(descriptorHOG);
+    FeatureExtractorHOG hog;
+    cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
+    cv::Size hogBlock = cv::Size(patchSize.width / 2, patchSize.height / 2);
+    cv::Size hogCell = cv::Size(hogBlock.width / 2, hogBlock.height / 2);
+    int nBins = 8;
+    hog.initialize(patchSize, hogBlock, hogBlock, hogCell, nBins);
+    logger << "HOG feature extraction initialized..." << std::endl
+           << "   imageSize: " << imageSize << std::endl
+           << "   patchSize: " << patchSize << std::endl
+           << "   hogBlock:  " << hogBlock << std::endl
+           << "   hogCell:   " << hogCell << std::endl 
+           << "   nBins:     " << nBins << std::endl;
+    #endif/*ESVM_USE_HOG*/
+    
+    #if ESVM_USE_LBP
+    nDescriptors++;
+    std::string descriptorLBP = "lbp";
+    descriptorNames.push_back(descriptorLBP);
+    FeatureExtractorLBP lbp;
+    int points = 8;
+    int radius = 8;
+    MappingType map = LBP_MAPPING_U2;
+    lbp.initialize(points, radius, map);
+    logger << "LBP feature extraction initialized..." << std::endl
+           << "   imageSize: " << imageSize << std::endl
+           << "   points:    " << points << std::endl
+           << "   radius:    " << radius << std::endl
+           << "   mapping:   " << lbp::MappingTypeStr[map] << std::endl;    
+    #endif/*ESVM_USE_LBP*/  
+
+    ASSERT_LOG(nDescriptors > 0, "At least one of the feature extraction method must be enabled");
+
+    // Samples container with expected indexes usage
+    /*
+        NB:     When using the 'mvector' class, if only a single 'int' value is specified for size, it is assigned for each dimension.
+                Using 'push_back' later on a deeper level of 'vector' will put the new values after the N default values would have been
+                added because of the single 'int' dimension value.
+                Dimensions should therefore be mentionned explicitely using an array of size for each 'vector' level, be initialized later
+                as required with lower dimension 'mvector', or using a 'zero' dimension (empty).
+    */
+    size_t nPositives = positivesID.size();
+    size_t nRepresentations = 1;
+    size_t nDuplications = 10;
+    size_t dimsGroundTruths[2] { nPositives, 0 };
+    size_t dimsImgPositives[3] { nPositives, nRepresentations, nPatches };   
+    xstd::mvector<2, int> probeGroundTruth(dimsGroundTruths);                   // [positive][probe]
+    xstd::mvector<3, cv::Mat> cvPositiveSamples(dimsImgPositives);              // [positive][representation][patch](Mat[x,y])
+    xstd::mvector<2, cv::Mat> cvNegativeSamples;                                // [negative][patch](Mat[x,y])
+    xstd::mvector<2, cv::Mat> cvProbeSamples;                                   // [probe][patch](Mat[x,y])     
+    std::vector<std::string> probeID;                                           // [probe]    
+
+    // Add samples to containers
+    logger << "Loading positives image for all test sequences..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {        
+        // Add additional positive representations as requested
+        if (useSyntheticPositives)
+        {
+            // Get original positive image with preprocessing but without patches splitting
+            cv::Mat img = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
+                                       imageSize, cv::Size(1,1), WINDOW_NAME, cv::IMREAD_COLOR)[0];
+            // Get synthetic representations from original and apply patches splitting each one
+            std::vector<cv::Mat> representations = imSyntheticGeneration(img);
+            // Reinitialize sub-container for augmented representations using synthetic images
+            nRepresentations = representations.size();
+            size_t dimsRepresentation[2] { nRepresentations, nPatches };
+            cvPositiveSamples[pos] = xstd::mvector<2, cv::Mat>(dimsRepresentation);
+
+            /// ############################################# #pragma omp parallel for
+            for (size_t r = 0; r < nRepresentations; r++)
+            {
+                std::vector<cv::Mat> patches = imSplitPatches(representations[r], patchCounts);
+                for (size_t p = 0; p < nPatches; p++)
+                    cvPositiveSamples[pos][r][p] = patches[p];
+            }
+        }
+        // Only original representation otherwise (no synthetic images)
+        else
+        {
+            //// cvPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
+            std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
+                                                        imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
+            for (size_t p = 0; p < nPatches; p++)
+                cvPositiveSamples[pos][0][p] = patches[p];
+        }
+    }
+
+    /// ################################################################################ DEBUG DISPLAY POSITIVES (+SYNTH)
+    /*
+    logger << "SHOWING DEBUG POSITIVE SAMPLES" << std::endl;
+    for (int i = 0; i < nPositives; i++)
+    {
+        for (int j = 0; j < cvPositiveSamples[i].size(); j++)
+        {
+            for (int k = 0; k < cvPositiveSamples[i][j].size(); k++)
+            {
+                cv::imshow(WINDOW_NAME, cvPositiveSamples[i][j][k]);
+                cv::waitKey(500);
+            }
+        }
+    }
+    logger << "DONE SHOWING DEBUG POSITIVE SAMPLES" << std::endl;
+    */
+    // Destroy viewing window not required anymore    
+    // cv::destroyWindow(WINDOW_NAME);
+    /// ################################################################################ DEBUG
+
+    logger << "Feature extraction of positive images for all test sequences..." << std::endl
+           << "   nPositives:       " << nPositives << std::endl
+           << "   nPatches:         " << nPatches << std::endl
+           << "   nRepresentations: " << nRepresentations << std::endl
+           << "   nDuplications:    " << nDuplications << std::endl
+           << "   nDescriptors:     " << nDescriptors << std::endl;
+
+    // Containers for feature vectors extracted from samples
+    size_t dimsPositives[4] = { nPositives, nPatches, nDescriptors, nRepresentations }; // note: 'mshape' fails in this case, size_t array works...
+    size_t dimsESVM[3] { nPositives, nPatches, nDescriptors };
+    xstd::mvector<3, ESVM> esvmModels(dimsESVM);                            // [target][patch][descriptor]
+    xstd::mvector<4, FeatureVector> fvPositiveSamples(dimsPositives);       // [target][patch][descriptor][positive]
+    xstd::mvector<3, FeatureVector> fvNegativeSamples;                      // [patch][descriptor][negative]
+    xstd::mvector<3, FeatureVector> fvProbeSamples;                         // [patch][descriptor][probe]
+
+    // Convert unique positive samples (or with synthetic representations)
+    /// ################################################## #pragma omp parallel for    
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {                
+        /// ################################################## #pragma omp parallel for
+        for (size_t p = 0; p < nPatches; p++)
+        {
+            for (size_t d = 0; d < nDescriptors; d++)
+            {                
+                /// ################################################## #pragma omp parallel for
+                for (int r = 0; r < nRepresentations; r++)
+                {
+                    // switch to (i,p,fe,r) order for (patch,feature)-based training of sample representations
+                    #if ESVM_USE_HOG
+                    if (descriptorNames[d] == descriptorHOG)
+                        fvPositiveSamples[pos][p][d][r] = hog.compute(cvPositiveSamples[pos][r][p]);
+                    #endif/*ESVM_USE_HOG*/
+                    #if ESVM_USE_LBP
+                    if (descriptorNames[d] == descriptorLBP)
+                        fvPositiveSamples[pos][p][d][r] = lbp.compute(cvPositiveSamples[pos][r][p]);                    
+                    #endif/*ESVM_USE_LBP*/
+                }
+
+                /// ################################################## 
+                // DUPLICATE EVEN MORE REPRESENTATIONS TO HELP LIBSVM PROBABILITY ESTIMATES CROSS-VALIDATION
+                // Add x-times the number of representations
+                if (nDuplications > 1)
+                    for (size_t r = 0; r < nRepresentations; r++)
+                        for (size_t dup = 1; dup < nDuplications; dup++)
+                            fvPositiveSamples[pos][p][d].push_back(fvPositiveSamples[pos][p][d][r]);
+            }
+        }
+    }
+    nRepresentations *= nDuplications;
+    for (size_t d = 0; d < nDescriptors; d++)
+        logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
+
+
+
     return -1;
 }
 
