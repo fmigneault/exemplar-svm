@@ -1751,8 +1751,10 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         std::string posID = positivesID[pos];
         logger << "Starting for '" << posID << "'..." << std::endl;
 
-        std::vector<int> probeGroundTruths;         // assigned when running prediction
-        std::vector<double> probeFusionScores;
+        std::vector<int> probeGroundTruths;                             // assigned when running prediction
+        std::vector<double> probeFusionScoresNormGradual;               // gradual normalization across corresponding patches before score fusion
+        std::vector<double> probeFusionScoresNormFinal;                 // final normalization across all patches of same probe for score fusion
+        std::vector<std::vector<double> > probeFusionScoresNormCumul;   // accumulation of patch scores for final score fusion [patch][probe]
         for (size_t p = 0; p < nPatches; p++)
         {
             std::string strPatch = std::to_string(p);
@@ -1765,23 +1767,46 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
             esvm[pos][p] = ESVM(trainFile, posID);
             probePatchScores = esvm[pos][p].predict(testFile, &probeGroundTruths);
 
-            // score fusion (accumulation of normalized patches scores)
+            // score normalization for patch
             std::vector<double> normPatchScores = normalizeMinMaxClassScores(probePatchScores);
-            nProbes = probeFusionScores.size();
-            if (nProbes == 0)
-                probeFusionScores = normPatchScores;
-            else                
+            logger << "Scores for '" << posID << "', patch " << strPatch << ":" << std::endl
+                   << featuresToVectorString(probePatchScores) << std::endl;
+            logger << "Scores normalized for '" << posID << "', patch " << strPatch << ":" << std::endl
+                   << featuresToVectorString(normPatchScores) << std::endl;
+
+            // score fusion accumulation
+            nProbes = probePatchScores.size();
+            probeFusionScoresNormCumul.push_back(probePatchScores);             // scores as is for final normalization
+            if (probeFusionScoresNormGradual.size() == 0)
+                probeFusionScoresNormGradual = normPatchScores;                 // initialize in case of first run
+            else
                 for (size_t prb = 0; prb < nProbes; prb++)
-                    probeFusionScores[prb] += normPatchScores[prb];
+                    probeFusionScoresNormGradual[prb] += normPatchScores[prb];  // gradually accumulate normalized scores       
         } 
-        // average of accumulated scores
+
+        // score fusion of patches
+        probeFusionScoresNormFinal.reserve(nProbes);
         for (size_t prb = 0; prb < nProbes; prb++)
-            probeFusionScores[prb] /= (double)nProbes;
-        logger << "Score fusion for '" << posID << "':" << std::endl << featuresToVectorString(probeFusionScores) << std::endl;
+        {
+            probeFusionScoresNormGradual[prb] /= (double)nProbes;               // average of gradually accumulated and normalized patch scores
+
+            double probeScoresSum = 0;
+            for (size_t p = 0; p < nPatches; p++)
+                probeScoresSum += probeFusionScoresNormCumul[p][prb];           // average across patch scores for corresponding probe 
+            probeFusionScoresNormFinal[prb] = probeScoresSum / (double)nPatches;
+        }
+        
+        // output resulting score fusion
+        logger << "Score fusion gradual normalization for '" << posID << "':" << std::endl 
+               << featuresToVectorString(probeFusionScoresNormGradual) << std::endl;
+        logger << "Score fusion final normalization for '" << posID << "':" << std::endl
+               << featuresToVectorString(probeFusionScoresNormFinal) << std::endl;
 
         // performance evaluation
-        logger << "Performance evaluation for '" << posID << "':" << std::endl;
-        eval_PerformanceClassificationScores(probeFusionScores, probeGroundTruths);
+        logger << "Performance evaluation for '" << posID << "' (gradual norm scores):" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScoresNormGradual, probeGroundTruths);
+        logger << "Performance evaluation for '" << posID << "' (final norm scores):" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScoresNormFinal, probeGroundTruths);
     }
 }
 
