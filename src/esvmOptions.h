@@ -6,6 +6,7 @@
 /* ESVM options */
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
+#define ESVM_USE_FEATURES_NORMALIZATION 0
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -29,8 +30,15 @@
 
          * (1) XOR (2), (2) remains if both specified
 */
-#define ESVM_READ_DATA_FILES 0 //0b1010
-const std::string dataFilePath = "data_TITAN_48x48_HOG-descriptor+9-patches"; // "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+#define ESVM_READ_DATA_FILES 0b0010
+const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
+            // "data_TITAN_48x48_HOG-descriptor+9-patches"; 
+            // "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+
+// Specify how the training samples are regrouped into training sequences
+//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
+//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+#define TEST_CHOKEPOINT_SEQUENCES_MODE 0
 
 /* Test options - Enable/Disable a specific test execution */
 #define TEST_IMAGE_PATHS 1
@@ -39,7 +47,7 @@ const std::string dataFilePath = "data_TITAN_48x48_HOG-descriptor+9-patches"; //
 #define TEST_NORMALIZATION 1
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-#define TEST_ESVM_TITAN 1
+#define TEST_ESVM_TITAN 0
 #define TEST_ESVM_SAMAN 0
 
 /* Image paths */

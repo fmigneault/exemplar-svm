@@ -7,10 +7,6 @@
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, , 3 cameras = 48 video dirs
       Crop Face dir:  up to 30 individuals (if present) with N face ROIs
 */
-// Specify how the training samples are regrouped into training sequences
-//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
-//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
-#define CHOKEPOINT_TEST_SEQUENCES_MODE 0
 // Possible sequence information
 enum PORTAL_TYPE { ENTER, LEAVE };
 const int PORTAL_NUMBER = 2;
