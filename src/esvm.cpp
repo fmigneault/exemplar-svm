@@ -333,7 +333,7 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
 double ESVM::predict(FeatureVector sample)
 {    
     if (ensembleModel == nullptr)
-        throw std::exception("Ensemble model of Exemplar-SVM is not initialized");
+        throw std::runtime_error("Ensemble model of Exemplar-SVM is not initialized");
 
     #if ESVM_USE_PREDICT_PROBABILITY
     if (ensembleModel->param.probability)

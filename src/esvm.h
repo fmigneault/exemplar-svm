@@ -23,7 +23,7 @@ public:
 private:
     void readSampleDataFile(std::string filePath, std::vector< FeatureVector >& sampleFeatureVectors, std::vector<int>& targetOutputs);
     void trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
-    static std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesCount);
+    static std::vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
     static svm_node* getFeatureVector(FeatureVector features);
     static svm_node* getFeatureVector(double* features, int featureCount);
     svm_model* ensembleModel = nullptr;

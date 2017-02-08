@@ -4,11 +4,15 @@ Logging/printing operations
 #ifndef LOGGER_H
 #define LOGGER_H
 
+// required magic!
+#define __STDC_WANT_LIB_EXT1__ 1
+
 #include "esvmTypes.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <ctime>
+#include <sstream>
 
 const std::string WINDOW_NAME = "Display";
 const std::string LOGGER_FILE = "output.txt";

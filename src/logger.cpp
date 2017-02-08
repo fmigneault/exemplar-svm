@@ -6,9 +6,13 @@ Logging/printing operations
 std::string currentTimeStamp()
 {
     time_t now = time(0);
-    char dt[64];
-    ctime_s(dt, sizeof dt, &now);
-    return std::string(dt);
+    struct tm * timeinfo;
+    timeinfo = localtime (&now);
+    // char dt[64];
+    // ctime_s(dt, sizeof dt, &now);
+    char buffer[256];
+    std::strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Y", timeinfo);
+    return std::string(buffer);
 }
 
 logstream::logstream(std::string filepath)
