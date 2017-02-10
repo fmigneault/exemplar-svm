@@ -40,6 +40,8 @@ int test_outputOptions()
            << tab << "ESVM:" << std::endl
            << tab << tab << "ESVM_USE_HOG:                    " << ESVM_USE_HOG << std::endl
            << tab << tab << "ESVM_USE_LBP:                    " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_SYNTHETIC_GENERATION:   " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
+           << tab << tab << "ESVM_DUPLICATE_COUNT:            " << ESVM_DUPLICATE_COUNT << std::endl
            << tab << tab << "ESVM_USE_FEATURES_NORMALIZATION: " << ESVM_USE_FEATURES_NORMALIZATION << std::endl
            << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:    " << ESVM_USE_PREDICT_PROBABILITY << std::endl
            << tab << tab << "ESVM_POSITIVE_CLASS:             " << ESVM_POSITIVE_CLASS << std::endl
@@ -1087,7 +1089,7 @@ TEST DEFINITION
     The enrolled individuals are represented by ensembles of Exemplar-SVM and are afterward tested using the probe videos.
     Classification performances are then evaluated each positive target vs. probe samples in term of FPR/TPR for ROC curbe.
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
+int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
     /* Training Targets:        single high quality still image for enrollment (same as Saman paper) */
     std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };
@@ -1105,7 +1107,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     size_t nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;    
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
-           << "   useSyntheticPositives: " << useSyntheticPositives << std::endl
+           << "   useSyntheticPositives: " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
            << "   imageSize:             " << imageSize << std::endl
            << "   patchCounts:           " << patchCounts << std::endl;
     
@@ -1164,8 +1166,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 as required with lower dimension 'mvector', or using a 'zero' dimension (empty).
     */
     size_t nPositives = positivesID.size();
-    size_t nRepresentations = 1;
-    size_t nDuplications = 10;
+    size_t nRepresentations = 1;                                                // single original enroll still
+    size_t nDuplications = ESVM_DUPLICATE_COUNT;
     size_t dimsGroundTruths[2] { nPositives, 0 };
     size_t dimsImgPositives[3] { nPositives, nRepresentations, nPatches };   
     xstd::mvector<2, int> probeGroundTruth(dimsGroundTruths);                   // [positive][probe]
@@ -1179,8 +1181,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
         // Add additional positive representations as requested
-        if (useSyntheticPositives)
-        {
+        #if ESVM_USE_SYNTHETIC_GENERATION
+        
             // Get original positive image with preprocessing but without patches splitting
             cv::Mat img = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
                                        imageSize, cv::Size(1,1), WINDOW_NAME, cv::IMREAD_COLOR)[0];
@@ -1198,16 +1200,17 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 for (size_t p = 0; p < nPatches; p++)
                     cvPositiveSamples[pos][r][p] = patches[p];
             }
-        }
+        
         // Only original representation otherwise (no synthetic images)
-        else
-        {
+        #else/*!ESVM_USE_SYNTHETIC_GENERATION*/
+        
             //// cvPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
             std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
                                                         imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
             for (size_t p = 0; p < nPatches; p++)
                 cvPositiveSamples[pos][0][p] = patches[p];
-        }
+        
+        #endif/*ESVM_USE_SYNTHETIC_GENERATION*/
     }
 
     /// ################################################################################ DEBUG DISPLAY POSITIVES (+SYNTH)
@@ -2057,13 +2060,20 @@ TEST DEFINITION
 **************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 {
+    ASSERT_LOG(TEST_ESVM_SAMAN != 0, "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' not selected for running");
+
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
     size_t nPositives = positivesID.size();
-    size_t nPatches = 9;
-    size_t nFeatures = 128;
+    size_t nPatches = 9;    
     size_t nProbes = 0;     // set when read from testing file
+    #if TEST_ESVM_SAMAN == 1
+    size_t nFeatures = 128;
+    std::string dataFileDir = "data_SAMAN_48x48_HOG-PCA-descriptor+9-patches/";
+    #elif TEST_ESVM_SAMAN == 2
+    size_t nFeatures = 588;
+    std::string dataFileDir = "data_SAMAN_48x48_HOG-descriptor+9-patches/";
+    #endif/*TEST_ESVM_SAMAN*/
 
-    std::string dataFileDir = "data_saman_48x48_HOG-PCA-descriptor+9-patches/";
     size_t dimsESVM[2] = { nPositives, nPatches };
     xstd::mvector<2, ESVM> esvm(dimsESVM);          // [positive][patch]
 

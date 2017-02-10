@@ -95,8 +95,7 @@ int main(int argc, char* argv[])
         cv::Size imageSize = cv::Size(48, 48);
         #endif/* (1) or (2) params */
         #if ESVM_READ_DATA_FILES & (0b0001 | 0b0010)
-        bool useSyntheticPositives = true;
-        err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts, useSyntheticPositives);
+        err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
         {
             logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;

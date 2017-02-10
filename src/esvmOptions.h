@@ -6,6 +6,8 @@
 /* ESVM options */
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
+#define ESVM_USE_SYNTHETIC_GENERATION 0
+#define ESVM_DUPLICATE_COUNT 0
 #define ESVM_USE_FEATURES_NORMALIZATION 0
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
@@ -30,7 +32,7 @@
 
          * (1) XOR (2), (2) remains if both specified
 */
-#define ESVM_READ_DATA_FILES 0b0010
+#define ESVM_READ_DATA_FILES 0 //0b0010
 const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
             /// "data_TITAN_48x48_HOG-descriptor+9-patches"; 
             /// "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
@@ -48,7 +50,13 @@ const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
 #define TEST_ESVM_TITAN 0
-#define TEST_ESVM_SAMAN 0
+/*
+    TEST_ESVM_SAMAN:
+        0: not run
+        1: run with PCA feature vectors
+        2: run with raw feature vectors
+*/
+#define TEST_ESVM_SAMAN 2
 
 /* Image paths */
 // Local
