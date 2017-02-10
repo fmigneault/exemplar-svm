@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     logstream logger(LOGGER_FILE);
     logger << "=================================================================" << std::endl
            << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
-    
+    test_outputOptions();
     try
     {
 

@@ -32,8 +32,8 @@
 */
 #define ESVM_READ_DATA_FILES 0b0010
 const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
-            // "data_TITAN_48x48_HOG-descriptor+9-patches"; 
-            // "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+            /// "data_TITAN_48x48_HOG-descriptor+9-patches"; 
+            /// "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
 
 // Specify how the training samples are regrouped into training sequences
 //    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)

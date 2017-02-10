@@ -19,6 +19,7 @@ std::string buildChokePointIndividualID(int id);
 bool checkPathEndSlash(std::string path);
 
 /* Tests */
+int test_outputOptions();
 int test_imagePaths();
 int test_imagePatchExtraction();
 int test_multiLevelVectors();

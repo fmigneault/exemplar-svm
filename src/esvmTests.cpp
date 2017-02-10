@@ -32,8 +32,37 @@ bool checkPathEndSlash(std::string path)
     return end == '/' || end == '\\';
 }
 
-int test_imagePaths()
+int test_outputOptions()
 {
+    logstream logger(LOGGER_FILE);
+    std::string tab = "   ";
+    logger << "Options:" << std::endl
+           << tab << "ESVM:" << std::endl
+           << tab << tab << "ESVM_USE_HOG:                    " << ESVM_USE_HOG << std::endl
+           << tab << tab << "ESVM_USE_LBP:                    " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_FEATURES_NORMALIZATION: " << ESVM_USE_FEATURES_NORMALIZATION << std::endl
+           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:    " << ESVM_USE_PREDICT_PROBABILITY << std::endl
+           << tab << tab << "ESVM_POSITIVE_CLASS:             " << ESVM_POSITIVE_CLASS << std::endl
+           << tab << tab << "ESVM_NEGATIVE_CLASS:             " << ESVM_NEGATIVE_CLASS << std::endl
+           << tab << tab << "ESVM_WEIGHTS_MODE:               " << ESVM_WEIGHTS_MODE << std::endl
+           << tab << tab << "ESVM_WRITE_DATA_FILES:           " << ESVM_WRITE_DATA_FILES << std::endl
+           << tab << tab << "ESVM_READ_DATA_FILES:            " << ESVM_READ_DATA_FILES << std::endl
+           << tab << "TEST:" << std::endl
+           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:  " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
+           << tab << tab << "TEST_IMAGE_PATHS:                " << TEST_IMAGE_PATHS << std::endl
+           << tab << tab << "TEST_IMAGE_PROCESSING:           " << TEST_IMAGE_PROCESSING << std::endl
+           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:        " << TEST_MULTI_LEVEL_VECTORS << std::endl
+           << tab << tab << "TEST_NORMALIZATION:              " << TEST_NORMALIZATION << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:   " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:     " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
+           << tab << tab << "TEST_ESVM_TITAN:                 " << TEST_ESVM_TITAN << std::endl
+           << tab << tab << "TEST_ESVM_SAMAN:                 " << TEST_ESVM_SAMAN << std::endl;
+
+    return 0;
+}
+
+int test_imagePaths()
+{    
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
@@ -1094,7 +1123,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     int nBins = 8;
     */
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
-    cv::Size blockSize = cv::Size(4, 4);
+    cv::Size blockSize = cv::Size(2, 2);
     cv::Size blockStride = cv::Size(2, 2);
     cv::Size cellSize = cv::Size(2, 2);
     int nBins = 3;
