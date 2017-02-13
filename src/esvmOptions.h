@@ -24,16 +24,17 @@
 #define ESVM_WRITE_DATA_FILES 1
 /*
     ESVM_READ_DATA_FILES:
-        (0) 0b0000:     no test 
-        (1) 0b0001:     images + extract features (whole-image) 
-        (2) 0b0010:     images + extract features (patch-based)
-        (4) 0b0100:     pre-generated samples files (whole-image)
-        (8) 0b1000:     pre-generated samples files (feature+patch-based)
+        (0)  0b00000000:    no test 
+        (1)  0b00000001:    images + extract features (whole-image) 
+        (2)  0b00000010:    images + extract features (patch-based)
+        (4)  0b00000100:    pre-generated samples files (whole-image)
+        (8)  0b00001000:    pre-generated samples files (feature+patch-based)
+        (16) 0b00010000:    pre-generated negative samples files (patch-based)
 
          * (1) XOR (2), (2) remains if both specified
 */
-#define ESVM_READ_DATA_FILES 0 //0b0010
-const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
+#define ESVM_READ_DATA_FILES 0b00010000
+const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
             /// "data_TITAN_48x48_HOG-descriptor+9-patches"; 
             /// "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
 
@@ -56,7 +57,7 @@ const std::string dataFilePath = "data_ChokePoint_48x48_HOG-descriptor+9-patches
         1: run with PCA feature vectors
         2: run with raw feature vectors
 */
-#define TEST_ESVM_SAMAN 2
+#define TEST_ESVM_SAMAN 0
 
 /* Image paths */
 // Local

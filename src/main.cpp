@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
         test_imagePaths();
         #endif/*TEST_IMAGE_PATHS*/
         #if ESVM_READ_DATA_FILES != 0b0000 || ESVM_WRITE_DATA_FILES != 0
-        ASSERT_LOG(checkPathEndSlash(dataFilePath), "Data file path doesn't end with slash character");
+        ASSERT_LOG(checkPathEndSlash(dataFileDir), "Data file path doesn't end with slash character");
         #endif/*ESVM_READ_DATA_FILES | ESVM_WRITE_DATA_FILES*/
     
         #if TEST_IMAGE_PROCESSING
@@ -85,16 +85,16 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo' completed." << std::endl;
         #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
 
-        #if ESVM_READ_DATA_FILES & 0b0001       // (1) Run ESVM training/testing using images and feature extraction on whole image
+        #if ESVM_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
         cv::Size patchCounts = cv::Size(1, 1);
         cv::Size imageSize = cv::Size(64, 64);
-        #elif ESVM_READ_DATA_FILES & 0b0010     // (2) Run ESVM training/testing using images and patch-based feature extraction
+        #elif ESVM_READ_DATA_FILES & 0b00000010 // (2) Run ESVM training/testing using images and patch-based feature extraction
         // Number of patches to use in each direction, must fit within the ROIs (ex: 4x4 patches & ROI 128x128 -> 16 patches of 32x32)
         cv::Size patchCounts = cv::Size(3, 3);
         cv::Size imageSize = cv::Size(48, 48);
         #endif/* (1) or (2) params */
-        #if ESVM_READ_DATA_FILES & (0b0001 | 0b0010)
+        #if ESVM_READ_DATA_FILES & (0b00000001 | 0b00000010)
         err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
         {
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' completed." << std::endl;
         #endif/* (1) or (2) test */
-        #if ESVM_READ_DATA_FILES & 0b0100       // (4) Run ESVM training/testing using pre-generated whole image samples files
+        #if ESVM_READ_DATA_FILES & 0b00000100   // (4) Run ESVM training/testing using pre-generated whole image samples files
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
         if (err)
         {        
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' completed." << std::endl;
         #endif/* (4) */
-        #if ESVM_READ_DATA_FILES & 0b1000       // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
+        #if ESVM_READ_DATA_FILES & 0b00001000   // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
         int nPatches = patchCounts.width * patchCounts.height;
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches);
         if (err)
@@ -121,6 +121,15 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
+        #endif/* (8) */
+        #if ESVM_READ_DATA_FILES & 0b00010000   // (16) Run ESVM training/testing using pre-generated patch-based negatives samples files        
+        err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
+        if (err)
+        {        
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' failed." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' completed." << std::endl;
         #endif/* (8) */
 
         #if TEST_ESVM_TITAN

@@ -7,7 +7,7 @@
 /*
     Initializes and trains an ESVM using list of positive and negative feature vectors
 */
-ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > negatives, std::string id)
+ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id)
 {
     ASSERT_LOG(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
         
@@ -18,7 +18,7 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
     for (int s = 0; s < posSamples; s++)
         targets[s] = ESVM_POSITIVE_CLASS;
 
-    std::vector< FeatureVector > samples;
+    std::vector<FeatureVector> samples;
     samples.insert(samples.end(), positives.begin(), positives.end());
     samples.insert(samples.end(), negatives.begin(), negatives.end());
 
@@ -36,8 +36,8 @@ ESVM::ESVM(std::vector< FeatureVector > positives, std::vector< FeatureVector > 
 ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
 {
     // get samples
-    std::vector< FeatureVector > samples;
-    std::vector< int > targets;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targets;
     readSampleDataFile(trainingSamplesFilePath, samples, targets);
 
     int Np = std::count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
@@ -94,13 +94,13 @@ bool ESVM::saveModelFile(std::string modelFilePath)
 /*
     Reads feature vectors and corresponding target output class from a LIBSVM formatted data sample file
 */
-void ESVM::readSampleDataFile(std::string filePath, std::vector< FeatureVector >& sampleFeatureVectors, std::vector<int>& targetOutputs)
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
     std::ifstream trainingFile(filePath);
     ASSERT_LOG(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
 
-    std::vector< FeatureVector > samples;
-    std::vector< int > targets;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targets;
     int nFeatures = 0;
     static std::string delimiter = ":";
     static int offDelim = delimiter.length();
@@ -328,9 +328,9 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
 }
 
 /*
-    Predicts the classification value for the specified feature vector sample using the trained ESVM model
+    Predicts the classification value for the specified feature vector sample using the trained ESVM model.
 */
-double ESVM::predict(FeatureVector sample)
+double ESVM::predict(FeatureVector probeSample)
 {    
     if (ensembleModel == nullptr)
         throw std::runtime_error("Ensemble model of Exemplar-SVM is not initialized");
@@ -340,10 +340,10 @@ double ESVM::predict(FeatureVector sample)
     {
         /*
         double* probEstimates = (double *)malloc(ensembleModel->nr_class * sizeof(double)); // = new double[ensembleModel->nr_class];
-        double p = svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
+        double p = svm_predict_probability(ensembleModel, getFeatureVector(probeSample), probEstimates);
         */
         double* probEstimates = new double[ensembleModel->nr_class];
-        svm_predict_probability(ensembleModel, getFeatureVector(sample), probEstimates);
+        svm_predict_probability(ensembleModel, getFeatureVector(probeSample), probEstimates);
 
         /// ################################################ DEBUG
         logstream logger(LOGGER_FILE);
@@ -364,8 +364,20 @@ double ESVM::predict(FeatureVector sample)
     // and that we have only 2 classes, we have only one decision value (positive vs. negative)
     int nClass = ensembleModel->nr_class;
     double* decisionValues = new double[nClass*(nClass - 1) / 2];
-    svm_predict_values(ensembleModel, getFeatureVector(sample), decisionValues);
+    svm_predict_values(ensembleModel, getFeatureVector(probeSample), decisionValues);
     return decisionValues[0];
+}
+
+/*
+    Predicts the classification values for the specified list of feature vector samples using the trained ESVM model.
+*/
+std::vector<double> ESVM::predict(std::vector<FeatureVector> probeSamples)
+{
+    int nPredictions = probeSamples.size();
+    std::vector<double> outputs(nPredictions);
+    for (int p = 0; p < nPredictions; p++)
+        outputs[p] = predict(probeSamples[p]);
+    return outputs;
 }
 
 /*
@@ -378,15 +390,9 @@ std::vector<double> ESVM::predict(std::string probeSamplesFilePath, std::vector<
     std::vector<int> classGroundTruths;
     std::vector<FeatureVector> samples;
     readSampleDataFile(probeSamplesFilePath, samples, classGroundTruths);
-
-    int nPredictions = samples.size();
-    std::vector<double> outputs(nPredictions);
-    for (int p = 0; p < nPredictions; p++)
-        outputs[p] = predict(samples[p]);
-
     if (probeGroundTruths != nullptr)
         *probeGroundTruths = classGroundTruths;
-    return outputs;
+    return predict(samples);
 }
 
 /*
