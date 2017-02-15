@@ -21,6 +21,7 @@ ipch/
 # Build results
 debug.log
 *.exp
+*.exe
 *.d
 *.o
 *.obj
@@ -40,6 +41,7 @@ bld/
 .vs/
 _ReSharper.Caches/
 *.TMP
+output.txt
 
 # NuGet Packages
 *.nupkg
