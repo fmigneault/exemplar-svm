@@ -2,6 +2,7 @@
 #define ESVM_OPTIONS_H
 
 #include <string>
+#include <stdlib.h>
 
 /* ESVM options */
 #define ESVM_USE_HOG 1
@@ -52,7 +53,7 @@ const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/
 #define TEST_NORMALIZATION 1
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-#define TEST_ESVM_SAMPLE_FILE_READ 1
+#define TEST_ESVM_READ_SAMPLE_FILE 0
 #define TEST_ESVM_TITAN 0
 /*
     TEST_ESVM_SAMAN:

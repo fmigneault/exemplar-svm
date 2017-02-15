@@ -85,15 +85,15 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo' completed." << std::endl;
         #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
 
-        #if TEST_ESVM_SAMPLE_FILE_READ
-        err = test_runBasicExemplarSvmSampleFileRead();
+        #if TEST_ESVM_READ_SAMPLE_FILE
+        err = test_runBasicExemplarSvmReadSampleFile();
         if (err)
         {
-            logger << "Test 'test_runBasicExemplarSvmSampleFileRead' failed (" << std::to_string(err) << ")." << std::endl;
+            logger << "Test 'test_runBasicExemplarSvmReadSampleFile' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
-        logger << "Test 'test_runBasicExemplarSvmSampleFileRead' completed." << std::endl;
-        #endif/*TEST_ESVM_SAMPLE_FILE_READ*/
+        logger << "Test 'test_runBasicExemplarSvmReadSampleFile' completed." << std::endl;
+        #endif/*TEST_ESVM_READ_SAMPLE_FILE*/
 
         #if ESVM_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)

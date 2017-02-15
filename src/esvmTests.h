@@ -28,7 +28,7 @@ int test_multiLevelVectors();
 int test_normalizationFunctions();
 int test_runBasicExemplarSvmFunctionalities();
 int test_runBasicExemplarSvmClassification();
-int test_runBasicExemplarSvmSampleFileRead();
+int test_runBasicExemplarSvmReadSampleFile();
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
