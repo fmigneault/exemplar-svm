@@ -1897,7 +1897,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     size_t nPatches = 9;
     size_t nPositives = positivesID.size();
     size_t dimsPositives[2] = { nPositives, nPatches };    
-    size_t dimsProbes[2] = { nPatches, 0 };
+    size_t dimsProbes[2] = { nPatches, 0 };                                 // known patch quantity, dynamically add probes
     xstd::mvector<2, ESVM> esvm(dimsPositives);                             // [target][patch](ESVM)
     xstd::mvector<2, FeatureVector> fvPositiveSamples(dimsPositives);       // [target][patch](FeatureVector)
     xstd::mvector<2, FeatureVector> fvProbeLoadedSamples(dimsProbes);       // [patch][probe](FeatureVector) - reversed indexing for easier access
@@ -1907,13 +1907,20 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 
     // Load positive stills and extract features
     logger << "Loading positive enroll image stills..." << std::endl;
-    for (int pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; pos++)
     {
         std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".jpg";
-        std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-        fvPositiveSamples.push_back(xstd::mvector<1, FeatureVector>(nPatches));
+        std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);        
+        
+        logger << "DEBUG -- pos: " << pos << std::endl;
+        logger << "DEBUG -- nPch: " << nPatches << std::endl;
+        logger << "DEBUG -- nPos: " << nPositives << std::endl;
+        logger << "DEBUG -- mv1: " << fvPositiveSamples.size() << std::endl;
+        logger << "DEBUG -- mv2: " << fvPositiveSamples[0].size() << std::endl;
+        logger << "DEBUG -- mat: " << patches.size() << std::endl;
         for (size_t p = 0; p < nPatches; p++)
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
+        logger << "DEBUG -- DONE 1 pos" << std::endl;
     }
 
     // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 32)
@@ -1959,10 +1966,10 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     // train and test ESVM
     ESVM tmpLoadESVM;   // temporary ESVM only for file loading
     for (int pos = 0; pos < nPositives; pos++)
-    {
-        std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;              // [probe](int)
-        std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;           // [probe](double)
-        xstd::mvector<2, double> probePatchScoresPreGen, probePatchScoresLoaded;        // [patch][probe](double)
+    {        
+        std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
+        std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
+        xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
         std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (int p = 0; p < nPatches; p++)
@@ -1982,13 +1989,13 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use pre-generated probe sample file
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
             std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
-            probePatchScoresPreGen.push_back(esvm[pos][p].predict(probePreGenTestFile));
+            probePatchScoresPreGen[p] = esvm[pos][p].predict(probePreGenTestFile);
             logger << "DEBUG -- " << probePatchScoresPreGen.size() << std::endl;
             logger << "DEBUG -- " << probePatchScoresPreGen[0].size() << std::endl;
             #endif/*ESVM_READ_DATA_FILES & (16)*/
             #if ESVM_READ_DATA_FILES & 0b00100000   // (32) use feature extraction on probe images
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
-            probePatchScoresLoaded.push_back(esvm[pos][p].predict(fvProbeLoadedSamples[p]));
+            probePatchScoresLoaded[p] = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
             #endif/*ESVM_READ_DATA_FILES & (32)*/
         }
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
@@ -2004,16 +2011,19 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "DEBUG -- N PROBES: " << nProbesPreGen << std::endl;
         probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
         logger << "DEBUG -- N FUSION: " << probeFusionScoresPreGen.size() << std::endl;
-        logger << "DEBUG -- N SCORES: " << probePatchScoresPreGen.size() << std::endl;        
+        logger << "DEBUG -- N SCORES: " << probePatchScoresPreGen.size() << std::endl;   
+        logger << "DEBUG -- N GT:     " << probeGroundTruthsPreGen.size() << std::endl;
         for (int p = 0; p < nPatches; p++)
             for (int prb = 0; prb < nProbesPreGen; prb++)
                 probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
         
         // average accumulated scores and execute post-fusion normalization
         logger << "DEBUG -- CUMUL" << std::endl;
+        logger << "DEBUG -- N FUSION (before norm): " << probeFusionScoresPreGen.size() << std::endl;
         for (int prb = 0; prb < nProbesPreGen; prb++)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
         probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        logger << "DEBUG -- N FUSION (after norm): " << probeFusionScoresPreGen.size() << std::endl;
         
         // evaluate results with fusioned patch scores
         logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
