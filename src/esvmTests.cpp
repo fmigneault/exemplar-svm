@@ -2038,12 +2038,14 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             // test against pre-generated probes and loaded probes
             #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use pre-generated probe sample file
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
-            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
-            probePatchScoresPreGen[p] = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
+            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";            
+            std::vector<double> scoresPreGen = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
+            probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
             #endif/*ESVM_READ_DATA_FILES & (16)*/
             #if ESVM_READ_DATA_FILES & 0b00100000   // (32) use feature extraction on probe images
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
-            probePatchScoresLoaded[p] = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
+            std::vector<double> scoresLoaded = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
+            probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
             #endif/*ESVM_READ_DATA_FILES & (32)*/
         }
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
