@@ -1,12 +1,16 @@
 [submodule "LIBSVM"]
 	path = LIBSVM
 	url=https://bitbucket.org/KenjiKyoTeam/LIBSVM    
+    ignore = dirty
 [submodule "FeatureExtractorHOG"]
 	path = FeatureExtractorHOG
 	url=https://bitbucket.org/KenjiKyoTeam/FeatureExtractorHOG
+    ignore = dirty
 [submodule "FeatureExtractorLBP"]
 	path = FeatureExtractorLBP
 	url = https://bitbucket.org/KenjiKyoTeam/FeatureExtractorLBP
+    ignore = dirty
 [submodule "mvector"]
 	path = mvector
 	url=https://github.com/KenjiKyo/mvector
+    ignore = dirty
