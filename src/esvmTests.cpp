@@ -533,6 +533,76 @@ int test_runBasicExemplarSvmClassification(void)
     return 0;
 }
 
+// Tests sample file reading functionality of ESVM (index and value parsing)
+int test_runBasicExemplarSvmSampleFileRead()
+{
+    logstream logger(LOGGER_FILE);
+    logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
+
+    // create test sample files
+    std::string testDir = "test_sample-read-file/";
+    bfs::create_directory(testDir);
+    std::string validIndexSampleFileName1 = testDir + "test_valid-index-samples1.data";
+    std::string wrongIndexSampleFileName1 = testDir + "test_wrong-index-samples1.data";
+    std::string wrongIndexSampleFileName2 = testDir + "test_wrong-index-samples2.data";
+    std::string wrongIndexSampleFileName3 = testDir + "test_wrong-index-samples3.data";
+    std::string validSparseSampleFileName1 = testDir + "test_valid-sparse-samples1.data";
+    std::string wrongSparseSampleFileName1 = testDir + "test_wrong-sparse-samples1.data";
+    std::ofstream validIndexSampleFile1(validIndexSampleFileName1);
+    std::ofstream wrongIndexSampleFile1(wrongIndexSampleFileName1);
+    std::ofstream wrongIndexSampleFile2(wrongIndexSampleFileName2);
+    std::ofstream wrongIndexSampleFile3(wrongIndexSampleFileName3);
+    std::ofstream validSparseSampleFile1(validSparseSampleFileName1);
+    std::ofstream wrongSparseSampleFile1(wrongSparseSampleFileName1);
+
+    // fill test sample files
+    validIndexSampleFile1 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;
+    validIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:90.123 2:80.456 3:-70.78 4:-90000 5:-50.00 -1:0" << std::endl;
+    wrongIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
+    wrongIndexSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5
+    wrongIndexSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
+
+    // close test sample files
+    if (validIndexSampleFile1.is_open()) validIndexSampleFile1.close();
+    if (wrongIndexSampleFile1.is_open()) wrongIndexSampleFile1.close();
+    if (wrongIndexSampleFile2.is_open()) wrongIndexSampleFile2.close();
+    if (wrongIndexSampleFile3.is_open()) wrongIndexSampleFile3.close();
+    if (validSparseSampleFile1.is_open()) validSparseSampleFile1.close();
+    if (wrongSparseSampleFile1.is_open()) wrongSparseSampleFile1.close();
+
+    // tests
+    ESVM esvm;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targetOutputs;
+    try
+    {
+        esvm.readSampleDataFile(validIndexSampleFileName1, samples, targetOutputs);
+        ASSERT_LOG(samples.size() == 2, "File reading should result in 2 loaded feature vector samples");
+        
+    }
+    catch (std::exception& ex)
+    {
+
+    }
+
+    // asserts to check:
+    //   ASSERT_LOG(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS)
+    //   ASSERT_LOG(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
+    //   ASSERT_LOG(index - prev > 0, "Feature indexes must be in ascending order");
+    //   assert skip index reading if -1 found before
+    //   ASSERT_LOG(nFeatures == features.size()
+    //   ASSERT_LOG(trainingFile.eof()  ===>   add final fv without newline?
+
+
+
+
+
+    // delete test sample files
+    bfs::remove_all(testDir);
+
+    return 0;
+}
+
 #if 0
 /**************************************************************************************************************************
 TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
@@ -1846,7 +1916,8 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
     }
 
-    // Load probe images and extract features 
+    // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 32)
+    #if ESVM_READ_DATA_FILES & 0b00100000
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
     std::string seq;    
@@ -1882,64 +1953,100 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             }                        
         }
     }
+    #endif/*ESVM_READ_DATA_FILES & (32)*/
     cv::destroyWindow(WINDOW_NAME);
 
-    // train and test ESVM    
-    logger << "Starting ESVM training/testing..." << std::endl;
+    // train and test ESVM
     ESVM tmpLoadESVM;   // temporary ESVM only for file loading
     for (int pos = 0; pos < nPositives; pos++)
     {
         std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;              // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;           // [probe](double)
         xstd::mvector<2, double> probePatchScoresPreGen, probePatchScoresLoaded;        // [patch][probe](double)
-        std::string posID = buildChokePointIndividualID(positivesID[pos]);
+        std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (int p = 0; p < nPatches; p++)
         {
             // load feature vector files
             std::string strPatch = std::to_string(p);
             std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
-            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
             std::vector<FeatureVector> fvNegativePatch;
             tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativePatch, probeGroundTruthsPreGen);
 
             // train with positive extracted features and negative loaded features
+            logger << "Starting ESVM training for '" << posID << "', patch " << strPatch << "..." << std::endl;
             std::vector<FeatureVector> singlePositivePatch = { fvPositiveSamples[pos][p] };
             esvm[pos][p] = ESVM(singlePositivePatch, fvNegativePatch, posID + "-" + strPatch);
 
             // test against pre-generated probes and loaded probes
-            probePatchScoresPreGen[p] = esvm[pos][p].predict(probePreGenTestFile);
-            probePatchScoresLoaded[p] = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
+            #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use pre-generated probe sample file
+            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
+            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            probePatchScoresPreGen.push_back(esvm[pos][p].predict(probePreGenTestFile));
+            logger << "DEBUG -- " << probePatchScoresPreGen.size() << std::endl;
+            logger << "DEBUG -- " << probePatchScoresPreGen[0].size() << std::endl;
+            #endif/*ESVM_READ_DATA_FILES & (16)*/
+            #if ESVM_READ_DATA_FILES & 0b00100000   // (32) use feature extraction on probe images
+            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
+            probePatchScoresLoaded.push_back(esvm[pos][p].predict(fvProbeLoadedSamples[p]));
+            #endif/*ESVM_READ_DATA_FILES & (32)*/
         }
+        logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
+
+        /* -------------------------------------------
+           (16) use pre-generated probe sample file 
+        ------------------------------------------- */
+        #if ESVM_READ_DATA_FILES & 0b00010000 
 
         // accumulated sum of scores for score fusion
+        logger << "DEBUG -- N PROBES" << std::endl;
         int nProbesPreGen = probePatchScoresPreGen[0].size();
-        int nProbesLoaded = probePatchScoresLoaded[0].size();
+        logger << "DEBUG -- N PROBES: " << nProbesPreGen << std::endl;
+        probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
+        logger << "DEBUG -- N FUSION: " << probeFusionScoresPreGen.size() << std::endl;
+        logger << "DEBUG -- N SCORES: " << probePatchScoresPreGen.size() << std::endl;        
         for (int p = 0; p < nPatches; p++)
-        {
             for (int prb = 0; prb < nProbesPreGen; prb++)
                 probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
-            for (int prb = 0; prb < nProbesLoaded; prb++)
-                probeFusionScoresLoaded[prb] += probePatchScoresLoaded[p][prb];
-        }
-
-        // find ground truths of feature vectors (pre-generated already done when reading file)
-        // also average accumulated scores and execute post-fusion normalization
+        
+        // average accumulated scores and execute post-fusion normalization
+        logger << "DEBUG -- CUMUL" << std::endl;
         for (int prb = 0; prb < nProbesPreGen; prb++)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
+        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        
+        // evaluate results with fusioned patch scores
+        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
+        
+        #endif/*ESVM_READ_DATA_FILES & (16)*/
+        
+        /* ----------------------------------------------
+           (32) use feature extraction on probe images
+        ---------------------------------------------- */
+        #if ESVM_READ_DATA_FILES & 0b00100000
+
+        // accumulated sum of scores for score fusion
+        int nProbesLoaded = probePatchScoresLoaded[0].size();
+        probeFusionScoresLoaded = std::vector<double>(nProbesLoaded, 0.0);
+        for (int p = 0; p < nPatches; p++)
+            for (int prb = 0; prb < nProbesLoaded; prb++)
+                probeFusionScoresLoaded[prb] += probePatchScoresLoaded[p][prb];
+
+        // average accumulated scores and execute post-fusion normalization
+        // also find ground truths of feature vectors
         for (int prb = 0; prb < nProbesLoaded; prb++)
         {
             probeGroundTruthsLoaded.push_back(probesLoadedID[prb] == posID ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
             probeFusionScoresLoaded[prb] /= (double)nPatches;
-        }
-        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        }        
         probeFusionScoresLoaded = normalizeMinMaxClassScores(probeFusionScoresLoaded);
-
+        
         // evaluate results with fusioned patch scores
-        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
-        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
         eval_PerformanceClassificationScores(probeFusionScoresLoaded, probeGroundTruthsLoaded);
+        
+        #endif/*ESVM_READ_DATA_FILES & (32)*/       
     }
     
     logger << "Test complete" << std::endl;

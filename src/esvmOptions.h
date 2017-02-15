@@ -29,9 +29,11 @@
         (2)  0b00000010:    images + extract features (patch-based)
         (4)  0b00000100:    pre-generated samples files (whole-image)
         (8)  0b00001000:    pre-generated samples files (feature+patch-based)
-        (16) 0b00010000:    pre-generated negative samples files (patch-based)
+        (16) 0b00010000:    pre-generated negative samples files + pre-generated probe samples files (patch-based)
+        (32) 0b00100000:    pre-generated negative samples files + extract features for probe images (patch-based)
 
          * (1) XOR (2), (2) remains if both specified
+         * (16) AND (32) can be combined to run with images/files sequentially
 */
 #define ESVM_READ_DATA_FILES 0b00010000
 const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
@@ -50,6 +52,7 @@ const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/
 #define TEST_NORMALIZATION 1
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
+#define TEST_ESVM_SAMPLE_FILE_READ 1
 #define TEST_ESVM_TITAN 0
 /*
     TEST_ESVM_SAMAN:

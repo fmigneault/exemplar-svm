@@ -112,7 +112,7 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
         if (!getline(trainingFile, line)) break;
 
         bool firstPart = true;
-        std::istringstream ss(line);
+        std::istringstream ssline(line);
         std::string spart;
         int prev = 0;
         int index = 0;
@@ -120,9 +120,9 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
         FeatureVector features;
 
         // loop each part delimited by a space
-        while (ss)
+        while (ssline)
         {
-            if (!getline(ss, spart, ' ')) break;
+            if (!getline(ssline, spart, ' ')) break;
             if (firstPart)
             {
                 // Reading label
@@ -137,7 +137,7 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
             {
                 // Reading features
                 size_t offset = spart.find(delimiter);
-                ASSERT_LOG(offset != std::string::npos, "Failed to find feature index:value delimiter");
+                ASSERT_LOG(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
                 std::istringstream(spart.substr(0, offset)) >> index;
                 std::istringstream(spart.erase(0, offset + offDelim)) >> value;
 

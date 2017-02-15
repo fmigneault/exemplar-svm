@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         err = test_imagePatchExtraction();
         if (err)
         {
-            logger << "Test 'test_imagePatchExtraction' failed." << std::endl;
+            logger << "Test 'test_imagePatchExtraction' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_imagePatchExtraction' completed." << std::endl;
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
         err = test_multiLevelVectors();
         if (err)
         {
-            logger << "Test 'test_multiLevelVectors' failed." << std::endl;
+            logger << "Test 'test_multiLevelVectors' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_multiLevelVectors' completed." << std::endl;
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         err = test_normalizationFunctions();
         if (err)
         {
-            logger << "Test 'test_normalizationFunctions' failed." << std::endl;
+            logger << "Test 'test_normalizationFunctions' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_normalizationFunctions' completed." << std::endl;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         err = test_runBasicExemplarSvmFunctionalities();
         if (err)
         {
-            logger << "Test 'test_runBasicExemplarSvmFunctionalities' failed." << std::endl;
+            logger << "Test 'test_runBasicExemplarSvmFunctionalities' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runBasicExemplarSvmFunctionalities' completed." << std::endl;
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
         err = test_runBasicExemplarSvmClassification();
         if (err)
         {
-            logger << "Test 'test_runBasicExemplarSvmClassification' failed." << std::endl;
+            logger << "Test 'test_runBasicExemplarSvmClassification' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runBasicExemplarSvmClassification' completed." << std::endl;
@@ -79,11 +79,21 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo(patchCounts);
         if (err)
         {
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo' completed." << std::endl;
         #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
+
+        #if TEST_ESVM_SAMPLE_FILE_READ
+        err = test_runBasicExemplarSvmSampleFileRead();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmSampleFileRead' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmSampleFileRead' completed." << std::endl;
+        #endif/*TEST_ESVM_SAMPLE_FILE_READ*/
 
         #if ESVM_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -98,7 +108,7 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
         {
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' completed." << std::endl;
@@ -107,7 +117,7 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
         if (err)
         {        
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' completed." << std::endl;
@@ -117,20 +127,22 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches);
         if (err)
         {        
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' failed (" 
+                   << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
         #endif/* (8) */
-        #if ESVM_READ_DATA_FILES & 0b00010000   // (16) Run ESVM training/testing using pre-generated patch-based negatives samples files        
+        #if ESVM_READ_DATA_FILES & 0b00110000   // (16 | 32) Run ESVM training/testing using pre-generated patch-based negatives samples files
         err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
         if (err)
         {        
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' failed (" 
+                   << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' completed." << std::endl;
-        #endif/* (8) */
+        #endif/* (16 | 32) */
 
         #if TEST_ESVM_TITAN
         cv::Size patchCounts = cv::Size(3, 3);
@@ -139,7 +151,7 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo_TITAN(imageSize, patchCounts, useSyntheticPositives);
         if (err)
         {
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_TITAN' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_TITAN' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_TITAN' completed." << std::endl;
@@ -149,7 +161,7 @@ int main(int argc, char* argv[])
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
         if (err)
         {
-            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' failed." << std::endl;
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' completed." << std::endl;
