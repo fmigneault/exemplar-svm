@@ -1294,15 +1294,26 @@ TEST DEFINITION
 **************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
-    /* Training Targets:        single high quality still image for enrollment (same as Saman paper) */
-    std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };
-    /* Training Non-Targets:    as many video negatives as possible */
-    std::vector<std::string> negativesID = { "0001", "0002", "0006", "0007", "0010",
+    /* Training Targets:        single high quality still image for enrollment */    
+    /*std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };*/  // same as Saman paper
+    /// change to fit same positives as in SAMAN code
+    std::vector<std::string> positivesID = { "0003", "0005", "0006", "0010", "0024" };
+    /* Training Non-Targets:    as many video negatives as possible */    
+    /*std::vector<std::string> negativesID = { "0001", "0002", "0006", "0007", "0010",
                                              "0017", "0018", "0019", "0024", "0025",
-                                             "0027", "0028", "0030" };
-    /* Testing Probes:          some video positives and negatives */
-    std::vector<std::string> probesID = { "0004", "0009", "0011", "0012", "0013",
-                                          "0016", "0020", "0023", "0026", "0029" }; 
+                                             "0027", "0028", "0030" };*/
+    /// change to fit new positives/probes defined
+    std::vector<std::string> negativesID = { "0001", "0002", "0007", "0009", "0011",
+                                             "0013", "0014", "0016", "0017", "0018",
+                                             "0019", "0020", "0021", "0022", "0025" };
+    /* Testing Probes:          some video positives and negatives */    
+    /*std::vector<std::string> probesID = { "0004", "0009", "0011", "0012", "0013",
+                                          "0016", "0020", "0023", "0026", "0029" }; */
+    /// change to include new positives defined, and not any of the negatives
+    std::vector<std::string> probesID = { "0003", "0004", "0005", "0006", "0010",
+                                          "0012", "0015", "0023", "0024", "0028" }; 
+    /// not used:       0026, 0027, 0029, 0030
+    /// doesn't exist:  0008
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
@@ -1406,8 +1417,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         
         // Only original representation otherwise (no synthetic images)
         #else/*!ESVM_USE_SYNTHETIC_GENERATION*/
-        
-            //// matPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
+
             std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
                                                         imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
             for (size_t p = 0; p < nPatches; p++)
@@ -1463,7 +1473,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 /// ################################################## #pragma omp parallel for
                 for (int r = 0; r < nRepresentations; r++)
                 {
-                    // switch to (i,p,fe,r) order for (patch,feature)-based training of sample representations
+                    // switch to (i,p,d,r) order for (patch,feature)-based training of sample representations
                     #if ESVM_USE_HOG
                     if (descriptorNames[d] == descriptorHOG)
                         fvPositiveSamples[pos][p][d][r] = hog.compute(matPositiveSamples[pos][r][p]);
@@ -1484,7 +1494,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             }
         }
     }
-    nRepresentations *= nDuplications;
+    if (nDuplications > 1)
+        nRepresentations *= nDuplications;
     for (size_t d = 0; d < nDescriptors; d++)
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
@@ -1674,8 +1685,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 {
                     for (size_t pos = 0; pos < nPositives; pos++)
                     {        
-                        std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
-                                                    descriptorNames[d] + "-patch" + strPatch;
+                        std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" + descriptorNames[d] + "-patch" + strPatch;
                         std::string trainFileName = fileTemplate + "-train.data";
                         std::string testFileName = fileTemplate + "-test.data";
                         logger << "   Writing ESVM files:" << std::endl
@@ -2288,6 +2298,7 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
                 Dimensions should therefore be mentionned explicitely using an array of size for each 'vector' level, be initialized later
                 as required with lower dimension 'mvector', or using a 'zero' dimension (empty).
     */
+    
     size_t nPositives = positiveImageStills.size();
     size_t nRepresentations = 1;
     size_t nDuplications = 10;

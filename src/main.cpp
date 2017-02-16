@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
         cv::Size patchCounts = cv::Size(3, 3);
         cv::Size imageSize = cv::Size(48, 48);
         #endif/* (1|2) params */
-        #if ESVM_READ_DATA_FILES & (0b00000001 | 0b00000010)
+        #if ESVM_READ_DATA_FILES & 0b00000011
         err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
         {

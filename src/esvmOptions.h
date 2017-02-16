@@ -40,7 +40,7 @@
          * (1) XOR (2), (2) remains if both specified
          * (16) OR [(32) XOR (64)] can be combined to run with images/files sequentially, normal or transposed images files, priority to (32)
 */
-#define ESVM_READ_DATA_FILES 0b01000000
+#define ESVM_READ_DATA_FILES 0b00000010
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution
