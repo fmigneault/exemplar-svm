@@ -539,41 +539,53 @@ int test_runBasicExemplarSvmReadSampleFile()
     logstream logger(LOGGER_FILE);
     logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
 
-    // create test sample files
+    // create test sample files inside test directory
     std::string testDir = "test_sample-read-file/";
     bfs::create_directory(testDir);
-    std::string validIndexSampleFileName1 = testDir + "test_valid-index-samples1.data";
-    std::string wrongIndexSampleFileName1 = testDir + "test_wrong-index-samples1.data";
-    std::string wrongIndexSampleFileName2 = testDir + "test_wrong-index-samples2.data";
-    std::string wrongIndexSampleFileName3 = testDir + "test_wrong-index-samples3.data";
-    std::string wrongIndexSampleFileName4 = testDir + "test_wrong-index-samples4.data";
-    std::string validSparseSampleFileName1 = testDir + "test_valid-sparse-samples1.data";
-    std::string wrongSparseSampleFileName1 = testDir + "test_wrong-sparse-samples1.data";
-    std::ofstream validIndexSampleFile1(validIndexSampleFileName1);
-    std::ofstream wrongIndexSampleFile1(wrongIndexSampleFileName1);
-    std::ofstream wrongIndexSampleFile2(wrongIndexSampleFileName2);
-    std::ofstream wrongIndexSampleFile3(wrongIndexSampleFileName3);
-    std::ofstream wrongIndexSampleFile4(wrongIndexSampleFileName4);
-    std::ofstream validSparseSampleFile1(validSparseSampleFileName1);
-    std::ofstream wrongSparseSampleFile1(wrongSparseSampleFileName1);
+    std::string validSampleFileName1 = testDir + "test_valid-index-samples1.data";  // for testing normal indexed features
+    std::string validSampleFileName2 = testDir + "test_valid-index-samples2.data";  // for testing sparse indexed features
+    std::string validSampleFileName3 = testDir + "test_valid-index-samples3.data";  // for testing ending index producing same feature sizes
+    std::string validSampleFileName4 = testDir + "test_valid-index-samples4.data";  // for testing omitted ending index
+    std::string wrongSampleFileName1 = testDir + "test_wrong-index-samples1.data";  // for testing non ascending indexes
+    std::string wrongSampleFileName2 = testDir + "test_wrong-index-samples2.data";  // for testing repeating indexes
+    std::string wrongSampleFileName3 = testDir + "test_wrong-index-samples3.data";  // for testing non matching sample sizes
+    std::string wrongSampleFileName4 = testDir + "test_wrong-index-samples4.data";  // for testing not found index:value separator
+    std::string wrongSampleFileName5 = testDir + "test_wrong-index-samples5.data";  // for testing missing target output class value    
+    std::ofstream validSampleFile1(validSampleFileName1);
+    std::ofstream validSampleFile2(validSampleFileName2);
+    std::ofstream validSampleFile3(validSampleFileName3);
+    std::ofstream validSampleFile4(validSampleFileName4);
+    std::ofstream wrongSampleFile1(wrongSampleFileName1);
+    std::ofstream wrongSampleFile2(wrongSampleFileName2);
+    std::ofstream wrongSampleFile3(wrongSampleFileName3);
+    std::ofstream wrongSampleFile4(wrongSampleFileName4);
+    std::ofstream wrongSampleFile5(wrongSampleFileName5);    
 
     // fill test sample files
-    validIndexSampleFile1 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;
-    validIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:90.123 2:80.456 3:-70.78 4:-90000 5:-50.00 -1:0" << std::endl;
-    wrongIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
-    wrongIndexSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5
-    wrongIndexSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:99.111 2:88.222 3:77.333 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
-    wrongIndexSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;  // != size
-    wrongIndexSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:0" << std::endl;                    // != size
+    validSampleFile1 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;
+    validSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:90.123 2:80.456 3:-70.78 4:-90000 5:-50.00 -1:0" << std::endl;
+    validSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:12.345 4:6.7890 -1:0" << std::endl;                             // sparse
+    validSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:99.111 2:88.222 3:77.333 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
+    validSampleFile3 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:11.222 2:33.444 3:55.666 -1:0" << std::endl;                    // == size
+    validSampleFile4 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:90.111 2:80.222 3:70.333 4:60.444 5:50.555" << std::endl;;      // missing '-1:'
+    validSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.888 3:30.777 4:40.666 5:50.000" << std::endl;;      // missing '-1:'
+    wrongSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
+    wrongSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5    
+    wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;  // != size
+    wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:0" << std::endl;                    // != size
+    wrongSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;   // missing ':'
+    wrongSampleFile5 << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;                       // missing target output class
 
     // close test sample files
-    if (validIndexSampleFile1.is_open()) validIndexSampleFile1.close();
-    if (wrongIndexSampleFile1.is_open()) wrongIndexSampleFile1.close();
-    if (wrongIndexSampleFile2.is_open()) wrongIndexSampleFile2.close();
-    if (wrongIndexSampleFile3.is_open()) wrongIndexSampleFile3.close();
-    if (wrongIndexSampleFile4.is_open()) wrongIndexSampleFile4.close();
-    if (validSparseSampleFile1.is_open()) validSparseSampleFile1.close();
-    if (wrongSparseSampleFile1.is_open()) wrongSparseSampleFile1.close();
+    if (validSampleFile1.is_open()) validSampleFile1.close();
+    if (validSampleFile2.is_open()) validSampleFile2.close();
+    if (validSampleFile3.is_open()) validSampleFile3.close();
+    if (validSampleFile4.is_open()) validSampleFile4.close();
+    if (wrongSampleFile1.is_open()) wrongSampleFile1.close();
+    if (wrongSampleFile2.is_open()) wrongSampleFile2.close();
+    if (wrongSampleFile3.is_open()) wrongSampleFile3.close();
+    if (wrongSampleFile4.is_open()) wrongSampleFile4.close();
+    if (wrongSampleFile5.is_open()) wrongSampleFile5.close();
 
     /* --------
        tests 
@@ -583,8 +595,8 @@ int test_runBasicExemplarSvmReadSampleFile()
     std::vector<int> targetOutputs;
     try
     {
-        // test valid index samples (exception not expected)    
-        esvm.readSampleDataFile(validIndexSampleFileName1, samples, targetOutputs);        
+        // test valid normal indexed samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName1, samples, targetOutputs);        
         ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
         ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
@@ -604,55 +616,121 @@ int test_runBasicExemplarSvmReadSampleFile()
     }
     catch (std::exception& ex)
     {
-        logger << "Error: Valid samples indexes and file reading should not have generated an exception." << std::endl 
+        logger << "Error: Valid normal indexed samples and file reading should not have generated an exception." << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
         return -1;
     }
     try
     {
-        // test wrong index samples (exception expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName1, samples, targetOutputs);
-        logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
-        return -2;
-    }
-    catch (...) {}
-    try
-    {
-        // test wrong index samples (exception expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName2, samples, targetOutputs);
-        logger << "Error: Repeating indexes should have raised an exception." << std::endl;
-        return -3;
-    }
-    catch (...) {}
-    try
-    {
-        // test wrong index samples (exception not expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName3, samples, targetOutputs);
-        ASSERT_LOG(samples[1].size() == 3, "Sample features should be set until -1 index is reached, following ones should be ignored");
-        ASSERT_LOG(samples[0][0] == 99.111, "Sample feature value should match value in file");
-        ASSERT_LOG(samples[0][1] == 88.222, "Sample feature value should match value in file");
-        ASSERT_LOG(samples[0][2] == 77.333, "Sample feature value should match value in file");
+        // test valid sparse indexed samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName2, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 1, "File reading should result in 1 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
+        ASSERT_LOG(samples.size() == 1, "File reading should result in 1 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 4, "Sample feature vector should have proper size according to values in file");
+        ASSERT_LOG(samples[0][0] == 12.345, "Specified sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 0, "Not specified sparse sample feature value should be set to zero");
+        ASSERT_LOG(samples[0][2] == 0, "Not specified sparse sample feature value should be set to zero");
+        ASSERT_LOG(samples[0][3] == 6.7890, "Specified sample feature value should match value in file");
     }
     catch (std::exception& ex)
     {
-        logger << "Error: Valid samples indexes and file reading should not have generated an exception." << std::endl
+        logger << "Error: Valid sparse indexes samples and file reading should not have generated an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return -2;
+    }
+    try
+    {
+        // test valid limited final index (-1) samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName3, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
+        ASSERT_LOG(targetOutputs[1] == ESVM_POSITIVE_CLASS, "Second sample target output class should be positive class value");
+        ASSERT_LOG(samples.size() == 2, "File reading should result in 2 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 3, "Sample features should be set until -1 index is reached, following ones should be ignored");
+        ASSERT_LOG(samples[1].size() == 3, "Sample features should have corresponding number of feature in file");
+        ASSERT_LOG(samples[0][0] == 99.111, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 88.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][2] == 77.333, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][0] == 11.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][1] == 33.444, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][2] == 55.666, "Sample feature value should match value in file");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return -3;
+    }
+    try
+    {
+        // test valid omitted final index (-1) samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName4, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
+        ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
+        ASSERT_LOG(samples.size() == 2, "File reading should result in 2 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 5, "Sample features should be set until -1 index is reached, following ones should be ignored");
+        ASSERT_LOG(samples[1].size() == 5, "Sample features should have corresponding number of feature in file");
+        ASSERT_LOG(samples[0][0] == 90.111, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 80.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][2] == 70.333, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][3] == 60.444, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][4] == 50.555, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][0] == 10.999, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][1] == 20.888, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][2] == 30.777, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][3] == 40.666, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][4] == 50.000, "Sample feature value should match value in file");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         return -4;
     }
+    try
+    {
+        // test wrong non ascending index samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName1, samples, targetOutputs);
+        logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
+        return -5;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong repeated index samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName2, samples, targetOutputs);
+        logger << "Error: Repeating indexes should have raised an exception." << std::endl;
+        return -6;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong non matching size samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName3, samples, targetOutputs);
+        logger << "Error: Non matching sample sizes should have raised an exception." << std::endl;
+        return -7;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong missing index:value separator (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName4, samples, targetOutputs);
+        logger << "Error: Not found 'index:value' seperator should have raised an exception." << std::endl;
+        return -8;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong missing target output class (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName5, samples, targetOutputs);
+        logger << "Error: Missing target output class value should have raised an exception." << std::endl;
+        return -9;
+    }
+    catch (...) {}
 
-    // asserts to check:
-    //   ASSERT_LOG(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS)
-    //   ASSERT_LOG(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
-    //   ASSERT_LOG(index - prev > 0, "Feature indexes must be in ascending order");
-    //   assert skip index reading if -1 found before
-    //   ASSERT_LOG(nFeatures == features.size()
-    //   ASSERT_LOG(trainingFile.eof()  ===>   add final fv without newline?
-
-
-
-
-
-    // delete test sample files
+    // delete test directory and sample files
     bfs::remove_all(testDir);
 
     return 0;
@@ -1967,10 +2045,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".jpg";
         std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
         for (size_t p = 0; p < nPatches; p++)
-        {
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
-            logger << featuresToVectorString(fvPositiveSamples[pos][p]) << std::endl;
-        }
     }
 
     // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 32)

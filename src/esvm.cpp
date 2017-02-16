@@ -9,7 +9,7 @@
 */
 ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id)
 {
-    ASSERT_LOG(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
+    ASSERT_THROW(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
         
     int posSamples = positives.size();
     int negSamples = negatives.size();
@@ -58,25 +58,25 @@ ESVM::ESVM(svm_model* trainedModel, std::string id)
     static std::string posStr = std::to_string(ESVM_POSITIVE_CLASS);
     static std::string negStr = std::to_string(ESVM_NEGATIVE_CLASS);
     
-    ASSERT_LOG(trainedModel != nullptr, "No SVM model reference specified to intialize ESVM");
-    ASSERT_LOG(trainedModel->param.svm_type == C_SVC, "ESVM model must be a C-SVM classifier");
-    ASSERT_LOG(trainedModel->param.kernel_type == LINEAR, "ESVM model must have a LINEAR kernel");
-    ASSERT_LOG(trainedModel->param.C > 0, "ESVM model cost must be greater than zero");
-    ASSERT_LOG(trainedModel->nr_class == 2, "ESVM model must have two classes (positives, negatives)");
-    ASSERT_LOG(trainedModel->label[0] == ESVM_POSITIVE_CLASS, "ESVM model positive class label [0] must be equal to " + posStr);
-    ASSERT_LOG(trainedModel->label[1] == ESVM_NEGATIVE_CLASS, "ESVM model negative class label [1] must be equal to " + negStr);
-    ASSERT_LOG(trainedModel->l > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");    
-    ASSERT_LOG(trainedModel->nSV[0] > 0, "Number of positive ESVM support vector must be greater than zero");
-    ASSERT_LOG(trainedModel->nSV[1] > 0, "Number of negative ESVM support vector must be greater than zero");
+    ASSERT_THROW(trainedModel != nullptr, "No SVM model reference specified to intialize ESVM");
+    ASSERT_THROW(trainedModel->param.svm_type == C_SVC, "ESVM model must be a C-SVM classifier");
+    ASSERT_THROW(trainedModel->param.kernel_type == LINEAR, "ESVM model must have a LINEAR kernel");
+    ASSERT_THROW(trainedModel->param.C > 0, "ESVM model cost must be greater than zero");
+    ASSERT_THROW(trainedModel->nr_class == 2, "ESVM model must have two classes (positives, negatives)");
+    ASSERT_THROW(trainedModel->label[0] == ESVM_POSITIVE_CLASS, "ESVM model positive class label [0] must be equal to " + posStr);
+    ASSERT_THROW(trainedModel->label[1] == ESVM_NEGATIVE_CLASS, "ESVM model negative class label [1] must be equal to " + negStr);
+    ASSERT_THROW(trainedModel->l > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
+    ASSERT_THROW(trainedModel->nSV[0] > 0, "Number of positive ESVM support vector must be greater than zero");
+    ASSERT_THROW(trainedModel->nSV[1] > 0, "Number of negative ESVM support vector must be greater than zero");
 
     int nWeights = trainedModel->param.nr_weight;
-    ASSERT_LOG(nWeights == 0 || nWeights == 2, "ESVM model must have either two weights (positive, negative) or none");
+    ASSERT_THROW(nWeights == 0 || nWeights == 2, "ESVM model must have either two weights (positive, negative) or none");
     if (nWeights == 2)
     {
-        ASSERT_LOG(trainedModel->param.weight[0] > 0, "ESVM model positive class weight must be greater than zero");
-        ASSERT_LOG(trainedModel->param.weight[1] > 0, "ESVM model negative class weight must be greater than zero");
-        ASSERT_LOG(trainedModel->param.weight_label[0] == ESVM_POSITIVE_CLASS, "ESVM model positive weight label [0] must be equal to " + posStr);
-        ASSERT_LOG(trainedModel->param.weight_label[1] == ESVM_NEGATIVE_CLASS, "ESVM model negative weight label [1] must be equal to " + negStr);
+        ASSERT_THROW(trainedModel->param.weight[0] > 0, "ESVM model positive class weight must be greater than zero");
+        ASSERT_THROW(trainedModel->param.weight[1] > 0, "ESVM model negative class weight must be greater than zero");
+        ASSERT_THROW(trainedModel->param.weight_label[0] == ESVM_POSITIVE_CLASS, "ESVM model positive weight label [0] must be equal to " + posStr);
+        ASSERT_THROW(trainedModel->param.weight_label[1] == ESVM_NEGATIVE_CLASS, "ESVM model negative weight label [1] must be equal to " + negStr);
     }
 
     ensembleModel = trainedModel;
@@ -97,7 +97,7 @@ bool ESVM::saveModelFile(std::string modelFilePath)
 void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
     std::ifstream trainingFile(filePath);
-    ASSERT_LOG(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
+    ASSERT_THROW(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
 
     std::vector<FeatureVector> samples;
     std::vector<int> targets;
@@ -128,8 +128,8 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
                 // Reading label
                 int target = 0;
                 std::istringstream(spart) >> target;
-                ASSERT_LOG(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS,
-                           "Invalid class label specified for ESVM training from file");
+                ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS,
+                             "Invalid class label specified for ESVM training from file");
                 targets.push_back(target);
                 firstPart = false;
             }
@@ -137,13 +137,13 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
             {
                 // Reading features
                 size_t offset = spart.find(delimiter);
-                ASSERT_LOG(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
+                ASSERT_THROW(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
                 std::istringstream(spart.substr(0, offset)) >> index;
                 std::istringstream(spart.erase(0, offset + offDelim)) >> value;
 
                 // end reading index:value if termination index found (-1), otherwise check if still valid index
                 if (index == -1) break;
-                ASSERT_LOG(index - prev > 0, "Feature indexes must be in ascending order");
+                ASSERT_THROW(index - prev > 0, "Feature indexes must be in ascending order");
 
                 // Add omitted sparse features (zero value features)
                 while (index - prev > 1)
@@ -159,10 +159,10 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
         if (nFeatures == 0)
             nFeatures = features.size();
         else
-            ASSERT_LOG(nFeatures == features.size(), "Loaded feature vectors must have a consistent dimension");
+            ASSERT_THROW(nFeatures == features.size(), "Loaded feature vectors must have a consistent dimension");
         samples.push_back(features);
     }
-    ASSERT_LOG(trainingFile.eof(), "Reading ESVM training file finished without reaching EOF");
+    ASSERT_THROW(trainingFile.eof(), "Reading ESVM training file finished without reaching EOF");
 
     sampleFeatureVectors = samples;
     targetOutputs = targets;
@@ -173,9 +173,9 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
 */
 void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<int> targetOutputs, std::vector<double> classWeights)
 {    
-    ASSERT_LOG(samples.size() > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
-    ASSERT_LOG(samples.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");    
-    ASSERT_LOG(classWeights.size() == 2, "Exemplar-SVM expects two weigths (positive, negative)");
+    ASSERT_THROW(samples.size() > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
+    ASSERT_THROW(samples.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
+    ASSERT_THROW(classWeights.size() == 2, "Exemplar-SVM expects two weigths (positive, negative)");
 
     logstream logger(LOGGER_FILE);
 
@@ -235,15 +235,12 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     try
     {
         const char* msg = svm_check_parameter(&prob, &param);
-        if (msg)
-        {
-            logger << "Failure message from 'svm_check_parameter': " << std::string(msg) << std::endl;
-            return;
-        }
+        ASSERT_THROW(msg == nullptr, "Failure message from 'svm_check_parameter': " + std::string(msg) + "\n");
     }
     catch(std::exception& ex)
     {
-        logger << "Exception during parameter check: " << ex.what() << std::endl;
+        logger << "Exception occurred during parameter check: " << ex.what() << std::endl;
+        throw ex;
     }
 
     logger << "ESVM training..." << std::endl;
@@ -253,7 +250,8 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
     }
     catch (std::exception& ex)
     {
-        logger << "Exception during ESVM training: " << ex.what() << std::endl;
+        logger << "Exception occurred during ESVM training: " << ex.what() << std::endl;
+        throw ex;
     }
 
     /// ################################################ DEBUG
@@ -294,8 +292,8 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
     int Np = positivesCount;
     int Nn = negativesCount;
     int N = Nn + Np;
-    ASSERT_LOG(Np > 0, "Number of positives must be greater than zero");
-    ASSERT_LOG(Nn > 0, "Number of negatives must be greater than zero");
+    ASSERT_THROW(Np > 0, "Number of positives must be greater than zero");
+    ASSERT_THROW(Nn > 0, "Number of negatives must be greater than zero");
 
     #if ESVM_WEIGHTS_MODE == 0
     double Wp = 0;
@@ -332,8 +330,7 @@ std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negat
 */
 double ESVM::predict(FeatureVector probeSample)
 {    
-    if (ensembleModel == nullptr)
-        throw std::runtime_error("Ensemble model of Exemplar-SVM is not initialized");
+    ASSERT_THROW(ensembleModel != nullptr, "Ensemble model of Exemplar-SVM is not initialized");
 
     #if ESVM_USE_PREDICT_PROBABILITY
     if (ensembleModel->param.probability)
