@@ -1841,7 +1841,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
 {
     logstream logger(LOGGER_FILE);
 
-    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }    
+    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }   
+    std::string dataFileDir = "data_ChokePoint_64x64_HOG-LBP-descriptors_whole-image/";
     #if ESVM_USE_HOG
     filenames.push_back({ dataFileDir + "chokepoint-S1-id0011-hog-train.data", dataFileDir + "chokepoint-S1-id0011-hog-test.data", "id0011" });
     filenames.push_back({ dataFileDir + "chokepoint-S2-id0011-hog-train.data", dataFileDir + "chokepoint-S2-id0011-hog-test.data", "id0011" });
@@ -1901,8 +1902,10 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
 
     logstream logger(LOGGER_FILE);
     
+    std::string dataFileDir = "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
     std::vector< std::string > positivesID = { "id0011", "id0012", "id0013", "id0016", "id0020" };    
     std::vector< std::string > descriptorNames;
+    
     #if ESVM_USE_HOG
     descriptorNames.push_back("hog");
     #endif/*ESVM_USE_HOG*/
@@ -1992,8 +1995,9 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 {
     // Paths and logging
     logstream logger(LOGGER_FILE);
-    const std::string negativesDir = "negatives/";
-    const std::string probesFileDir = "data_SAMAN_48x48_HOG-descriptor+9-patches/";
+    const std::string imageTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b00100000) ? "" : "-transposed";
+    const std::string negativesDir = "negatives" + imageTypeFilesPreGen + "/";
+    const std::string probesFileDir = "data_SAMAN_48x48" + imageTypeFilesPreGen + "_HOG-descriptor+9-patches/";
 
     // Check requirements
     ASSERT_LOG(ESVM_USE_HOG != 0, "HOG feature extraction is required for this test");
@@ -2048,8 +2052,8 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
     }
 
-    // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 32)
-    #if ESVM_READ_DATA_FILES & 0b00100000
+    // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 16)
+    #if ESVM_READ_DATA_FILES & 0b00010000
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
     std::string seq;    
@@ -2085,7 +2089,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             }                        
         }
     }
-    #endif/*ESVM_READ_DATA_FILES & (32)*/
+    #endif/*ESVM_READ_DATA_FILES & (16)*/
     cv::destroyWindow(WINDOW_NAME);
 
     // train and test ESVM
@@ -2111,47 +2115,24 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             esvm[pos][p] = ESVM(singlePositivePatch, fvNegativePatch, posID + "-" + strPatch);
 
             // test against pre-generated probes and loaded probes
-            #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use pre-generated probe sample file
+            #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use feature extraction on probe images
+            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
+            std::vector<double> scoresLoaded = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
+            probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
+            #endif/*ESVM_READ_DATA_FILES & (16)*/
+            #if ESVM_READ_DATA_FILES & 0b01100000   // (32|64) use pre-generated probe sample file
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
             std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";            
             std::vector<double> scoresPreGen = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
             probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
-            #endif/*ESVM_READ_DATA_FILES & (16)*/
-            #if ESVM_READ_DATA_FILES & 0b00100000   // (32) use feature extraction on probe images
-            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
-            std::vector<double> scoresLoaded = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
-            probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
-            #endif/*ESVM_READ_DATA_FILES & (32)*/
+            #endif/*ESVM_READ_DATA_FILES & (32|64)*/
         }
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
-
-        /* -------------------------------------------
-           (16) use pre-generated probe sample file 
-        ------------------------------------------- */
-        #if ESVM_READ_DATA_FILES & 0b00010000 
-
-        // accumulated sum of scores for score fusion
-        int nProbesPreGen = probePatchScoresPreGen[0].size();
-        probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
-        for (int p = 0; p < nPatches; p++)
-            for (int prb = 0; prb < nProbesPreGen; prb++)
-                probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
-        
-        // average accumulated scores and execute post-fusion normalization
-        for (int prb = 0; prb < nProbesPreGen; prb++)
-            probeFusionScoresPreGen[prb] /= (double)nPatches;
-        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
-        
-        // evaluate results with fusioned patch scores
-        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
-        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
-        
-        #endif/*ESVM_READ_DATA_FILES & (16)*/
         
         /* ----------------------------------------------
-           (32) use feature extraction on probe images
+           (16) use feature extraction on probe images
         ---------------------------------------------- */
-        #if ESVM_READ_DATA_FILES & 0b00100000
+        #if ESVM_READ_DATA_FILES & 0b00010000
 
         // accumulated sum of scores for score fusion
         int nProbesLoaded = probePatchScoresLoaded[0].size();
@@ -2173,7 +2154,30 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
         eval_PerformanceClassificationScores(probeFusionScoresLoaded, probeGroundTruthsLoaded);
         
-        #endif/*ESVM_READ_DATA_FILES & (32)*/       
+        #endif/*ESVM_READ_DATA_FILES & (16)*/  
+
+        /* -------------------------------------------------------------------------------------------------------
+           (32|64) use pre-generated probe sample file ([normal|transposed] images employed to generate files) 
+        ------------------------------------------------------------------------------------------------------- */
+        #if ESVM_READ_DATA_FILES & 0b01100000 
+
+        // accumulated sum of scores for score fusion
+        int nProbesPreGen = probePatchScoresPreGen[0].size();
+        probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
+        for (int p = 0; p < nPatches; p++)
+            for (int prb = 0; prb < nProbesPreGen; prb++)
+                probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
+        
+        // average accumulated scores and execute post-fusion normalization
+        for (int prb = 0; prb < nProbesPreGen; prb++)
+            probeFusionScoresPreGen[prb] /= (double)nPatches;
+        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        
+        // evaluate results with fusioned patch scores
+        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
+        
+        #endif/*ESVM_READ_DATA_FILES & (32|64)*/
     }
     
     logger << "Test complete" << std::endl;
@@ -2225,6 +2229,8 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         roiTitanUnitFastDTTrackPath + "1 fixed/images/person_5",    // Irina
         roiTitanUnitFastDTTrackPath + "1 fixed/images/person_8",    // Roman
     };
+
+    std::string writingDataFileDir = "data_TITAN_48x48_HOG-descriptor+9-patches/";
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
@@ -2463,6 +2469,7 @@ TEST DEFINITION
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 {
     ASSERT_LOG(TEST_ESVM_SAMAN != 0, "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' not selected for running");
+    #if TEST_ESVM_SAMAN
 
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
     size_t nPositives = positivesID.size();
@@ -2576,6 +2583,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         eval_PerformanceClassificationScores(probeFusionScoresNormSkippedPostNorm, probeGroundTruths);
     }
 
+    #endif/*TEST_ESVM_SAMAN*/
     return 0;
 }
 

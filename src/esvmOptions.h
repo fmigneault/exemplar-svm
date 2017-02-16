@@ -4,7 +4,10 @@
 #include <string>
 #include <stdlib.h>
 
-/* ESVM options */
+/* ------------------------------------------------------------
+   ESVM options
+------------------------------------------------------------ */
+
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
 #define ESVM_USE_SYNTHETIC_GENERATION 0
@@ -30,23 +33,23 @@
         (2)  0b00000010:    images + extract features (patch-based)
         (4)  0b00000100:    pre-generated samples files (whole-image)
         (8)  0b00001000:    pre-generated samples files (feature+patch-based)
-        (16) 0b00010000:    pre-generated negative samples files + pre-generated probe samples files (patch-based)
-        (32) 0b00100000:    pre-generated negative samples files + extract features for probe images (patch-based)
+        (16) 0b00010000:    pre-generated negative samples files + extract features for probe images (patch-based)
+        (32) 0b00100000:    pre-generated negative samples files + pre-generated probe samples files (patch-based)
+        (64) 0b01000000:    pre-generated negative samples files + pre-generated probe samples files (patch-based, transposed images - MATLAB)
 
          * (1) XOR (2), (2) remains if both specified
-         * (16) AND (32) can be combined to run with images/files sequentially
+         * (16) OR [(32) XOR (64)] can be combined to run with images/files sequentially, normal or transposed images files, priority to (32)
 */
-#define ESVM_READ_DATA_FILES 0b00010000
-const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/";
-            /// "data_TITAN_48x48_HOG-descriptor+9-patches"; 
-            /// "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
+#define ESVM_READ_DATA_FILES 0b01000000
+
+/* ------------------------------------------------------------
+   Test options - Enable/Disable a specific test execution
+------------------------------------------------------------ */
 
 // Specify how the training samples are regrouped into training sequences
 //    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
 //    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
 #define TEST_CHOKEPOINT_SEQUENCES_MODE 0
-
-/* Test options - Enable/Disable a specific test execution */
 #define TEST_IMAGE_PATHS 1
 #define TEST_IMAGE_PROCESSING 0
 #define TEST_MULTI_LEVEL_VECTORS 1
@@ -63,7 +66,10 @@ const std::string dataFileDir = "data_ChokePoint_48x48_HOG-descriptor+9-patches/
 */
 #define TEST_ESVM_SAMAN 0
 
-/* Image paths */
+/* ------------------------------------------------------------
+   Image paths
+------------------------------------------------------------ */
+
 // Local
 const std::string roiVideoImagesPath = "../img/roi/";                               // Person ROI tracks obtained from face detection + tracking
 const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP

@@ -15,14 +15,10 @@ int main(int argc, char* argv[])
     test_outputOptions();
     try
     {
-
         // Check paths for tests
         #if TEST_IMAGE_PATHS
         test_imagePaths();
         #endif/*TEST_IMAGE_PATHS*/
-        #if ESVM_READ_DATA_FILES != 0b0000 || ESVM_WRITE_DATA_FILES != 0
-        ASSERT_LOG(checkPathEndSlash(dataFileDir), "Data file path doesn't end with slash character");
-        #endif/*ESVM_READ_DATA_FILES | ESVM_WRITE_DATA_FILES*/
     
         #if TEST_IMAGE_PROCESSING
         err = test_imagePatchExtraction();
@@ -103,7 +99,7 @@ int main(int argc, char* argv[])
         // Number of patches to use in each direction, must fit within the ROIs (ex: 4x4 patches & ROI 128x128 -> 16 patches of 32x32)
         cv::Size patchCounts = cv::Size(3, 3);
         cv::Size imageSize = cv::Size(48, 48);
-        #endif/* (1) or (2) params */
+        #endif/* (1|2) params */
         #if ESVM_READ_DATA_FILES & (0b00000001 | 0b00000010)
         err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
@@ -112,7 +108,7 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' completed." << std::endl;
-        #endif/* (1) or (2) test */
+        #endif/* (1|2) test */
         #if ESVM_READ_DATA_FILES & 0b00000100   // (4) Run ESVM training/testing using pre-generated whole image samples files
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
         if (err)
@@ -133,7 +129,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
         #endif/* (8) */
-        #if ESVM_READ_DATA_FILES & 0b00110000   // (16 | 32) Run ESVM training/testing using pre-generated patch-based negatives samples files
+        #if ESVM_READ_DATA_FILES & 0b01110000   // (16|32|64) Run ESVM training/testing using pre-generated patch-based negatives samples files
         err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
         if (err)
         {        
@@ -142,7 +138,7 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' completed." << std::endl;
-        #endif/* (16 | 32) */
+        #endif/* (16|32|64) */
 
         #if TEST_ESVM_TITAN
         cv::Size patchCounts = cv::Size(3, 3);
