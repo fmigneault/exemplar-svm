@@ -301,6 +301,11 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[4] == 5,   "Maximum value should be found");
     ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
 
+    double minAll, maxAll;
+    findMinMaxOverall(v, &minAll, &maxAll);
+    ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
+    ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
+
     FeatureVector normAll = normalizeMinMaxAllFeatures(v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
     for (int f = 0; f < normAll.size(); f++)
         ASSERT_LOG(normAll[f] == v1_norm01[f], "Feature should be normalized with specified min/max values");
