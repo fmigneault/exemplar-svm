@@ -2005,9 +2005,10 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 {
     // Paths and logging
     logstream logger(LOGGER_FILE);
+    const std::string hogTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b10000000) ? "-C++" : "-MATLAB";
     const std::string imageTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b00100000) ? "" : "-transposed";
-    const std::string negativesDir = "negatives" + imageTypeFilesPreGen + "/";
-    const std::string probesFileDir = "data_SAMAN_48x48" + imageTypeFilesPreGen + "_HOG-descriptor+9-patches/";
+    const std::string negativesDir = "negatives" + hogTypeFilesPreGen + imageTypeFilesPreGen + "/";
+    const std::string probesFileDir = "data_SAMAN_48x48" + hogTypeFilesPreGen + imageTypeFilesPreGen + "_HOG-descriptor+9-patches/";
 
     // Check requirements
     ASSERT_LOG(ESVM_USE_HOG != 0, "HOG feature extraction is required for this test");

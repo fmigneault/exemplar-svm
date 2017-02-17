@@ -28,17 +28,18 @@
 #define ESVM_WRITE_DATA_FILES 1
 /*
     ESVM_READ_DATA_FILES:
-        (0)  0b00000000:    no test 
-        (1)  0b00000001:    images + extract features (whole-image) 
-        (2)  0b00000010:    images + extract features (patch-based)
-        (4)  0b00000100:    pre-generated samples files (whole-image)
-        (8)  0b00001000:    pre-generated samples files (feature+patch-based)
-        (16) 0b00010000:    pre-generated negative samples files + extract features for probe images (patch-based)
-        (32) 0b00100000:    pre-generated negative samples files + pre-generated probe samples files (patch-based)
-        (64) 0b01000000:    pre-generated negative samples files + pre-generated probe samples files (patch-based, transposed images - MATLAB)
+        (0)   0b00000000:   no test 
+        (1)   0b00000001:   images + extract features (whole-image) 
+        (2)   0b00000010:   images + extract features (patch-based)
+        (4)   0b00000100:   pre-generated samples files (whole-image)
+        (8)   0b00001000:   pre-generated samples files (feature+patch-based)
+        (16)  0b00010000:   pre-generated negative samples files + extract features for probe images (patch-based, C++ HOG)
+        (32)  0b00100000:   pre-generated negative samples files + pre-generated probe samples files (patch-based, normal images - MATLAB HOG)
+        (64)  0b01000000:   pre-generated negative samples files + pre-generated probe samples files (patch-based, transposed images - MATLAB HOG)
+        (128) 0b10000000:   pre-generated negative samples files + extract features for probe images (patch-based, normal images - C++ HOG)
 
          * (1) XOR (2), (2) remains if both specified
-         * (16) OR [(32) XOR (64)] can be combined to run with images/files sequentially, normal or transposed images files, priority to (32)
+         * (16) can be combined with [(32) XOR (64) XOR (128)] to run images/files sequentially, normal or transposed images files, priority to (32)
 */
 #define ESVM_READ_DATA_FILES 0b00000010
 
