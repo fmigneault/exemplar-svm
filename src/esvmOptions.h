@@ -33,15 +33,18 @@
         (2)   0b00000010:   images + extract features (patch-based)
         (4)   0b00000100:   pre-generated samples files (whole-image)
         (8)   0b00001000:   pre-generated samples files (feature+patch-based)
-        (16)  0b00010000:   pre-generated negative samples files + extract features for probe images (patch-based, C++ HOG)
+        (16)  0b00010000:   pre-generated negative samples files + extract features for probe images (patch-based, normal images - MATLAB HOG)
         (32)  0b00100000:   pre-generated negative samples files + pre-generated probe samples files (patch-based, normal images - MATLAB HOG)
         (64)  0b01000000:   pre-generated negative samples files + pre-generated probe samples files (patch-based, transposed images - MATLAB HOG)
         (128) 0b10000000:   pre-generated negative samples files + extract features for probe images (patch-based, normal images - C++ HOG)
 
-         * (1) XOR (2), (2) remains if both specified
-         * (16) can be combined with [(32) XOR (64) XOR (128)] to run images/files sequentially, normal or transposed images files, priority to (32)
+         * [(1) XOR (2)]: (2) has priority over (1)
+         * [(32) XOR (64)]: (32) has priority over (64)
+         * (16) can be combined with [(32) XOR (64)] to run images/files sequentially, normal/transposed images files
+         * (128) cannot be set with any of [(16),(32),(64)]
+         * any other combination of flags is allowed (different test functions)
 */
-#define ESVM_READ_DATA_FILES 0b00000010
+#define ESVM_READ_DATA_FILES 0b10000000
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution
@@ -57,7 +60,8 @@
 #define TEST_NORMALIZATION 1
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-#define TEST_ESVM_READ_SAMPLE_FILE 1
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
+#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 1
 #define TEST_ESVM_TITAN 0
 /*
     TEST_ESVM_SAMAN:

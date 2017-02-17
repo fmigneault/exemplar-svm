@@ -736,6 +736,41 @@ int test_runBasicExemplarSvmReadSampleFile()
     return 0;
 }
 
+int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
+{
+    ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
+    ASSERT_LOG(nFeatures > 0, "Number of samples must be greater than zero");
+
+    logstream logger(LOGGER_FILE);
+
+    // Generate test samples file
+    logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
+    std::string timingSampleFileName = "test_timing-samples.data";
+    std::ofstream timingSampleFile(timingSampleFileName);    
+    std::srand(0);
+    for (int s = 0; s < nSamples; s++)
+    {
+        timingSampleFile << std::to_string(ESVM_NEGATIVE_CLASS);
+        for (int f = 0; f < nFeatures; f++)
+            timingSampleFile << " " << f + 1 << ":" << ((double)std::rand() / (double)RAND_MAX);
+        timingSampleFile << " -1:0" << std::endl;
+    }
+    if (timingSampleFile.is_open()) timingSampleFile.close();
+
+    // Start reading to evaluate timing
+    ESVM esvm;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targetOutputs;
+    double t0 = (double)cv::getTickCount();
+    esvm.readSampleDataFile(timingSampleFileName, samples, targetOutputs);
+    double dt = ((double)cv::getTickCount() - t0) / cv::getTickFrequency();
+    logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features: " << dt << "s" << std::endl;
+
+    bfs::remove(timingSampleFileName);
+
+    return 0;
+}
+
 #if 0
 /**************************************************************************************************************************
 TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
@@ -2005,8 +2040,11 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 {
     // Paths and logging
     logstream logger(LOGGER_FILE);
+        
+    ASSERT_LOG(((ESVM_READ_DATA_FILES & 0b10000000) | (ESVM_READ_DATA_FILES & 0b01110000)) == 0b10000000,
+               "Invalid 'ESVM_READ_DATA_FILES' options flag (128) cannot be used simultaneously with [(16),(32),(64)]"); 
     const std::string hogTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b10000000) ? "-C++" : "-MATLAB";
-    const std::string imageTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b00100000) ? "" : "-transposed";
+    const std::string imageTypeFilesPreGen = (ESVM_READ_DATA_FILES & 0b10110000) ? "" : "-transposed";
     const std::string negativesDir = "negatives" + hogTypeFilesPreGen + imageTypeFilesPreGen + "/";
     const std::string probesFileDir = "data_SAMAN_48x48" + hogTypeFilesPreGen + imageTypeFilesPreGen + "_HOG-descriptor+9-patches/";
 
@@ -2021,7 +2059,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     /* Training Targets:    single high quality still image for enrollment (same as Saman code) */
     std::vector<int> positivesID = { 3, 5, 6, 10, 24 };
     /* Testing Probes:      some video positives and negatives */
-    std::vector<int> probesID = { 3, 4, 5, 6, 9, 10, 11, 12, 23, 24 };
+    std::vector<int> probesID = { 3, 4, 5, 6, 10, 12, 15, 23, 24, 28 };
     
     // Predefined parameters to match pre-generated files    
     cv::Size imageSize = cv::Size(48, 48);
@@ -2063,8 +2101,8 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
     }
 
-    // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 16)
-    #if ESVM_READ_DATA_FILES & 0b00010000
+    // Load probe images and extract features if required (ESVM_READ_DATA_FILES & 16|128)
+    #if ESVM_READ_DATA_FILES & 0b10010000
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
     std::string seq;    
@@ -2100,11 +2138,13 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             }                        
         }
     }
-    #endif/*ESVM_READ_DATA_FILES & (16)*/
+    #endif/*ESVM_READ_DATA_FILES & (16|128)*/
     cv::destroyWindow(WINDOW_NAME);
 
     // train and test ESVM
-    ESVM tmpLoadESVM;   // temporary ESVM only for file loading
+    ESVM tmpLoadESVM;                                                   // temporary ESVM only for file loading
+    size_t dimsNegatives[2]{ nPatches, 0 };                             // dynamically fill patches from file loading
+    xstd::mvector<2, FeatureVector> fvNegativePatchAll(dimsNegatives);  // [patch][negative](FeatureVector)
     for (int pos = 0; pos < nPositives; pos++)
     {        
         std::vector<int> negativeGroundTruths, probeGroundTruthsPreGen, probeGroundTruthsLoaded;            // [probe](int)
@@ -2114,11 +2154,20 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (int p = 0; p < nPatches; p++)
         {
-            // load feature vector files
             std::string strPatch = std::to_string(p);
-            std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
             std::vector<FeatureVector> fvNegativePatch;
-            tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativePatch, negativeGroundTruths);
+
+            // load files for negative samples (only on first positive as they remain the same for each one)
+            // otherwise use already loaded negatives
+            if (pos != 0)
+                fvNegativePatch = std::vector<FeatureVector>(fvNegativePatchAll[p]);
+            else
+            {                
+                std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";                
+                logger << "Loading negatives for patch " << strPatch << "..." << std::endl;
+                tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativePatch, negativeGroundTruths);
+                fvNegativePatchAll[p] = xstd::mvector<1, FeatureVector>(fvNegativePatch);
+            }
 
             // train with positive extracted features and negative loaded features
             logger << "Starting ESVM training for '" << posID << "', patch " << strPatch << "..." << std::endl;
@@ -2126,11 +2175,11 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             esvm[pos][p] = ESVM(singlePositivePatch, fvNegativePatch, posID + "-" + strPatch);
 
             // test against pre-generated probes and loaded probes
-            #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use feature extraction on probe images
+            #if ESVM_READ_DATA_FILES & 0b10010000   // (16|128) use feature extraction on probe images
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
             std::vector<double> scoresLoaded = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
             probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
-            #endif/*ESVM_READ_DATA_FILES & (16)*/
+            #endif/*ESVM_READ_DATA_FILES & (16|128)*/
             #if ESVM_READ_DATA_FILES & 0b01100000   // (32|64) use pre-generated probe sample file
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
             std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";            
@@ -2141,9 +2190,9 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
         
         /* ----------------------------------------------
-           (16) use feature extraction on probe images
+           (16|128) use feature extraction on probe images
         ---------------------------------------------- */
-        #if ESVM_READ_DATA_FILES & 0b00010000
+        #if ESVM_READ_DATA_FILES & 0b10010000
 
         // accumulated sum of scores for score fusion
         int nProbesLoaded = probePatchScoresLoaded[0].size();
@@ -2165,7 +2214,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
         eval_PerformanceClassificationScores(probeFusionScoresLoaded, probeGroundTruthsLoaded);
         
-        #endif/*ESVM_READ_DATA_FILES & (16)*/  
+        #endif/*ESVM_READ_DATA_FILES & (16|128)*/  
 
         /* -------------------------------------------------------------------------------------------------------
            (32|64) use pre-generated probe sample file ([normal|transposed] images employed to generate files) 

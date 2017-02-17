@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo' completed." << std::endl;
         #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
 
-        #if TEST_ESVM_READ_SAMPLE_FILE
+        #if TEST_ESVM_READ_SAMPLES_FILE_PARSER
         err = test_runBasicExemplarSvmReadSampleFile();
         if (err)
         {
@@ -90,6 +90,18 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runBasicExemplarSvmReadSampleFile' completed." << std::endl;
         #endif/*TEST_ESVM_READ_SAMPLE_FILE*/
+
+        #if TEST_ESVM_READ_SAMPLES_FILE_TIMING
+        int nSamples = 2000;
+        int nFeatures = 500;
+        err = test_runTimerExemplarSvmReadSampleFile(nSamples, nFeatures);
+        if (err)
+        {
+            logger << "Test 'test_runTimerExemplarSvmReadSampleFile' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runTimerExemplarSvmReadSampleFile' completed." << std::endl;
+        #endif/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
 
         #if ESVM_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -129,7 +141,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
         #endif/* (8) */
-        #if ESVM_READ_DATA_FILES & 0b01110000   // (16|32|64) Run ESVM training/testing using pre-generated patch-based negatives samples files
+        #if ESVM_READ_DATA_FILES & 0b11110000   // (16|32|64|128) Run ESVM training/testing using pre-generated patch-based negatives samples files
         err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
         if (err)
         {        
@@ -138,7 +150,7 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' completed." << std::endl;
-        #endif/* (16|32|64) */
+        #endif/* (16|32|64|128) */
 
         #if TEST_ESVM_TITAN
         cv::Size patchCounts = cv::Size(3, 3);
