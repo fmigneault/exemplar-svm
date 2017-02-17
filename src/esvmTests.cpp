@@ -38,27 +38,27 @@ int test_outputOptions()
     std::string tab = "   ";
     logger << "Options:" << std::endl
            << tab << "ESVM:" << std::endl
-           << tab << tab << "ESVM_USE_HOG:                    " << ESVM_USE_HOG << std::endl
-           << tab << tab << "ESVM_USE_LBP:                    " << ESVM_USE_LBP << std::endl
-           << tab << tab << "ESVM_USE_SYNTHETIC_GENERATION:   " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
-           << tab << tab << "ESVM_DUPLICATE_COUNT:            " << ESVM_DUPLICATE_COUNT << std::endl
-           << tab << tab << "ESVM_USE_FEATURES_NORMALIZATION: " << ESVM_USE_FEATURES_NORMALIZATION << std::endl
-           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:    " << ESVM_USE_PREDICT_PROBABILITY << std::endl
-           << tab << tab << "ESVM_POSITIVE_CLASS:             " << ESVM_POSITIVE_CLASS << std::endl
-           << tab << tab << "ESVM_NEGATIVE_CLASS:             " << ESVM_NEGATIVE_CLASS << std::endl
-           << tab << tab << "ESVM_WEIGHTS_MODE:               " << ESVM_WEIGHTS_MODE << std::endl
-           << tab << tab << "ESVM_WRITE_DATA_FILES:           " << ESVM_WRITE_DATA_FILES << std::endl
-           << tab << tab << "ESVM_READ_DATA_FILES:            " << ESVM_READ_DATA_FILES << std::endl
+           << tab << tab << "ESVM_USE_HOG:                     " << ESVM_USE_HOG << std::endl
+           << tab << tab << "ESVM_USE_LBP:                     " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_SYNTHETIC_GENERATION:    " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
+           << tab << tab << "ESVM_DUPLICATE_COUNT:             " << ESVM_DUPLICATE_COUNT << std::endl
+           << tab << tab << "ESVM_FEATURES_NORMALIZATION_MODE: " << ESVM_FEATURES_NORMALIZATION_MODE << std::endl
+           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:     " << ESVM_USE_PREDICT_PROBABILITY << std::endl
+           << tab << tab << "ESVM_POSITIVE_CLASS:              " << ESVM_POSITIVE_CLASS << std::endl
+           << tab << tab << "ESVM_NEGATIVE_CLASS:              " << ESVM_NEGATIVE_CLASS << std::endl
+           << tab << tab << "ESVM_WEIGHTS_MODE:                " << ESVM_WEIGHTS_MODE << std::endl
+           << tab << tab << "ESVM_WRITE_DATA_FILES:            " << ESVM_WRITE_DATA_FILES << std::endl
+           << tab << tab << "ESVM_READ_DATA_FILES:             " << ESVM_READ_DATA_FILES << std::endl
            << tab << "TEST:" << std::endl
-           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:  " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
-           << tab << tab << "TEST_IMAGE_PATHS:                " << TEST_IMAGE_PATHS << std::endl
-           << tab << tab << "TEST_IMAGE_PROCESSING:           " << TEST_IMAGE_PROCESSING << std::endl
-           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:        " << TEST_MULTI_LEVEL_VECTORS << std::endl
-           << tab << tab << "TEST_NORMALIZATION:              " << TEST_NORMALIZATION << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:   " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:     " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
-           << tab << tab << "TEST_ESVM_TITAN:                 " << TEST_ESVM_TITAN << std::endl
-           << tab << tab << "TEST_ESVM_SAMAN:                 " << TEST_ESVM_SAMAN << std::endl;
+           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:   " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
+           << tab << tab << "TEST_IMAGE_PATHS:                 " << TEST_IMAGE_PATHS << std::endl
+           << tab << tab << "TEST_IMAGE_PROCESSING:            " << TEST_IMAGE_PROCESSING << std::endl
+           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:         " << TEST_MULTI_LEVEL_VECTORS << std::endl
+           << tab << tab << "TEST_NORMALIZATION:               " << TEST_NORMALIZATION << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:    " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:      " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
+           << tab << tab << "TEST_ESVM_TITAN:                  " << TEST_ESVM_TITAN << std::endl
+           << tab << tab << "TEST_ESVM_SAMAN:                  " << TEST_ESVM_SAMAN << std::endl;
 
     return 0;
 }
@@ -1660,20 +1660,33 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             logger << "Starting enrollment for sequence: " << seq << "..." << std::endl;
 
             // Feature vector normalization
-            #if !ESVM_USE_FEATURES_NORMALIZATION
-            logger << "Skipping features normalization" << std::endl;
-            #else/*ESVM_USE_FEATURES_NORMALIZATION*/
-            logger << "Getting feature normalization values..." << std::endl;
-            size_t dimsMinMax[2] { nPatches, nDescriptors };
-            size_t dimsAllVectors[3] { nPatches, nDescriptors, nPositives * nRepresentations + nNegatives + nProbes };            
-            xstd::mvector<2, FeatureVector> minFeatures(dimsMinMax);                // [patch][descriptor]
-            xstd::mvector<2, FeatureVector> maxFeatures(dimsMinMax);                // [patch][descriptor]
-            xstd::mvector<3, FeatureVector> allFeatureVectors(dimsAllVectors);      // [patch][descriptor][sample]
-            /// ############################################# #pragma omp parallel for
-            for (size_t p = 0; p < nPatches; p++)
-            {
-                //// allFeatureVectors[p] = std::vector< std::vector< FeatureVector > >(nFeatureExtraction);
-                for (size_t d = 0; d < nDescriptors; d++)
+            #if !ESVM_FEATURES_NORMALIZATION_MODE
+            logger << "Skipping features normalization" << std::endl;            
+            #else // Prepare some containers employed by each normalization method
+            size_t dimsAllVectors[3]{ nPatches, nDescriptors, nPositives * nRepresentations + nNegatives + nProbes };
+            size_t dimsMinMax[2]{ nDescriptors, nPatches };
+            xstd::mvector<3, FeatureVector> allFeatureVectors(dimsAllVectors);      // [patch][descriptor][sample](FeatureVector)            
+            xstd::mvector<2, FeatureVector> minFeaturesCumul(dimsMinMax);           // [descriptor][patch](FeatureVector)
+            xstd::mvector<2, FeatureVector> maxFeaturesCumul(dimsMinMax);           // [descriptor][patch](FeatureVector)
+            #endif/*ESVM_FEATURES_NORMALIZATION_MODE*/                        
+
+            // Specific min/max containers according to methods
+            #if ESVM_FEATURES_NORMALIZATION_MODE == 1       // Per feature and per patch normalization
+            logger << "Searching feature normalization values (per feature, per patch)..." << std::endl;
+            #elif ESVM_FEATURES_NORMALIZATION_MODE == 2     // Per feature and across patches normalization
+            logger << "Searching feature normalization values (per feature, across patches)..." << std::endl;
+            std::vector<FeatureVector> minFeatures(nDescriptors);                   // [descriptor](FeatureVector)
+            std::vector<FeatureVector> maxFeatures(nDescriptors);                   // [descriptor](FeatureVector)
+            #elif ESVM_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
+            logger << "Searching feature normalization values (across features, across patches)..." << std::endl;
+            std::vector<double> minFeatures(nDescriptors, DBL_MAX);                 // [descriptor](double)
+            std::vector<double> maxFeatures(nDescriptors, -DBL_MAX);                // [descriptor](double)            
+            #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+
+            // Accumulate all positive/negative/probes samples to find min/max features according to normalization mode
+            for (size_t d = 0; d < nDescriptors; d++)
+            {                
+                for (size_t p = 0; p < nPatches; p++)
                 {
                     size_t s = 0;  // Sample index
                     for (size_t pos = 0; pos < nPositives; pos++)
@@ -1683,32 +1696,65 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         allFeatureVectors[p][d][s++] = fvNegativeSamples[p][d][neg];
                     for (size_t prb = 0; prb < nProbes; prb++)
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
-
-                    // Min/Max of each (patch,feature extraction) combination for normalization 
-                    findMinMaxFeatures(allFeatureVectors[p][d], &(minFeatures[p][d]), &(maxFeatures[p][d]));
-                    logger << "Found min/max features for (descriptor,patch) " << descriptorNames[d] << "," << p << ":" << std::endl
-                           << "   MIN: " << featuresToVectorString(minFeatures[p][d]) << std::endl
-                           << "   MAX: " << featuresToVectorString(maxFeatures[p][d]) << std::endl;
+                    
+                    // Find min/max features according to normalization mode
+                    findMinMaxFeatures(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
+                    #if ESVM_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+                    logger << "Found min/max features for (descriptor,patch) (" << descriptorNames[d] << "," << p << "):" << std::endl
+                           << "   MIN: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl
+                           << "   MAX: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl;                   
+                    #endif/*ESVM_USE_FEATURES_NORMALIZATION == 1*/
                 }
-            }      
+                #if ESVM_FEATURES_NORMALIZATION_MODE == 2       // Per feature and across patches normalization
+                FeatureVector dummyFeatures(minFeaturesCumul[d][0].size());
+                findMinMaxFeatures(minFeaturesCumul[d], &(minFeatures[d]), &dummyFeatures);
+                findMinMaxFeatures(maxFeaturesCumul[d], &dummyFeatures, &(maxFeatures[d]));
+                logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
+                       << "   MIN: " << featuresToVectorString(minFeatures[d]) << std::endl
+                       << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
+                #elif ESVM_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
+                double dummyMinMax;
+                findMinMaxOverall(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
+                findMinMaxOverall(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
+                       << "   MIN: " << minFeatures[d] << std::endl
+                       << "   MAX: " << maxFeatures[d] << std::endl;
+                #endif/*ESVM_USE_FEATURES_NORMALIZATION == (2|3)*/
+            }
             
-            logger << "Applying features normalization..." << std::endl;
+            #if ESVM_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+            logger << "Applying features normalization (per feature, per patch)..." << std::endl;
+            #elif ESVM_FEATURES_NORMALIZATION_MODE == 2 // Per feature and across patches normalization
+            logger << "Applying features normalization (per feature, across patches)..." << std::endl;
+            #elif ESVM_FEATURES_NORMALIZATION_MODE == 3 // Across features and across patches normalization
+            logger << "Applying features normalization (across feature, across patches)..." << std::endl;
+            #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+            FeatureVector minNorm, maxNorm;
             for (size_t p = 0; p < nPatches; p++)
             {    
                 for (size_t d = 0; d < nDescriptors; d++)
                 {
-                    FeatureVector mins = minFeatures[p][d];
-                    FeatureVector maxs = maxFeatures[p][d];
+                    #if ESVM_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+                    minNorm = minFeaturesCumul[d][p];
+                    maxNorm = minFeaturesCumul[d][p];
+                    #elif ESVM_FEATURES_NORMALIZATION_MODE == 2 // Per feature and across patches normalization
+                    minNorm = minFeatures[d];
+                    maxNorm = minFeatures[d];
+                    #elif ESVM_FEATURES_NORMALIZATION_MODE == 3 // Across features and across patches normalization
+                    int nFeatures = fvPositiveSamples[0][0][0][0].size();
+                    minNorm = FeatureVector(nFeatures, minFeatures[d]);
+                    maxNorm = FeatureVector(nFeatures, maxFeatures[d]);
+                    #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+
                     for (size_t pos = 0; pos < nPositives; pos++)
                         for (size_t r = 0; r < nRepresentations; r++)
-                            fvPositiveSamples[pos][p][d][r] = normalizeMinMaxPerFeatures(fvPositiveSamples[pos][p][d][r], mins, maxs);
+                            fvPositiveSamples[pos][p][d][r] = normalizeMinMaxPerFeatures(fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
                     for (size_t neg = 0; neg < nNegatives; neg++)
-                        fvNegativeSamples[p][d][neg] = normalizeMinMaxPerFeatures(fvNegativeSamples[p][d][neg], mins, maxs);
+                        fvNegativeSamples[p][d][neg] = normalizeMinMaxPerFeatures(fvNegativeSamples[p][d][neg], minNorm, maxNorm);
                     for (size_t prb = 0; prb < nProbes; prb++)
-                        fvProbeSamples[p][d][prb] = normalizeMinMaxPerFeatures(fvProbeSamples[p][d][prb], mins, maxs);
+                        fvProbeSamples[p][d][prb] = normalizeMinMaxPerFeatures(fvProbeSamples[p][d][prb], minNorm, maxNorm);
                 }
-            }            
-            #endif/*ESVM_USE_FEATURES_NORMALIZATION*/
+            }
 
             // ESVM samples files for each (sequence,positive,feature-extraction,train/test,patch) combination
             #if ESVM_WRITE_DATA_FILES

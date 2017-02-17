@@ -12,7 +12,14 @@
 #define ESVM_USE_LBP 0
 #define ESVM_USE_SYNTHETIC_GENERATION 0
 #define ESVM_DUPLICATE_COUNT 0
-#define ESVM_USE_FEATURES_NORMALIZATION 0
+#define ESVM_FEATURES_NORMALIZATION_MODE 3
+/*
+    ESVM_FEATURES_NORMALIZATION_MODE:
+        0: no normalization applied
+        1: normalization per corresponding features in all positive/negative/probe vectors, and separately for each patch and descriptor
+        2: normalization per corresponding features in all positive/negative/probe vectors, and across all patches, separately for each descriptor
+        3: normalization across all features and all positive/negative/probe vectors, and across all patches, seperately for each descriptor
+*/
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
