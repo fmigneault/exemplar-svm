@@ -51,7 +51,7 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define ESVM_READ_DATA_FILES 0b10000000
+#define ESVM_READ_DATA_FILES 0b00000000
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution
@@ -75,8 +75,9 @@
         0: not run
         1: run with PCA feature vectors
         2: run with raw feature vectors
+        3: run with raw feature vectors obtained from pre-transposed images
 */
-#define TEST_ESVM_SAMAN 0
+#define TEST_ESVM_SAMAN 2
 
 /* ------------------------------------------------------------
    Image paths

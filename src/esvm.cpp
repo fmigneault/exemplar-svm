@@ -256,6 +256,7 @@ void ESVM::trainEnsembleModel(std::vector< FeatureVector > samples, std::vector<
 
     /// ################################################ DEBUG
     logger << "ESVM trained with parameters:" << std::endl
+           << "   targetID:    " << targetID << std::endl
            << "   C:           " << param.C << std::endl
            << "   eps:         " << param.eps << std::endl
            << "   probability: " << param.probability << std::endl

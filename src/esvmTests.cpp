@@ -2604,10 +2604,13 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     size_t nProbes = 0;     // set when read from testing file
     #if TEST_ESVM_SAMAN == 1
     size_t nFeatures = 128;
-    std::string dataFileDir = "data_SAMAN_48x48_HOG-PCA-descriptor+9-patches/";
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB_HOG-PCA-descriptor+9-patches/";
     #elif TEST_ESVM_SAMAN == 2
     size_t nFeatures = 588;
-    std::string dataFileDir = "data_SAMAN_48x48_HOG-descriptor+9-patches/";
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB_HOG-descriptor+9-patches/";
+    #elif TEST_ESVM_SAMAN == 3
+    size_t nFeatures = 588;
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB-transposed_HOG-descriptor+9-patches/";
     #endif/*TEST_ESVM_SAMAN*/
 
     size_t dimsESVM[2] = { nPositives, nPatches };
@@ -2629,14 +2632,14 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         std::vector<double> probeFusionScoresNormSkippedPostNorm;   // post-fusion normalization of scores obtained from skipped normalization
         for (size_t p = 0; p < nPatches; p++)
         {
-            std::string strPatch = std::to_string(p);
-            logger << "Starting training/testing ESVM evaluation for '" << posID << "', patch " << strPatch << "..." << std::endl;
-
             // run training / testing from files            
             std::vector<double> probePatchScores;
+            std::string strPatch = std::to_string(p);
             std::string trainFile = dataFileDir + "train-target" + posID + "-patch" + strPatch + ".data";
             std::string testFile = dataFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            logger << "Starting ESVM training from pre-generated file for '" << posID << "', patch " << strPatch << "..." << std::endl;
             esvm[pos][p] = ESVM(trainFile, posID);
+            logger << "Starting ESVM testing from pre-generated file for '" << posID << "', patch " << strPatch << "..." << std::endl;
             probePatchScores = esvm[pos][p].predict(testFile, &probeGroundTruths);
 
             // score normalization for patch
