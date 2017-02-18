@@ -12,7 +12,6 @@
 #define ESVM_USE_LBP 0
 #define ESVM_USE_SYNTHETIC_GENERATION 0
 #define ESVM_DUPLICATE_COUNT 0
-#define ESVM_FEATURES_NORMALIZATION_MODE 3
 /*
     ESVM_FEATURES_NORMALIZATION_MODE:
         0: no normalization applied
@@ -20,6 +19,7 @@
         2: normalization per corresponding features in all positive/negative/probe vectors, and across all patches, separately for each descriptor
         3: normalization across all features and all positive/negative/probe vectors, and across all patches, seperately for each descriptor
 */
+#define ESVM_FEATURES_NORMALIZATION_MODE 3
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -76,8 +76,9 @@
         1: run with PCA feature vectors
         2: run with raw feature vectors
         3: run with raw feature vectors obtained from pre-transposed images
+        4: run with raw feature vectors obtained from 'FullChokePoint' test (pre-feature norm overall, post-fusion norm)
 */
-#define TEST_ESVM_SAMAN 2
+#define TEST_ESVM_SAMAN 4
 
 /* ------------------------------------------------------------
    Image paths
