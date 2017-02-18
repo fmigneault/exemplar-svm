@@ -51,7 +51,7 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define ESVM_READ_DATA_FILES 0b00000010
+#define ESVM_READ_DATA_FILES 0b10000000
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution

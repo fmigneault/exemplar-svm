@@ -1486,7 +1486,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     // cv::destroyWindow(WINDOW_NAME);
     /// ################################################################################ DEBUG
 
-    logger << "Feature extraction of positive images for all test sequences..." << std::endl
+    logger << "Executing feature extraction of positive images for all test sequences..." << std::endl
            << "   nPositives:       " << nPositives << std::endl
            << "   nPatches:         " << nPatches << std::endl
            << "   nRepresentations: " << nRepresentations << std::endl
@@ -1618,7 +1618,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             // Feature extraction of negatives and probes
             size_t nProbes = matProbeSamples.size();
             size_t nNegatives = matNegativeSamples.size();
-            logger << "Feature extraction of negative and probe samples (total negatives: " << nNegatives
+            logger << "Executing feature extraction of negative and probe samples (total negatives: " << nNegatives
                    << ", total probes: " << nProbes << ")..." << std::endl;
             /// ############################################# #pragma omp parallel for
                      
@@ -2192,38 +2192,53 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     #endif/*ESVM_READ_DATA_FILES & (16|128)*/
     cv::destroyWindow(WINDOW_NAME);
 
-    // train and test ESVM
+    // load negatives from pre-generated files
     ESVM tmpLoadESVM;                                                   // temporary ESVM only for file loading
     size_t dimsNegatives[2]{ nPatches, 0 };                             // dynamically fill patches from file loading
-    xstd::mvector<2, FeatureVector> fvNegativePatchAll(dimsNegatives);  // [patch][negative](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvNegativeSamples(dimsNegatives);   // [patch][negative](FeatureVector)
+    for (int p = 0; p < nPatches; p++)
+    {
+        std::string strPatch = std::to_string(p);
+        std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
+        logger << "Loading pre-generated negative samples file for patch " << strPatch << "..." << std::endl;
+        std::vector<FeatureVector> fvNegativeSamplesPatch;
+        std::vector<int> negativeGroundTruths;
+        tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativeSamplesPatch, negativeGroundTruths);
+        fvNegativeSamples[p] = xstd::mvector<1, FeatureVector>(fvNegativeSamplesPatch);
+    }
+
+    // execute feature normalization as required
+    //    N.B. Pre-generated negatives and probes samples from files are already normalized
+    #if ESVM_FEATURES_NORMALIZATION_MODE == 3
+    logger << "Applying feature normalization (across features, across patches) for loaded positives and probes..." << std::endl;
+    double hardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test
+    double hardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test
+    int nProbesLoaded = fvProbeLoadedSamples[0].size();
+    for (int p = 0; p < nPatches; p++)
+    {
+        for (int pos = 0; pos < nPositives; pos++)
+            fvPositiveSamples[pos][p] = normalizeMinMaxAllFeatures(fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
+        for (int prb = 0; prb < nProbesLoaded; prb++)
+            fvProbeLoadedSamples[p][prb] = normalizeMinMaxAllFeatures(fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
+    }
+    #endif/*ESVM_FEATURES_NORMALIZATION_MODE == 3*/
+
+    // train and test ESVM
     for (int pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<int> negativeGroundTruths, probeGroundTruthsPreGen, probeGroundTruthsLoaded;            // [probe](int)
+        std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
         xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
         std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (int p = 0; p < nPatches; p++)
         {
-            std::string strPatch = std::to_string(p);
-            std::vector<FeatureVector> fvNegativePatch;
-
-            // load files for negative samples (only on first positive as they remain the same for each one)
-            // otherwise use already loaded negatives
-            if (pos != 0)
-                fvNegativePatch = std::vector<FeatureVector>(fvNegativePatchAll[p]);
-            else
-            {                
-                std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";                
-                logger << "Loading negatives for patch " << strPatch << "..." << std::endl;
-                tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativePatch, negativeGroundTruths);
-                fvNegativePatchAll[p] = xstd::mvector<1, FeatureVector>(fvNegativePatch);
-            }
-
             // train with positive extracted features and negative loaded features
+            std::string strPatch = std::to_string(p);
             logger << "Starting ESVM training for '" << posID << "', patch " << strPatch << "..." << std::endl;
-            std::vector<FeatureVector> singlePositivePatch = { fvPositiveSamples[pos][p] };
-            esvm[pos][p] = ESVM(singlePositivePatch, fvNegativePatch, posID + "-" + strPatch);
+            std::vector<FeatureVector> fvPositiveSingleSamplePatch = { fvPositiveSamples[pos][p] };
+            std::vector<FeatureVector> fvNegativeSamplesPatch = std::vector<FeatureVector>(fvNegativeSamples[p]);
+            esvm[pos][p] = ESVM(fvPositiveSingleSamplePatch, fvNegativeSamplesPatch, posID + "-" + strPatch);
 
             // test against pre-generated probes and loaded probes
             #if ESVM_READ_DATA_FILES & 0b10010000   // (16|128) use feature extraction on probe images
