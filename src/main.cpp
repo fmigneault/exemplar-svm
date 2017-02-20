@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
         test_imagePaths();
         #endif/*TEST_IMAGE_PATHS*/
     
-        #if TEST_IMAGE_PROCESSING
+        #if TEST_IMAGE_PATCH_EXTRACTION
         err = test_imagePatchExtraction();
         if (err)
         {
@@ -28,7 +28,17 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_imagePatchExtraction' completed." << std::endl;
-        #endif/*TEST_IMAGE_PROCESSING*/
+        #endif/*TEST_IMAGE_PATCH_EXTRACTION*/
+
+        #if TEST_IMAGE_PREPROCESSING
+        err = test_imagePreprocessing();
+        if (err)
+        {
+            logger << "Test 'test_imagePreprocessing' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_imagePreprocessing' completed." << std::endl;
+        #endif/*TEST_IMAGE_PREPROCESSING*/
 
         #if TEST_MULTI_LEVEL_VECTORS
         err = test_multiLevelVectors();
@@ -103,16 +113,16 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runTimerExemplarSvmReadSampleFile' completed." << std::endl;
         #endif/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
 
-        #if ESVM_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
+        #if TEST_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
         cv::Size patchCounts = cv::Size(1, 1);
         cv::Size imageSize = cv::Size(64, 64);
-        #elif ESVM_READ_DATA_FILES & 0b00000010 // (2) Run ESVM training/testing using images and patch-based feature extraction
+        #elif TEST_READ_DATA_FILES & 0b00000010 // (2) Run ESVM training/testing using images and patch-based feature extraction
         // Number of patches to use in each direction, must fit within the ROIs (ex: 4x4 patches & ROI 128x128 -> 16 patches of 32x32)
         cv::Size patchCounts = cv::Size(3, 3);
         cv::Size imageSize = cv::Size(48, 48);
         #endif/* (1|2) params */
-        #if ESVM_READ_DATA_FILES & 0b00000011
+        #if TEST_READ_DATA_FILES & 0b00000011
         err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
         if (err)
         {
@@ -121,7 +131,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' completed." << std::endl;
         #endif/* (1|2) test */
-        #if ESVM_READ_DATA_FILES & 0b00000100   // (4) Run ESVM training/testing using pre-generated whole image samples files
+        #if TEST_READ_DATA_FILES & 0b00000100   // (4) Run ESVM training/testing using pre-generated whole image samples files
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
         if (err)
         {        
@@ -130,7 +140,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' completed." << std::endl;
         #endif/* (4) */
-        #if ESVM_READ_DATA_FILES & 0b00001000   // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
+        #if TEST_READ_DATA_FILES & 0b00001000   // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
         int nPatches = patchCounts.width * patchCounts.height;
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches);
         if (err)
@@ -141,7 +151,7 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
         #endif/* (8) */
-        #if ESVM_READ_DATA_FILES & 0b11110000   // (16|32|64|128) Run ESVM training/testing using pre-generated patch-based negatives samples files
+        #if TEST_READ_DATA_FILES & 0b11110000   // (16|32|64|128) Run ESVM training/testing using pre-generated patch-based negatives samples files
         err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
         if (err)
         {        

@@ -24,6 +24,7 @@ bool checkPathEndSlash(std::string path);
 int test_outputOptions();
 int test_imagePaths();
 int test_imagePatchExtraction();
+int test_imagePreprocessing();
 int test_multiLevelVectors();
 int test_normalizationFunctions();
 int test_runBasicExemplarSvmFunctionalities();

@@ -62,12 +62,14 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
     return std::vector<cv::Mat>();
 }
 
-std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, std::string windowName, cv::ImreadModes readMode)
+std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
+                                  std::string windowName, cv::ImreadModes readMode)
 {
     cv::Mat img = imReadAndDisplay(imagePath, windowName, readMode);
     if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
         cv::cvtColor(img, img, CV_BGR2GRAY);
     cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);
-    cv::equalizeHist(img, img);
+    if (useHistogramEqualization)
+        cv::equalizeHist(img, img);
     return imSplitPatches(img, patchCounts);
 }

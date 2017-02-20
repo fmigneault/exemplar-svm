@@ -23,7 +23,7 @@ std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image);
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Size(0, 0));
 
 // Returns a vector of images combining patches splitting and other preprocessing steps (resizing, grayscale, hist.equal., etc.) 
-std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts,
+std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
                                   std::string windowName, cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
 #endif/*IMG_UTILS_H*/

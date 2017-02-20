@@ -10,16 +10,6 @@
 
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
-#define ESVM_USE_SYNTHETIC_GENERATION 0
-#define ESVM_DUPLICATE_COUNT 0
-/*
-    ESVM_FEATURES_NORMALIZATION_MODE:
-        0: no normalization applied
-        1: normalization per corresponding features in all positive/negative/probe vectors, and separately for each patch and descriptor
-        2: normalization per corresponding features in all positive/negative/probe vectors, and across all patches, separately for each descriptor
-        3: normalization across all features and all positive/negative/probe vectors, and across all patches, seperately for each descriptor
-*/
-#define ESVM_FEATURES_NORMALIZATION_MODE 3
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -32,9 +22,49 @@
         4: (Wp = 1, Wn = Np/Nn)     ratio of sample counts normalized for positives (Np/Nn = [N/Nn]/[N/Np])
 */
 #define ESVM_WEIGHTS_MODE 2
-#define ESVM_WRITE_DATA_FILES 1
+
+/* ------------------------------------------------------------
+   Test options - Enable/Disable a specific test execution
+------------------------------------------------------------ */
+
+// Specify how the training samples are regrouped into training sequences
+//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
+//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+#define TEST_CHOKEPOINT_SEQUENCES_MODE 0
+// Employ synthetic image generation to increase the positive samples quantity for ESVM training
+#define TEST_USE_SYNTHETIC_GENERATION 0
+// Employ duplication of samples by specified amount to increase positive samples quantity in ESVM training
+#define TEST_DUPLICATE_COUNT 0
+// Employ gallery positives samples other than the currently trained one as additional counter-examples in ESVM training
+#define TEST_USE_OTHER_POSITIVES_AS_NEGATIVES 0
 /*
-    ESVM_READ_DATA_FILES:
+    TEST_FEATURES_NORMALIZATION_MODE:
+        0: no normalization applied
+        1: normalization per corresponding features in all positive/negative/probe vectors, and separately for each patch and descriptor
+        2: normalization per corresponding features in all positive/negative/probe vectors, and across all patches, separately for each descriptor
+        3: normalization across all features and all positive/negative/probe vectors, and across all patches, seperately for each descriptor
+*/
+#define TEST_FEATURES_NORMALIZATION_MODE 3
+// Validates image paths found and with expected format
+#define TEST_IMAGE_PATHS 1
+// Test functionality of patch extraction procedures
+#define TEST_IMAGE_PATCH_EXTRACTION 1
+// Test and display results of regular image preprocessing chain for reference still
+#define TEST_IMAGE_PREPROCESSING 1
+// Test functionality of 'mvector' generation, dimensions and general behaviour
+#define TEST_MULTI_LEVEL_VECTORS 1
+// Test functionality of all vector normalization functions
+#define TEST_NORMALIZATION 1
+// Test MATLAB code procedure (obsolete)
+#define TEST_ESVM_BASIC_FUNCTIONALITY 0
+// Test alternative MATLAB procedure (obsolete)
+#define TEST_ESVM_BASIC_STILL2VIDEO 0
+// Test functionality of samples file reading and parsing to feature vectors
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
+// Evaluate timing performance for reading and parsing a samples file
+#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+/*   
+    TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 
         (1)   0b00000001:   images + extract features (whole-image) 
         (2)   0b00000010:   images + extract features (patch-based)
@@ -51,24 +81,10 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define ESVM_READ_DATA_FILES 0b00000000
-
-/* ------------------------------------------------------------
-   Test options - Enable/Disable a specific test execution
------------------------------------------------------------- */
-
-// Specify how the training samples are regrouped into training sequences
-//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
-//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
-#define TEST_CHOKEPOINT_SEQUENCES_MODE 0
-#define TEST_IMAGE_PATHS 1
-#define TEST_IMAGE_PROCESSING 0
-#define TEST_MULTI_LEVEL_VECTORS 1
-#define TEST_NORMALIZATION 1
-#define TEST_ESVM_BASIC_FUNCTIONALITY 0
-#define TEST_ESVM_BASIC_STILL2VIDEO 0
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
-#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+#define TEST_READ_DATA_FILES 0b00000010
+// Outputs extracted feature vectors from loaded images to samples files
+#define TEST_WRITE_DATA_FILES 1
+// Test training and testing using TITAN reference images against ChokePoint negatives
 #define TEST_ESVM_TITAN 0
 /*
     TEST_ESVM_SAMAN:
@@ -78,7 +94,7 @@
         3: run with raw feature vectors obtained from pre-transposed images
         4: run with raw feature vectors obtained from 'FullChokePoint' test (pre-feature norm overall, post-fusion norm)
 */
-#define TEST_ESVM_SAMAN 4
+#define TEST_ESVM_SAMAN 0
 
 /* ------------------------------------------------------------
    Image paths
