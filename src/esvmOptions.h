@@ -81,7 +81,7 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define TEST_READ_DATA_FILES 0b00000010
+#define TEST_READ_DATA_FILES 0b00100000
 // Outputs extracted feature vectors from loaded images to samples files
 #define TEST_WRITE_DATA_FILES 1
 // Test training and testing using TITAN reference images against ChokePoint negatives

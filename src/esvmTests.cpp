@@ -225,6 +225,14 @@ int test_imagePreprocessing()
         logger << refImgName << " hog588-impl-DBL2-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDbl2[p]) << std::endl;
     }
 
+    // access (NOW PROPERLY ACCESSED DIRECTLY IN HOG_IMPL?)     ---  VALIDATED with fix of issue #2 in 'FeatureExtractorHOG' repo
+    std::vector<FeatureVector> hogPatchesAccess(nPatches);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        hogPatchesAccess[p] = hog.compute(refImgPatches[p]);
+        logger << refImgName << " hog588-impl-Access-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesAccess[p]) << std::endl;
+    }
+
 
     // employ 'text' image data without image reading            
     double *refImgRawData = new double[refImgSide*refImgSide]{
@@ -2351,7 +2359,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     // Paths and logging
     logstream logger(LOGGER_FILE);
         
-    ASSERT_LOG(((TEST_READ_DATA_FILES & 0b10000000) | (TEST_READ_DATA_FILES & 0b01110000)) == 0b10000000,
+    ASSERT_LOG(!(TEST_READ_DATA_FILES & 0b10000000) != !(TEST_READ_DATA_FILES & 0b01110000),
                "Invalid 'TEST_READ_DATA_FILES' options flag (128) cannot be used simultaneously with [(16),(32),(64)]"); 
     const std::string hogTypeFilesPreGen = (TEST_READ_DATA_FILES & 0b10000000) ? "-C++" : "-MATLAB";
     const std::string imageTypeFilesPreGen = (TEST_READ_DATA_FILES & 0b10110000) ? "" : "-transposed";
@@ -2405,7 +2413,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     logger << "Loading positive enroll image stills..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {
-        std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".jpg";
+        std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".tif";
         std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
         for (size_t p = 0; p < nPatches; p++)
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
@@ -2459,7 +2467,8 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     {
         std::string strPatch = std::to_string(p);
         std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
-        logger << "Loading pre-generated negative samples file for patch " << strPatch << "..." << std::endl;
+        logger << "Loading pre-generated negative samples file for patch " << strPatch << "..." << std::endl 
+               << "   Using file: '" << negativeTrainFile << "'" << std::endl;
         std::vector<FeatureVector> fvNegativeSamplesPatch;
         std::vector<int> negativeGroundTruths;
         tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativeSamplesPatch, negativeGroundTruths);
@@ -2506,8 +2515,9 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
             #endif/*TEST_READ_DATA_FILES & (16|128)*/
             #if TEST_READ_DATA_FILES & 0b01100000   // (32|64) use pre-generated probe sample file
-            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
-            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";            
+            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl
+                   << "   Using file: '" << probePreGenTestFile << "'" << std::endl;                  
             std::vector<double> scoresPreGen = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
             probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
             #endif/*TEST_READ_DATA_FILES & (32|64)*/
