@@ -38,6 +38,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
 int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
 int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);

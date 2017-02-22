@@ -81,7 +81,7 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define TEST_READ_DATA_FILES 0b00100000
+#define TEST_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
 #define TEST_WRITE_DATA_FILES 1
 // Test training and testing using TITAN reference images against ChokePoint negatives
@@ -103,6 +103,8 @@
 // Local
 const std::string roiVideoImagesPath = "../img/roi/";                               // Person ROI tracks obtained from face detection + tracking
 const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
+const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
+const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
 // ChokePoint
 const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
 const std::string roiChokePointCroppedFacePath = rootChokePointPath + "Cropped face images/";   // Path of extracted 96x96 ROI from all videos 

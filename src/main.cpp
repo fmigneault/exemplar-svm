@@ -185,6 +185,15 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' completed." << std::endl;
         #endif/*TEST_ESVM_SAMAN*/
 
+
+        err = test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
+        if (err)
+        {
+            logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure' failed (" 
+                   << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure' completed." << std::endl;        
     }
     catch(std::exception& ex)
     {

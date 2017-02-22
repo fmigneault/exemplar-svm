@@ -10,12 +10,6 @@
 #include "generic.h"
 #include "mvector.hpp"      // Multi-Dimension vectors
 
-
-//################################################### DEBUG HOG direct call
-#include "../FeatureExtractorHOG/src/HOG_impl.h"
-//#######################################################
-
-
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
@@ -75,8 +69,12 @@ int test_imagePaths()
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
+    ASSERT_LOG(bfs::is_directory(negativeSamplesDir), "Cannot find negative samples directory");
+    ASSERT_LOG(bfs::is_directory(testingSamplesDir),  "Cannot find testing probe samples directory");
     ASSERT_LOG(checkPathEndSlash(roiVideoImagesPath), "ROI directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(negativeSamplesDir), "Negative samples directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(testingSamplesDir), "Testing probe samples directory doesn't end with slash character");
     // ChokePoint
     ASSERT_LOG(bfs::is_directory(rootChokePointPath), "Cannot find ChokePoint root directory");
     ASSERT_LOG(bfs::is_directory(roiChokePointCroppedFacePath), "Cannot find ChokePoint cropped faces root directory");
@@ -2522,6 +2520,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
             #endif/*TEST_READ_DATA_FILES & (32|64)*/
         }
+
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
         
         /* ----------------------------------------------
@@ -2996,6 +2995,102 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     }
 
     #endif/*TEST_ESVM_SAMAN*/
+    return 0;
+}
+
+/**************************************************************************************************************************
+TEST DEFINITION
+
+    This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated 
+    negative samples files from the ChokePoint dataset (Sequence 1).  
+**************************************************************************************************************************/
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure()
+{
+    logstream logger(LOGGER_FILE);
+
+    // image and patch dimensions 
+    cv::Size imageSize(48, 48);
+    cv::Size patchCounts(3, 3);    
+    size_t nPatches = patchCounts.area();
+
+    // positive samples
+    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
+    size_t nPositives = positivesID.size();    
+    size_t dimsPositives[2]{ nPatches, nPositives };
+    xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
+
+    // negative samples    
+    size_t dimsNegatives[2]{ nPatches, 0 };                             // number of negatives unknown (loaded from file)
+    xstd::mvector<2, FeatureVector> negativeSamples(dimsNegatives);     // [patch][negative](FeatureVector)
+    
+    // probe samples
+    size_t dimsProbes[3]{ nPatches, nPositives, 0 };                    // number of probes unknown (loaded from file)
+    xstd::mvector<3, FeatureVector> probeSamples(dimsProbes);           // [patch][positive][probe](FeatureVector)    
+
+    // classification results    
+    size_t dimsResults[2]{ nPositives, 0 };                             // number of probes unknown (loaded from file)
+    xstd::mvector<3, double> scores(dimsProbes);                        // [patch][positive][probe](double)
+    xstd::mvector<2, double> classificationScores(dimsResults);         // [positive][probe](double)    
+    xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
+
+    // Exemplar-SVM
+    ESVM FileLoaderESVM;
+    xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM)    
+
+    // prepare hog feature extractor    
+    cv::Size blockSize(2, 2);
+    cv::Size blockStride(2, 2);
+    cv::Size cellSize(2, 2);
+    int nBins = 3;
+    FeatureExtractorHOG hog(imageSize, blockSize, blockStride, cellSize, nBins);
+
+    // load positive target still images and extract features
+    logger << "Loading positive image stills and extracting feature vectors..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {        
+        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
+        for (size_t p = 0; p < nPatches; p++)
+            positiveSamples[p][pos] = hog.compute(patches[p]);
+    }
+
+    // load negative samples from pre-generated files for training
+    logger << "Loading negative samples from files..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".data", negativeSamples[p]);    
+
+    // load probe samples from pre-generated files for testing
+    logger << "Loading probe samples from files..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".data",
+                                              probeSamples[p][pos], probeGroundTruths[pos]);  
+
+    // training
+    logger << "Training ESVM with positives and negatives..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
+
+    // testing, score fusion, normalization
+    logger << "Testing probe samples against enrolled targets..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++) {
+        for (size_t prb = 0; prb < probeSamples[0][pos].size(); prb++) {        // variable number of probes according to tested positive
+            for (size_t p = 0; p < nPatches; p++) {
+                scores[p][pos][prb] = esvm[p][pos].predict(probeSamples[p][pos][prb]);
+                classificationScores[pos][prb] += scores[p][pos][prb];
+            }            
+            classificationScores[pos][prb] /= (double)nPatches;
+        }        
+        classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);
+    }
+
+    // performance evaluation
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {
+        logger << "Performance evaluation results for target " << positivesID[pos] << ":" << std::endl;
+        eval_PerformanceClassificationScores(classificationScores[pos], probeGroundTruths[pos]);
+    }
+
     return 0;
 }
 

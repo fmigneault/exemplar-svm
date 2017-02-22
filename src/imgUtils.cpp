@@ -7,8 +7,11 @@ cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::Imre
 {
     std::cout << "Reading image: " << imagePath << std::endl;
     cv::Mat img = cv::imread(imagePath, readMode);
-    cv::imshow(windowName, img);
-    cv::waitKey(1); // allow window redraw
+    if (windowName != "")
+    {
+        cv::imshow(windowName, img);
+        cv::waitKey(1); // allow window redraw
+    }
     return img;
 }
 

@@ -13,6 +13,7 @@ ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> nega
         
     int posSamples = positives.size();
     int negSamples = negatives.size();
+    targetID = id;
 
     std::vector<int> targets(posSamples + negSamples, ESVM_NEGATIVE_CLASS);
     for (int s = 0; s < posSamples; s++)
@@ -25,8 +26,7 @@ ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> nega
     // train with penalty weights according to specified mode
     // greater penalty attributed to incorrectly classifying a positive vs the many negatives 
     std::vector<double> weights = calcClassWeightsFromMode(posSamples, negSamples);
-    trainEnsembleModel(samples, targets, weights);
-    targetID = id;
+    trainEnsembleModel(samples, targets, weights);    
 }
 
 /*
@@ -42,11 +42,11 @@ ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
 
     int Np = std::count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
     int Nn = std::count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
+    targetID = id;
 
     // train using loaded samples
     std::vector<double> weights = calcClassWeightsFromMode(Np, Nn);
-    trainEnsembleModel(samples, targets, weights);
-    targetID = id;
+    trainEnsembleModel(samples, targets, weights);    
 }
 
 /* 
@@ -166,6 +166,15 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
 
     sampleFeatureVectors = samples;
     targetOutputs = targets;
+}
+
+/*
+    Reads feature vectors from a LIBSVM formatted data sample file
+*/
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors)
+{
+    std::vector<int> dummyOutputTargets;
+    readSampleDataFile(filePath, sampleFeatureVectors, dummyOutputTargets);
 }
 
 /*

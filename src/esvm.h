@@ -14,8 +14,9 @@ public:
     inline ESVM() {}
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
-    ESVM(svm_model* trainedModel, std::string id = "");
+    ESVM(svm_model* trainedModel, std::string id = "");   
     void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
+    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors);
     bool saveModelFile(std::string modelFilePath);
     double predict(FeatureVector probeSample);
     std::vector<double> predict(std::vector<FeatureVector> probeSamples);
