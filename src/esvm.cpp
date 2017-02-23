@@ -92,9 +92,40 @@ bool ESVM::saveModelFile(std::string modelFilePath)
 }
 
 /*
+    Reads feature vectors from a data sample file
+*/
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = BINARY)
+{
+    std::vector<int> dummyOutputTargets;
+    readSampleDataFile(filePath, sampleFeatureVectors, dummyOutputTargets, format);
+}
+
+/*
+    Reads feature vectors and corresponding target output class from a data sample file
+*/
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
+                              std::vector<int>& targetOutputs, FileFormat format = BINARY)
+{
+    if (format == BINARY)
+        readSampleDataFile_binary(filePath, sampleFeatureVectors, targetOutputs);
+    else if (format == LIBSVM)
+        readSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
+    else
+        throw std::runtime_error("Unknown file format");
+}
+
+/*
+    Reads feature vectors from a binary data sample file
+*/
+void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+{
+    
+}
+
+/*
     Reads feature vectors and corresponding target output class from a LIBSVM formatted data sample file
 */
-void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
     std::ifstream trainingFile(filePath);
     ASSERT_THROW(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
@@ -169,12 +200,28 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
 }
 
 /*
-    Reads feature vectors from a LIBSVM formatted data sample file
+    Writes feature vectors and corresponding target output class to a data sample file
 */
-void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors)
+void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                               std::vector<int>& targetOutputs, FileFormat format = BINARY)
 {
-    std::vector<int> dummyOutputTargets;
-    readSampleDataFile(filePath, sampleFeatureVectors, dummyOutputTargets);
+    
+}
+
+/*
+    Writes feature vectors and corresponding target output class to a binary data sample file
+*/
+static void writeSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+{
+    
+}
+
+/*
+    Writes feature vectors and corresponding target output class to a LIBSVM formatted data sample file
+*/
+static void writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+{
+    
 }
 
 /*
