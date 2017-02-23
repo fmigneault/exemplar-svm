@@ -8,7 +8,8 @@
 #include "logger.h"
 #include "imgUtils.h"
 #include "generic.h"
-#include "mvector.hpp"      // Multi-Dimension vectors
+
+#include <iomanip>
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -573,6 +574,50 @@ int test_normalizationFunctions()
     ASSERT_LOG(s1neg == 0, "Negative class score should be normalized as minimum similarity");
     ASSERT_LOG(s0mid == 0.5, "Indifferent class score should be normalized as middle similarity");
     ASSERT_LOG(sprob == 0.75, "Half-probable positive class score should be normalized as 3/4 simiarity");
+
+    return 0;
+}
+
+int test_performanceEvaluationFunctions()
+{    
+    // test basic confusion matrix operations
+    ASSERT_LOG(calcTPR(2250, 250) == 0.9,  "Invalid calculation result for TPR");
+    ASSERT_LOG(calcSPC(100, 900)  == 0.1,  "Invalid calculation result for SPC");
+    ASSERT_LOG(calcFPR(1500, 500) == 0.75, "Invalid calculation result for FPR");
+    ASSERT_LOG(calcPPV(2250, 1500) == 0.6, "Invalid calculation result for PPV");
+    ASSERT_LOG(calcTNR(500, 1500) == 0.25, "Invalid calculation result for TNR");
+    ASSERT_LOG(calcACC(2450, 650, 1650, 250) == 0.62, "Invalid calculation result for ACC");
+
+    // test area under curve calculation
+    std::vector<double> FPR = { 0.000, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
+    std::vector<double> TPR = { 0.900, 0.950, 0.975, 0.990, 0.990, 0.990, 0.990, 0.990, 0.990, 0.995, 1.000 };
+    double AUC_valid = 0.98100;         // AUC [0,1] of values
+    double pAUC20_valid = 0.18875;      // pAUC(20%) of values, lands perfectly on an existing FPR           
+    double pAUC35_valid = 0.33650;      // pAUC(35%) of values, lands between existing FPRs, interpolation applied   
+    double AUC_result = calcAUC(FPR, TPR);
+    double pAUC20_result = calcAUC(FPR, TPR, 0.20);
+    double pAUC35_result = calcAUC(FPR, TPR, 0.35);
+    ASSERT_LOG(doubleAlmostEquals(AUC_valid, AUC_result), "AUC calculation should return expected value");
+    ASSERT_LOG(doubleAlmostEquals(pAUC20_valid, pAUC20_result), "pAUC(20%) calculation should return expected value");
+    ASSERT_LOG(doubleAlmostEquals(pAUC35_valid, pAUC35_result), "pAUC(35%) calculation should return expected value");
+    
+    // test to display results (visual inspection in console / logger)
+    // should display like the table below with corresponding valid values
+    /*
+        Target IDs |      AUC      |   pAUC(10%)   |   pAUC(20%)   |      AUPR     
+        ---------------------------------------------------------------------------
+        TEST       |             1 |           0.1 |           0.2 |           0.8
+    */
+    logstream logger(LOGGER_FILE);
+    xstd::mvector<2, double> scores;
+    xstd::mvector<2, int> groundTruths;
+    std::vector<std::string> targets = { "TEST" };
+    std::vector<double> targetScores{ 0.9, 0.85, 0.92, 0.89, 0.87, 0.63, 0.42, 0.56 };
+    std::vector<int> targetOutputs{ 1, 1, 1, 1, 1, -1, -1, -1 };
+    scores.push_back(targetScores);
+    groundTruths.push_back(targetOutputs);
+    logger << "Displaying results table from dummy classification scores:" << std::endl;
+    eval_PerformanceClassificationSummary(targets, scores, groundTruths);
 
     return 0;
 }
@@ -3043,22 +3088,24 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     cv::Size cellSize(2, 2);
     int nBins = 3;
     FeatureExtractorHOG hog(imageSize, blockSize, blockStride, cellSize, nBins);
-
-    // load positive target still images and extract features
-    logger << "Loading positive image stills and extracting feature vectors..." << std::endl;
+    double hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    
+    // load positive target still images, extract features and normalize
+    logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = hog.compute(patches[p]);
+            positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
     }
 
-    // load negative samples from pre-generated files for training
+    // load negative samples from pre-generated files for training (samples in files are pre-normalized)
     logger << "Loading negative samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".data", negativeSamples[p]);    
 
-    // load probe samples from pre-generated files for testing
+    // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
@@ -3073,23 +3120,31 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 
     // testing, score fusion, normalization
     logger << "Testing probe samples against enrolled targets..." << std::endl;
-    for (size_t pos = 0; pos < nPositives; pos++) {
-        for (size_t prb = 0; prb < probeSamples[0][pos].size(); prb++) {        // variable number of probes according to tested positive
-            for (size_t p = 0; p < nPatches; p++) {
-                scores[p][pos][prb] = esvm[p][pos].predict(probeSamples[p][pos][prb]);
-                classificationScores[pos][prb] += scores[p][pos][prb];
-            }            
-            classificationScores[pos][prb] /= (double)nPatches;
-        }        
-        classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);
+    for (size_t pos = 0; pos < nPositives; pos++) 
+    {
+        int nProbes = probeSamples[0][pos].size();      // variable number of probes according to tested positive
+        classificationScores[pos] = xstd::mvector<1, double>(nProbes, 0);
+        for (size_t prb = 0; prb < nProbes; prb++)
+        {            
+            for (size_t p = 0; p < nPatches; p++)
+            {
+                scores[p][pos].push_back( esvm[p][pos].predict(probeSamples[p][pos][prb]) );
+                classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
+            }
+            classificationScores[pos][prb] /= (double)nPatches;                                 // average score fusion
+        }
+        classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
     }
 
     // performance evaluation
+
     for (size_t pos = 0; pos < nPositives; pos++)
     {
         logger << "Performance evaluation results for target " << positivesID[pos] << ":" << std::endl;
         eval_PerformanceClassificationScores(classificationScores[pos], probeGroundTruths[pos]);
     }
+    logger << "Summary of performance evaluation results:" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, classificationScores, probeGroundTruths);
 
     return 0;
 }
@@ -3099,27 +3154,98 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths)
 {
+    std::vector<double> FPR, TPR;
+    eval_PerformanceClassificationScores(normScores, probeGroundTruths, FPR, TPR);
+}
+
+/*
+    Evaluates various performance mesures of classification scores according to ground truths and return (FPR,TPR) results
+*/
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths,
+                                          std::vector<double>& FPR, std::vector<double>& TPR)
+{
     ASSERT_LOG(normScores.size() == probeGroundTruths.size(), "Number of classification scores and ground truth must match");
 
     logstream logger(LOGGER_FILE);
 
-    // Evaluate results
-    std::vector<double> TPR, FPR;
+    // Evaluate results    
     int steps = 100;
+    FPR = std::vector<double>(steps + 1, 0);
+    TPR = std::vector<double>(steps + 1, 0);
     for (int i = 0; i <= steps; i++)
     {
         int FP, FN, TP, TN;
         double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
         countConfusionMatrix(normScores, probeGroundTruths, T, &TP, &TN, &FP, &FN);
-        TPR.push_back(calcTPR(TP, FN));
-        FPR.push_back(calcFPR(FP, TN));
+        TPR[i] = calcTPR(TP, FN);
+        FPR[i] = calcFPR(FP, TN);
     }
-    double AUC = calcAUC(TPR, FPR);
-    double pAUC10 = calcAUC(TPR, FPR, 0.10);
-    double pAUC20 = calcAUC(TPR, FPR, 0.20);
+    double AUC = calcAUC(FPR, TPR);
+    double pAUC10 = calcAUC(FPR, TPR, 0.10);
+    double pAUC20 = calcAUC(FPR, TPR, 0.20);
     for (size_t j = 0; j < FPR.size(); j++)
         logger << "(FPR,TPR)[" << j << "] = " << FPR[j] << "," << TPR[j] << std::endl;
     logger << "AUC = " << AUC << std::endl              // Area Under ROC Curve
            << "pAUC(10%) = " << pAUC10 << std::endl     // Partial Area Under ROC Curve (FPR=10%)
            << "pAUC(20%) = " << pAUC20 << std::endl;    // Partial Area Under ROC Curve (FPR=20%)
+}
+
+/*
+    Makes a summary evaluation and display of multiple targets using their corresponding (FPR,TPR) values.
+
+    Format Requirements:
+
+        - positivesID:          matches the first dimension of the results multi-vectors
+        - normScores:           2D-vector indexed as [target][probe] scores
+        - probeGroundTruths:    2D-vector indexed as [target][probe] ground truths matching scores indexes
+*/
+void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID, 
+                                           xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths)
+{
+    // check targets
+    size_t nTargets = positivesID.size();
+    ASSERT_LOG(nTargets > 0, "Cannot make performance classification summary without target IDs");
+    ASSERT_LOG(nTargets == normScores.size(), "Number of target IDs must match number of scores (1st dimension)");
+    ASSERT_LOG(nTargets == probeGroundTruths.size(), "Number of target IDs must match number of ground truths (1st dimension)");
+
+    // evaluate results    
+    int steps = 100;
+    size_t dimsSummary[2]{ nTargets, 4 };                   
+    size_t dimsThresholds[2]{ nTargets, steps + 1 };        
+    xstd::mvector<2, double> summaryResults(dimsSummary);   // [target][0: AUC | 1: pAUC(10%) | 2: pAUC(20%) | 3: AUPR](double)
+    xstd::mvector<2, ConfusionMatrix> CM(dimsThresholds);   // [target][threshold](ConfusionMatrix)
+    for (size_t pos = 0; pos < nTargets; pos++)
+    {
+        for (int i = 0; i <= steps; i++)
+        {
+            ConfusionMatrix cm;
+            double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
+            countConfusionMatrix(normScores[pos], probeGroundTruths[pos], T, &cm);
+            CM[pos][i] = cm;
+        }
+        summaryResults[pos][0] = calcAUC(CM[pos]);          // AUC
+        summaryResults[pos][1] = calcAUC(CM[pos], 0.10);    // pAUC(10%)
+        summaryResults[pos][2] = calcAUC(CM[pos], 0.20);    // pAUC(20%)
+        summaryResults[pos][3] = calcAUPR(CM[pos]);         // AUPR
+    }
+
+    // display results
+    logstream logger(LOGGER_FILE);
+    std::string header = "Target IDs";
+    std::vector<std::string> cols = { "      AUC      ", "   pAUC(10%)   ", "   pAUC(20%)   ", "      AUPR     " };
+    size_t targetLen = header.size();    
+    for (size_t pos = 0; pos < nTargets; pos++)
+        targetLen = std::max(positivesID[pos].size(), targetLen);
+    targetLen++;
+    header += std::string(targetLen - header.size(), ' ');
+    for (size_t c = 0; c < cols.size(); c++)
+        header += "|" + cols[c];
+    logger << header << std::endl << std::string(header.size(), '-') << std::endl;    
+    for (size_t pos = 0; pos < nTargets; pos++)
+    {
+        logger << positivesID[pos] << std::string(targetLen - positivesID[pos].size() - 1, ' ');
+        for (size_t c = 0; c < cols.size(); c++)
+            logger << " |" << std::setw(cols[c].size() - 1) << summaryResults[pos][c];        
+        logger << std::endl;
+    }
 }

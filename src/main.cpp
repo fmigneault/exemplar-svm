@@ -10,8 +10,8 @@ int main(int argc, char* argv[])
 {
     int err;
     logstream logger(LOGGER_FILE);
-    logger << "=================================================================" << std::endl
-           << "Starting new Exemplar-SVM test execution " << currentTimeStamp() << std::endl;
+    std::string header = "Starting new Exemplar-SVM test execution " + currentTimeStamp();
+    logger << std::string(header.size(), '=') << std::endl << header << std::endl;
     test_outputOptions();
     try
     {
@@ -59,6 +59,16 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_normalizationFunctions' completed." << std::endl;
         #endif/*TEST_NORMALIZATION*/
+
+        #if TEST_PERF_EVAL_FUNCTIONS
+        err = test_performanceEvaluationFunctions();
+        if (err)
+        {
+            logger << "Test 'test_performanceEvaluationFunctions' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_performanceEvaluationFunctions' completed." << std::endl;
+        #endif/*TEST_PERF_EVAL_FUNCTIONS*/        
 
         #if TEST_ESVM_BASIC_FUNCTIONALITY
         err = test_runBasicExemplarSvmFunctionalities();

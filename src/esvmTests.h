@@ -2,6 +2,7 @@
 #define ESVM_TESTS_H
 
 #include "opencv2/opencv.hpp"
+#include "mvector.hpp"      // Multi-Dimension vectors
 
 /* ChokePoint Dataset:
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, 3 cameras = 48 video dirs (with Ground Truths, one by one individuals pass)
@@ -27,6 +28,7 @@ int test_imagePatchExtraction();
 int test_imagePreprocessing();
 int test_multiLevelVectors();
 int test_normalizationFunctions();
+int test_performanceEvaluationFunctions();
 int test_runBasicExemplarSvmFunctionalities();
 int test_runBasicExemplarSvmClassification();
 int test_runBasicExemplarSvmReadSampleFile();
@@ -42,5 +44,9 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths, 
+                                          std::vector<double>& FPR, std::vector<double>& TPR);
+void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
+                                           xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 
 #endif/*ESVM_TESTS_H*/

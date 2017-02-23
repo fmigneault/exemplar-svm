@@ -50,11 +50,13 @@
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
-#define TEST_IMAGE_PREPROCESSING 1
+#define TEST_IMAGE_PREPROCESSING 0
 // Test functionality of 'mvector' generation, dimensions and general behaviour
 #define TEST_MULTI_LEVEL_VECTORS 1
 // Test functionality of all vector normalization functions
 #define TEST_NORMALIZATION 1
+// Test functionality of performance evaluation functions
+#define TEST_PERF_EVAL_FUNCTIONS 1
 // Test MATLAB code procedure (obsolete)
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test alternative MATLAB procedure (obsolete)
