@@ -102,13 +102,20 @@ int main(int argc, char* argv[])
         #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
 
         #if TEST_ESVM_READ_SAMPLES_FILE_PARSER
-        err = test_runBasicExemplarSvmReadSampleFile();
+        err = test_runBasicExemplarSvmReadSampleFile_libsvm();
         if (err)
         {
-            logger << "Test 'test_runBasicExemplarSvmReadSampleFile' failed (" << std::to_string(err) << ")." << std::endl;
+            logger << "Test 'test_runBasicExemplarSvmReadSampleFile_libsvm' failed (" << std::to_string(err) << ")." << std::endl;
             return err;
         }
-        logger << "Test 'test_runBasicExemplarSvmReadSampleFile' completed." << std::endl;
+        logger << "Test 'test_runBasicExemplarSvmReadSampleFile_libsvm' completed." << std::endl;
+        err = test_runBasicExemplarSvmReadSampleFile_binary();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmReadSampleFile_binary' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmReadSampleFile_binary' completed." << std::endl;
         #endif/*TEST_ESVM_READ_SAMPLE_FILE*/
 
         #if TEST_ESVM_READ_SAMPLES_FILE_TIMING

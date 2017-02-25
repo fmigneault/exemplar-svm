@@ -1,6 +1,7 @@
 #include "esvm.h"
 #include "esvmOptions.h"
 #include "generic.h"
+
 #include <fstream>
 #include <sstream>
 
@@ -94,7 +95,7 @@ bool ESVM::saveModelFile(std::string modelFilePath)
 /*
     Reads feature vectors from a data sample file
 */
-void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = BINARY)
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format)
 {
     std::vector<int> dummyOutputTargets;
     readSampleDataFile(filePath, sampleFeatureVectors, dummyOutputTargets, format);
@@ -104,7 +105,7 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
     Reads feature vectors and corresponding target output class from a data sample file
 */
 void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
-                              std::vector<int>& targetOutputs, FileFormat format = BINARY)
+                              std::vector<int>& targetOutputs, FileFormat format)
 {
     if (format == BINARY)
         readSampleDataFile_binary(filePath, sampleFeatureVectors, targetOutputs);
@@ -119,7 +120,41 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
 */
 void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
+    /* see writing function for expected format */
     
+    // check for opened file
+    std::ifstream samplesFile(filePath, std::ios::in | std::ios::binary);
+    ASSERT_THROW(samplesFile.is_open(), "Failed to open the specified samples data binary file: '" + filePath + "'");
+    
+    // check for header
+    std::string headerStr = "ESVM bin samples";
+    const char *headerChar = headerStr.c_str();    
+    int headerLength = headerStr.size();    
+    char *headerCheck = new char[headerLength + 1]; // +1 for the terminating '\0'
+    samplesFile.read(headerCheck, headerLength);
+    headerCheck[headerLength] = '\0';               // avoids comparing different strings because '\0' is not found
+    ASSERT_THROW(std::string(headerChar) == std::string(headerCheck), "Expected binary samples data file header was not found");
+    
+    // check for samples and feature counts
+    int nSamples = 0;
+    int nFeatures = 0;
+    samplesFile.read(reinterpret_cast<char*>(&nSamples), sizeof(nSamples));
+    samplesFile.read(reinterpret_cast<char*>(&nFeatures), sizeof(nFeatures));
+    ASSERT_THROW(nSamples > 0, "Read number of samples should be greater than zero");
+    ASSERT_THROW(nFeatures > 0, "Read number of features should be greater than zero");
+
+    // retrieve sample features and target outputs
+    sampleFeatureVectors = std::vector<FeatureVector>(nSamples);
+    targetOutputs = std::vector<int>(nSamples);
+    samplesFile.read(reinterpret_cast<char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
+    for (int s = 0; s < nSamples; s++)
+    {
+        sampleFeatureVectors[s] = FeatureVector(nFeatures);        
+        samplesFile.read(reinterpret_cast<char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));
+        ASSERT_THROW(samplesFile.good(), "Invalid file stream status when reading samples");
+    }
+        
+    samplesFile.close();
 }
 
 /*
@@ -203,23 +238,68 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
     Writes feature vectors and corresponding target output class to a data sample file
 */
 void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
-                               std::vector<int>& targetOutputs, FileFormat format = BINARY)
+                               std::vector<int>& targetOutputs, FileFormat format)
 {
-    
+    ASSERT_THROW(sampleFeatureVectors.size() > 0, "Number of samples must be greater than zero");
+    ASSERT_THROW(sampleFeatureVectors.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
+
+    int nSamples = sampleFeatureVectors.size();
+    int nFeatures = sampleFeatureVectors[0].size();
+    for (int s = 0; s < nSamples; s++)
+        ASSERT_THROW(sampleFeatureVectors[s].size() == nFeatures, "Inconsistent number of features in samples");
+
+    if (format == BINARY)
+        writeSampleDataFile_binary(filePath, sampleFeatureVectors, targetOutputs);
+    else if (format == LIBSVM)
+        writeSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
+    else
+        throw std::runtime_error("Unknown file format");
 }
 
 /*
     Writes feature vectors and corresponding target output class to a binary data sample file
 */
-static void writeSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
+    /*
+    Expected data format and order:    <all reinterpreted as char*>
+
+        TYPE        QUANTITY                VALUE
+        ========================================
+        (char)   |  20                     | 'ESVM bin sample data'
+        (int)    |  1                      | nSamples
+        (int)    |  1                      | nFeatures
+        (int)    |  nSamples               | Targets
+        (double) |  nSamples * nFeatures   | Samples Features
+    */
+
+    // check opened file
+    std::ofstream samplesFile(filePath, std::ios::out | std::ios::binary);
+    ASSERT_THROW(samplesFile.is_open(), "Failed to open the specified samples data binary file: '" + filePath + "'");
     
+    // get sample and feature counts (already checked valid dimensions from calling function)
+    int nSamples = sampleFeatureVectors.size();
+    int nFeatures = sampleFeatureVectors[0].size();
+
+    // write header and counts for later reading
+    std::string headerStr = "ESVM bin samples";
+    const char *headerChar = headerStr.c_str();
+    samplesFile.write(headerChar, headerStr.size());
+    samplesFile.write(reinterpret_cast<const char*>(&nSamples), sizeof(nSamples));
+    samplesFile.write(reinterpret_cast<const char*>(&nFeatures), sizeof(nFeatures));
+
+    // write target outputs and sample features
+    samplesFile.write(reinterpret_cast<const char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
+    for (int s = 0; s < nSamples; s++)    
+        samplesFile.write(reinterpret_cast<const char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));    
+
+    samplesFile.close();
 }
 
 /*
     Writes feature vectors and corresponding target output class to a LIBSVM formatted data sample file
 */
-static void writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
+void ESVM::writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
     
 }

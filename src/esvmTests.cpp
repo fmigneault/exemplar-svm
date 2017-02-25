@@ -772,8 +772,8 @@ int test_runBasicExemplarSvmClassification(void)
     // training ESVM with samples (XOR)
     // ------------------------------------------------------------------------------------------------------------------------ 
     logger << "Training Exemplar-SVM with XOR samples..." << std::endl;
-    std::vector < FeatureVector > positives(20);
-    std::vector < FeatureVector > negatives(20);  
+    std::vector<FeatureVector> positives(20);
+    std::vector<FeatureVector> negatives(20);  
     std::srand(std::time(0));
     for (int i = 0; i < 10; i++)
     {
@@ -803,7 +803,7 @@ int test_runBasicExemplarSvmClassification(void)
     // testing ESVM
     // ------------------------------------------------------------------------------------------------------------------------  
     logger << "Testing Exemplar-SVM classification results..." << std::endl;
-    std::vector< FeatureVector > samples(6);
+    std::vector<FeatureVector> samples(6);
     samples[0] = { 0, 0 };          
     samples[1] = { 0, 1 };
     samples[2] = { 0.75, 0 };
@@ -819,8 +819,8 @@ int test_runBasicExemplarSvmClassification(void)
     return 0;
 }
 
-// Tests sample file reading functionality of ESVM (index and value parsing)
-int test_runBasicExemplarSvmReadSampleFile()
+// Tests LIBSVM format sample file reading functionality of ESVM (index and value parsing)
+int test_runBasicExemplarSvmReadSampleFile_libsvm()
 {
     logstream logger(LOGGER_FILE);
     logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
@@ -828,15 +828,15 @@ int test_runBasicExemplarSvmReadSampleFile()
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-file/";
     bfs::create_directory(testDir);
-    std::string validSampleFileName1 = testDir + "test_valid-index-samples1.data";  // for testing normal indexed features
-    std::string validSampleFileName2 = testDir + "test_valid-index-samples2.data";  // for testing sparse indexed features
-    std::string validSampleFileName3 = testDir + "test_valid-index-samples3.data";  // for testing ending index producing same feature sizes
-    std::string validSampleFileName4 = testDir + "test_valid-index-samples4.data";  // for testing omitted ending index
-    std::string wrongSampleFileName1 = testDir + "test_wrong-index-samples1.data";  // for testing non ascending indexes
-    std::string wrongSampleFileName2 = testDir + "test_wrong-index-samples2.data";  // for testing repeating indexes
-    std::string wrongSampleFileName3 = testDir + "test_wrong-index-samples3.data";  // for testing non matching sample sizes
-    std::string wrongSampleFileName4 = testDir + "test_wrong-index-samples4.data";  // for testing not found index:value separator
-    std::string wrongSampleFileName5 = testDir + "test_wrong-index-samples5.data";  // for testing missing target output class value    
+    std::string validSampleFileName1 = testDir + "test_valid-samples1.data";  // for testing normal indexed features
+    std::string validSampleFileName2 = testDir + "test_valid-samples2.data";  // for testing sparse indexed features
+    std::string validSampleFileName3 = testDir + "test_valid-samples3.data";  // for testing ending index producing same feature sizes
+    std::string validSampleFileName4 = testDir + "test_valid-samples4.data";  // for testing omitted ending index
+    std::string wrongSampleFileName1 = testDir + "test_wrong-samples1.data";  // for testing non ascending indexes
+    std::string wrongSampleFileName2 = testDir + "test_wrong-samples2.data";  // for testing repeating indexes
+    std::string wrongSampleFileName3 = testDir + "test_wrong-samples3.data";  // for testing non matching sample sizes
+    std::string wrongSampleFileName4 = testDir + "test_wrong-samples4.data";  // for testing not found index:value separator
+    std::string wrongSampleFileName5 = testDir + "test_wrong-samples5.data";  // for testing missing target output class value    
     std::ofstream validSampleFile1(validSampleFileName1);
     std::ofstream validSampleFile2(validSampleFileName2);
     std::ofstream validSampleFile3(validSampleFileName3);
@@ -904,6 +904,7 @@ int test_runBasicExemplarSvmReadSampleFile()
     {
         logger << "Error: Valid normal indexed samples and file reading should not have generated an exception." << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
         return -1;
     }
     try
@@ -923,6 +924,7 @@ int test_runBasicExemplarSvmReadSampleFile()
     {
         logger << "Error: Valid sparse indexes samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
         return -2;
     }
     try
@@ -946,6 +948,7 @@ int test_runBasicExemplarSvmReadSampleFile()
     {
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
         return -3;
     }
     try
@@ -973,6 +976,7 @@ int test_runBasicExemplarSvmReadSampleFile()
     {
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
         return -4;
     }
     try
@@ -1018,7 +1022,81 @@ int test_runBasicExemplarSvmReadSampleFile()
 
     // delete test directory and sample files
     bfs::remove_all(testDir);
+    return 0;
+}
 
+// Tests binary sample file reading functionality of ESVM
+int test_runBasicExemplarSvmReadSampleFile_binary()
+{
+    logstream logger(LOGGER_FILE);
+    logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
+
+    // create test sample files inside test directory
+    std::string testDir = "test_sample-read-binary-file/";
+    bfs::create_directory(testDir);
+    std::string validSampleFileName1 = testDir + "test_valid-samples1.data";  // for testing valid binary formatted file
+    std::string wrongSampleFileName1 = testDir + "test_wrong-samples1.data";  // for testing missing header
+    std::string wrongSampleFileName2 = testDir + "test_wrong-samples2.data";  // for testing invalid header
+    std::string wrongSampleFileName3 = testDir + "test_wrong-samples3.data";  // for testing invalid number of samples
+    std::string wrongSampleFileName4 = testDir + "test_wrong-samples4.data";  // for testing invalid number of features
+    std::string wrongSampleFileName5 = testDir + "test_wrong-samples5.data";  // for testing missing target output class value
+
+    // fill test sample files
+    ESVM esvm;
+    FeatureVector v1 = { 0.999, 1.888, 2.777, 3.666, 4.555 }, v2 = { 5.444, 6.333, 7.222, 8.111, 9.000 };
+    std::vector<FeatureVector> validSamples = { v1, v2 };
+    std::vector<int> validTargetOutputs = { ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+    esvm.writeSampleDataFile(validSampleFileName1, validSamples, validTargetOutputs, BINARY);
+
+    /*=====================
+    TODO
+    file not found
+    missing/wrong header
+    <= 0 n samples/features
+    invalid reading (fail status ex: not enough samples compared to nSamples)
+    valid reading
+    =====================*/
+
+    std::vector<FeatureVector> readSamples;
+    std::vector<int> readTargetOutputs;
+
+    try
+    {
+        // test reading valid samples encoded in binary file
+        esvm.readSampleDataFile(validSampleFileName1, readSamples, readTargetOutputs, BINARY);
+        ASSERT_LOG(readSamples.size() == validSamples.size(), "Number of samples read from binary file should match original");
+        ASSERT_LOG(readSamples[0].size() == validSamples[0].size(), "Number of features read from binary file should match original");
+        ASSERT_LOG(readTargetOutputs.size() == validTargetOutputs.size(), "Number of target outputs read from binary file should match original");
+        ASSERT_LOG(readSamples[0][0] == validSamples[0][0], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[0][1] == validSamples[0][1], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[0][2] == validSamples[0][2], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[0][3] == validSamples[0][3], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[0][4] == validSamples[0][4], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[1][0] == validSamples[1][0], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[1][1] == validSamples[1][1], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[1][2] == validSamples[1][2], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[1][3] == validSamples[1][3], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readSamples[1][4] == validSamples[1][4], "Sample feature value from binary file should match the original one");
+        ASSERT_LOG(readTargetOutputs[0] == validTargetOutputs[0], "Target output value from binary file should match the original one");
+        ASSERT_LOG(readTargetOutputs[1] == validTargetOutputs[1], "Target output value from binary file should match the original one");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Error: Valid binary samples file reading should not have generated an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
+        return -1;
+    }
+    try
+    {
+        // test wrong reading file format
+        esvm.readSampleDataFile(wrongSampleFileName5, readSamples, readTargetOutputs, LIBSVM);
+        logger << "Error: Reading binary formatted file as LIBSVM format should result in parsing failure." << std::endl;
+        return -2;
+    }
+    catch (...) {}
+
+    bfs::remove_all(testDir);
     return 0;
 }
 
@@ -3104,6 +3182,12 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     logger << "Loading negative samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".data", negativeSamples[p]);    
+        
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        std::vector<int> dummyOutput(negativeSamples[p].size(), ESVM_NEGATIVE_CLASS);
+        FileLoaderESVM.writeSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", negativeSamples[p], dummyOutput, BINARY);
+    }
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
@@ -3111,6 +3195,11 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
         for (size_t pos = 0; pos < nPositives; pos++)
             FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".data",
                                               probeSamples[p][pos], probeGroundTruths[pos]);  
+
+        for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            FileLoaderESVM.writeSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".bin",
+                                              probeSamples[p][pos], probeGroundTruths[pos], BINARY);  
 
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
