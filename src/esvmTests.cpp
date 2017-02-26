@@ -3287,18 +3287,16 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     logger << "Testing probe samples against enrolled targets..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++) 
     {
-        int nProbes = probeSamples[0][pos].size();      // variable number of probes according to tested positive
-        classificationScores[pos] = xstd::mvector<1, double>(nProbes);
-        for (size_t p = 0; p < nPatches; p++)        
-        {   
-            scores[p][pos] = std::vector<double>(nProbes);
-            for (size_t prb = 0; prb < nProbes; prb++)
-            {
-                scores[p][pos][prb] = esvm[p][pos].predict(probeSamples[p][pos][prb]);
+        size_t nProbes = probeSamples[0][pos].size();   // variable number of probes according to tested positive
+        classificationScores[pos] = xstd::mvector<1, double>(nProbes, 0.0);
+        for (size_t prb = 0; prb < nProbes; prb++)
+        {            
+            for (size_t p = 0; p < nPatches; p++)
+            {                
+                scores[p][pos].push_back( esvm[p][pos].predict(probeSamples[p][pos][prb]) );
                 classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
             }
-            for (size_t prb = 0; prb < nProbes; prb++)
-                classificationScores[pos][prb] /= (double)nPatches;                             // average score fusion
+            classificationScores[pos][prb] /= (double)nPatches;                                 // average score fusion
         }
         classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
     }

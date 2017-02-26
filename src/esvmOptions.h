@@ -105,7 +105,7 @@
         1: run with LIBSVM formatted sample files
         2: run with binary formatted sample files
 */
-#define TEST_ESVM_WORKING_PROCEDURE 1
+#define TEST_ESVM_WORKING_PROCEDURE 2
 
 /* ------------------------------------------------------------
    Image paths
