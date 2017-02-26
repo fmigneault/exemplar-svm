@@ -1100,6 +1100,80 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     return 0;
 }
 
+// Validation of identical sample features from LIBSVM / binary formatted files
+int test_runBasicExemplarSvmReadSampleFile_compare()
+{
+    logstream logger(LOGGER_FILE);
+    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
+    ESVM esvmFileLoader;
+    size_t nPatches = 9;
+    size_t nPositives = positivesID.size();
+
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        std::vector<FeatureVector> samplesLIBSVM, samplesBinary;
+        std::vector<int> targetOutputsLIBSVM, targetOutputsBinary;
+        std::string strPatch = std::to_string(p);
+
+        // load negatives samples and target ouputs from binary/LIBSVM formatted files        
+        std::string negativeSamplesPatchFile = negativeSamplesDir + "negatives-hog-patch" + strPatch;
+        std::string currentNegativePatch = " (negatives, patch " + strPatch + ")";
+        logger << "Loading samples files (binary/LIBSVM) for comparison" << currentNegativePatch << "..." << std::endl;
+        esvmFileLoader.readSampleDataFile(negativeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
+        esvmFileLoader.readSampleDataFile(negativeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+
+        // compare negative patch samples and target outputs
+        logger << "Comparing samples files (binary/LIBSVM) data" << currentNegativePatch << "..." << std::endl;
+        size_t nNegatives = samplesLIBSVM.size();
+        size_t nNegativeFeatures = samplesLIBSVM[0].size();        
+        ASSERT_LOG(nNegatives == samplesBinary.size(), "Inconsistent LIBSVM and binary samples count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == targetOutputsBinary.size(), "Inconsistent binary target outputs count" + currentNegativePatch);
+        for (size_t neg = 0; neg < nNegatives; neg++)
+        {            
+            currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ")";
+            ASSERT_LOG(nNegativeFeatures == samplesBinary[neg].size(), "Inconsistent LIBSVM and binary features count" + currentNegativePatch);
+            ASSERT_LOG(targetOutputsLIBSVM[neg] == targetOutputsBinary[neg], "Target outputs should match" + currentNegativePatch);
+            for (size_t f = 0; f < nNegativeFeatures; f++)
+            {
+                currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ", feature " + std::to_string(f) + ")";
+                ASSERT_LOG(samplesLIBSVM[neg][f] == samplesBinary[neg][f], "Sample features should match" + currentNegativePatch);
+            }
+        }
+                
+        for (size_t pos = 0; pos < nPositives; pos++)
+        {
+            // load probe samples and target ouputs from binary/LIBSVM formatted files
+            std::string probeSamplesPatchFile = testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + strPatch;
+            std::string currentProbePatch = " (positive " + positivesID[pos] + ", probes, patch " + strPatch + ")";
+            logger << "Loading samples files (binary/LIBSVM) for comparison" << currentProbePatch << "..." << std::endl;
+            esvmFileLoader.readSampleDataFile(probeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
+            esvmFileLoader.readSampleDataFile(probeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+
+            // compare probe patch samples and target outputs
+            logger << "Comparing samples files (binary/LIBSVM) data" << currentProbePatch << "..." << std::endl;
+            size_t nProbes = samplesLIBSVM.size();
+            size_t nProbeFeatures = samplesLIBSVM[0].size();
+            ASSERT_LOG(nProbeFeatures == nNegativeFeatures, "Inconsistent negative and probe sample feature count" + currentProbePatch);
+            ASSERT_LOG(nProbes == samplesBinary.size(), "Inconsistent LIBSVM and binary samples count" + currentProbePatch);
+            ASSERT_LOG(nProbes == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentProbePatch);
+            ASSERT_LOG(nProbes == targetOutputsBinary.size(), "Inconsistent binary target outputs count" + currentProbePatch);
+            for (size_t prb = 0; prb < nProbes; prb++)
+            {
+                currentProbePatch = " (positive " + positivesID[pos] + ", probe " + std::to_string(prb) + ", patch " + strPatch + ")";
+                ASSERT_LOG(nProbeFeatures == samplesBinary[prb].size(), "Inconsistent LIBSVM and binary features count" + currentProbePatch);
+                ASSERT_LOG(targetOutputsLIBSVM[prb] == targetOutputsBinary[prb], "Target outputs should match" + currentProbePatch);
+                for (size_t f = 0; f < nProbeFeatures; f++)
+                {
+                    currentProbePatch = "positive " + positivesID[pos] + ", (probe " + std::to_string(prb) +
+                                        ", patch " + strPatch + ", feature " + std::to_string(f) + ")";
+                    ASSERT_LOG(samplesLIBSVM[prb][f] == samplesBinary[prb][f], "Sample features should match" + currentProbePatch);
+                }
+            }
+        }
+    }
+}
+
 int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
 {
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");

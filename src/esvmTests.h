@@ -33,6 +33,7 @@ int test_runBasicExemplarSvmFunctionalities();
 int test_runBasicExemplarSvmClassification();
 int test_runBasicExemplarSvmReadSampleFile_libsvm();
 int test_runBasicExemplarSvmReadSampleFile_binary();
+int test_runBasicExemplarSvmReadSampleFile_compare();
 int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);

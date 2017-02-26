@@ -8,7 +8,7 @@ namespace bfs = boost::filesystem;
 
 int main(int argc, char* argv[])
 {
-    int err;
+    int err = 0;
     logstream logger(LOGGER_FILE);
     std::string header = "Starting new Exemplar-SVM test execution " + currentTimeStamp();
     logger << std::string(header.size(), '=') << std::endl << header << std::endl;
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
             return err;
         }
         logger << "Test 'test_runBasicExemplarSvmReadSampleFile_binary' completed." << std::endl;
-        #endif/*TEST_ESVM_READ_SAMPLE_FILE*/
+        #endif/*TEST_ESVM_READ_SAMPLES_FILE_PARSER*/
 
         #if TEST_ESVM_READ_SAMPLES_FILE_TIMING
         int nSamples = 2000;
@@ -129,6 +129,16 @@ int main(int argc, char* argv[])
         }
         logger << "Test 'test_runTimerExemplarSvmReadSampleFile' completed." << std::endl;
         #endif/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
+        
+        #if TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE
+        err = test_runBasicExemplarSvmReadSampleFile_compare();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmReadSampleFile_compare' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmReadSampleFile_compare' completed." << std::endl;
+        #endif/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
 
         #if TEST_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)

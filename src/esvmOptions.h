@@ -65,6 +65,8 @@
 #define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
 // Evaluate timing performance for reading and parsing a samples file
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+// Test functionality of samples file reading LIBSVM/binary format comparison
+#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 1
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 
