@@ -212,7 +212,6 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' completed." << std::endl;
         #endif/*TEST_ESVM_SAMAN*/
 
-
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
         if (err)
         {

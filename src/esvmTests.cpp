@@ -1172,6 +1172,8 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
             }
         }
     }
+
+    return 0;
 }
 
 int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
@@ -3205,6 +3207,16 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 {
     logstream logger(LOGGER_FILE);
 
+    #if TEST_ESVM_WORKING_PROCEDURE == 1
+    std::string sampleFileExt = ".data";
+    FileFormat sampleFileFormat = LIBSVM;
+    #elif TEST_ESVM_WORKING_PROCEDURE == 2
+    std::string sampleFileExt = ".bin";
+    FileFormat sampleFileFormat = BINARY;
+    #else
+    throw std::runtime_error("Unknown 'TEST_ESVM_WORKING_PROCEDURE' mode");
+    #endif/*TEST_ESVM_WORKING_PROCEDURE*/
+
     // image and patch dimensions 
     cv::Size imageSize(48, 48);
     cv::Size patchCounts(3, 3);    
@@ -3255,29 +3267,15 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
     logger << "Loading negative samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
-        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", negativeSamples[p], BINARY);    
-        
-    /* TODO REMOVE
-    for (size_t p = 0; p < nPatches; p++)
-    {
-        std::vector<int> dummyOutput(negativeSamples[p].size(), ESVM_NEGATIVE_CLASS);
-        FileLoaderESVM.writeSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", negativeSamples[p], dummyOutput, BINARY);
-    }
-    */
+        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
+                                          sampleFileExt, negativeSamples[p], sampleFileFormat);
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
-            FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".bin",
-                                              probeSamples[p][pos], probeGroundTruths[pos], BINARY);
-
-    /* TODO REMOVE
-    for (size_t p = 0; p < nPatches; p++)
-        for (size_t pos = 0; pos < nPositives; pos++)
-            FileLoaderESVM.writeSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".bin",
-                                              probeSamples[p][pos], probeGroundTruths[pos], BINARY);  
-    */
+            FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + 
+                                              sampleFileExt, probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);
 
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
@@ -3290,52 +3288,18 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     for (size_t pos = 0; pos < nPositives; pos++) 
     {
         int nProbes = probeSamples[0][pos].size();      // variable number of probes according to tested positive
-        
-        logger << "POS: " << pos << " nProbes: " << nProbes << std::endl;
-        
-        /* TODO REMOVE
-        size_t dimProbes[1]{ nProbes };
-        classificationScores[pos] = xstd::mvector<1, double>(dimProbes);
-        */
         classificationScores[pos] = xstd::mvector<1, double>(nProbes);
         for (size_t p = 0; p < nPatches; p++)        
         {   
             scores[p][pos] = std::vector<double>(nProbes);
             for (size_t prb = 0; prb < nProbes; prb++)
             {
-                /* TODO REMOVE
-                logger << "prb: " << prb << " nProbes: " << nProbes << std::endl;
-
-                logger << "BEFORE SCORES " << std::endl;
-                logger << " - pos: " << pos << " prb: " << prb << " p: " << p << " nProbes: " << nProbes 
-                    << " scores: " << scores.size() << " scores[0]: " << scores[0].size() << " classScores: " << classificationScores.size() 
-                    << " classScores[0]: " << classificationScores[0].size() << std::endl;
-                */
-                
                 scores[p][pos][prb] = esvm[p][pos].predict(probeSamples[p][pos][prb]);
-                /* TODO REMOVE
-                logger << "AFTER SCORES " << std::endl;
-                logger << " - pos: " << pos << " prb: " << prb << " p: " << p << " nProbes: " << nProbes
-                    << " scores: " << scores.size() << " scores[0]: " << scores[0].size() << " scores[0][0]: " << scores[0][0].size() << std::endl;
-                */
                 classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
             }
-
-            /* TODO REMOVE
-            logger << "BEFORE CLASS SCORES " << std::endl;
-            logger << " - pos: " << pos << " nProbes: " << nProbes
-                << " scores: " << scores.size() << " classScores: " << classificationScores.size() << std::endl;
-            */
             for (size_t prb = 0; prb < nProbes; prb++)
                 classificationScores[pos][prb] /= (double)nPatches;                             // average score fusion
         }
-
-        /* TODO REMOVE
-        logger << "BEFORE CLASS NORM " << std::endl;
-        logger << " - pos: " << pos << " nProbes: " << nProbes
-            << " scores: " << scores.size() << " classScores: " << classificationScores.size() << std::endl;
-        */
-
         classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
     }
 
