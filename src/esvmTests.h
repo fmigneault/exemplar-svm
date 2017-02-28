@@ -2,6 +2,7 @@
 #define ESVM_TESTS_H
 
 #include "opencv2/opencv.hpp"
+#include "mvector.hpp"      // Multi-Dimension vectors
 
 /* ChokePoint Dataset:
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, 3 cameras = 48 video dirs (with Ground Truths, one by one individuals pass)
@@ -24,11 +25,14 @@ bool checkPathEndSlash(std::string path);
 int test_outputOptions();
 int test_imagePaths();
 int test_imagePatchExtraction();
+int test_imagePreprocessing();
 int test_multiLevelVectors();
 int test_normalizationFunctions();
+int test_performanceEvaluationFunctions();
 int test_runBasicExemplarSvmFunctionalities();
 int test_runBasicExemplarSvmClassification();
 int test_runBasicExemplarSvmReadSampleFile();
+int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
@@ -36,8 +40,13 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
 int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
 int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths, 
+                                          std::vector<double>& FPR, std::vector<double>& TPR);
+void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
+                                           xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 
 #endif/*ESVM_TESTS_H*/

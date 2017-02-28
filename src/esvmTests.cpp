@@ -8,7 +8,8 @@
 #include "logger.h"
 #include "imgUtils.h"
 #include "generic.h"
-#include "mvector.hpp"      // Multi-Dimension vectors
+
+#include <iomanip>
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -38,27 +39,28 @@ int test_outputOptions()
     std::string tab = "   ";
     logger << "Options:" << std::endl
            << tab << "ESVM:" << std::endl
-           << tab << tab << "ESVM_USE_HOG:                    " << ESVM_USE_HOG << std::endl
-           << tab << tab << "ESVM_USE_LBP:                    " << ESVM_USE_LBP << std::endl
-           << tab << tab << "ESVM_USE_SYNTHETIC_GENERATION:   " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
-           << tab << tab << "ESVM_DUPLICATE_COUNT:            " << ESVM_DUPLICATE_COUNT << std::endl
-           << tab << tab << "ESVM_USE_FEATURES_NORMALIZATION: " << ESVM_USE_FEATURES_NORMALIZATION << std::endl
-           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:    " << ESVM_USE_PREDICT_PROBABILITY << std::endl
-           << tab << tab << "ESVM_POSITIVE_CLASS:             " << ESVM_POSITIVE_CLASS << std::endl
-           << tab << tab << "ESVM_NEGATIVE_CLASS:             " << ESVM_NEGATIVE_CLASS << std::endl
-           << tab << tab << "ESVM_WEIGHTS_MODE:               " << ESVM_WEIGHTS_MODE << std::endl
-           << tab << tab << "ESVM_WRITE_DATA_FILES:           " << ESVM_WRITE_DATA_FILES << std::endl
-           << tab << tab << "ESVM_READ_DATA_FILES:            " << ESVM_READ_DATA_FILES << std::endl
+           << tab << tab << "ESVM_USE_HOG:                     " << ESVM_USE_HOG << std::endl
+           << tab << tab << "ESVM_USE_LBP:                     " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:     " << ESVM_USE_PREDICT_PROBABILITY << std::endl
+           << tab << tab << "ESVM_POSITIVE_CLASS:              " << ESVM_POSITIVE_CLASS << std::endl
+           << tab << tab << "ESVM_NEGATIVE_CLASS:              " << ESVM_NEGATIVE_CLASS << std::endl
+           << tab << tab << "ESVM_WEIGHTS_MODE:                " << ESVM_WEIGHTS_MODE << std::endl
            << tab << "TEST:" << std::endl
-           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:  " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
-           << tab << tab << "TEST_IMAGE_PATHS:                " << TEST_IMAGE_PATHS << std::endl
-           << tab << tab << "TEST_IMAGE_PROCESSING:           " << TEST_IMAGE_PROCESSING << std::endl
-           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:        " << TEST_MULTI_LEVEL_VECTORS << std::endl
-           << tab << tab << "TEST_NORMALIZATION:              " << TEST_NORMALIZATION << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:   " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:     " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
-           << tab << tab << "TEST_ESVM_TITAN:                 " << TEST_ESVM_TITAN << std::endl
-           << tab << tab << "TEST_ESVM_SAMAN:                 " << TEST_ESVM_SAMAN << std::endl;
+           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:   " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
+           << tab << tab << "TEST_USE_SYNTHETIC_GENERATION:    " << TEST_USE_SYNTHETIC_GENERATION << std::endl
+           << tab << tab << "TEST_DUPLICATE_COUNT:             " << TEST_DUPLICATE_COUNT << std::endl
+           << tab << tab << "TEST_FEATURES_NORMALIZATION_MODE: " << TEST_FEATURES_NORMALIZATION_MODE << std::endl
+           << tab << tab << "TEST_IMAGE_PATHS:                 " << TEST_IMAGE_PATHS << std::endl
+           << tab << tab << "TEST_IMAGE_PATCH_EXTRACTION:      " << TEST_IMAGE_PATCH_EXTRACTION << std::endl
+           << tab << tab << "TEST_IMAGE_PREPROCESSING:         " << TEST_IMAGE_PREPROCESSING << std::endl
+           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:         " << TEST_MULTI_LEVEL_VECTORS << std::endl
+           << tab << tab << "TEST_NORMALIZATION:               " << TEST_NORMALIZATION << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:    " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:      " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
+           << tab << tab << "TEST_WRITE_DATA_FILES:            " << TEST_WRITE_DATA_FILES << std::endl
+           << tab << tab << "TEST_READ_DATA_FILES:             " << TEST_READ_DATA_FILES << std::endl
+           << tab << tab << "TEST_ESVM_TITAN:                  " << TEST_ESVM_TITAN << std::endl
+           << tab << tab << "TEST_ESVM_SAMAN:                  " << TEST_ESVM_SAMAN << std::endl;
 
     return 0;
 }
@@ -68,8 +70,12 @@ int test_imagePaths()
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
+    ASSERT_LOG(bfs::is_directory(negativeSamplesDir), "Cannot find negative samples directory");
+    ASSERT_LOG(bfs::is_directory(testingSamplesDir),  "Cannot find testing probe samples directory");
     ASSERT_LOG(checkPathEndSlash(roiVideoImagesPath), "ROI directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(negativeSamplesDir), "Negative samples directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(testingSamplesDir), "Testing probe samples directory doesn't end with slash character");
     // ChokePoint
     ASSERT_LOG(bfs::is_directory(rootChokePointPath), "Cannot find ChokePoint root directory");
     ASSERT_LOG(bfs::is_directory(roiChokePointCroppedFacePath), "Cannot find ChokePoint cropped faces root directory");
@@ -122,7 +128,7 @@ int test_imagePatchExtraction(void)
         if (testPatches[p].size() != cv::Size(2, 2))
         {
             logger << "Invalid image size for patch " << p << " (size: " << testPatches[p].size() << ", expected: (2,2))" << std::endl;
-            return -1;
+            return -2;
         }
     }    
 
@@ -130,33 +136,264 @@ int test_imagePatchExtraction(void)
     if (!cv::countNonZero(testPatches[0] != cv::Mat(2, 2, CV_32S, { 1,2,7,8 })))
     {
         logger << "Invalid data for patch 0" << std::endl << testPatches[0] << std::endl;
-        return -1;
+        return -3;
     }
     if (!cv::countNonZero(testPatches[1] != cv::Mat(2, 2, CV_32S, { 3,4,9,10 })))
     {
         logger << "Invalid data for patch 1" << std::endl << testPatches[1] << std::endl;
-        return -1;
+        return -4;
     }
     if (!cv::countNonZero(testPatches[2] != cv::Mat(2, 2, CV_32S, { 5,6,11,12 })))
     {
         logger << "Invalid data for patch 2" << std::endl << testPatches[2] << std::endl;
-        return -1;
+        return -5;
     }
     if (!cv::countNonZero(testPatches[3] != cv::Mat(2, 2, CV_32S, { 13,14,19,20 })))
     {
         logger << "Invalid data for patch 3" << std::endl << testPatches[3] << std::endl;
-        return -1;
+        return -6;
     }
     if (!cv::countNonZero(testPatches[4] != cv::Mat(2, 2, CV_32S, { 15,16,21,22 })))
     {
         logger << "Invalid data for patch 4" << std::endl << testPatches[4] << std::endl;
-        return -1;
+        return -7;
     }
     if (!cv::countNonZero(testPatches[5] != cv::Mat(2, 2, CV_32S, { 17,18,23,24 })))
     {
         logger << "Invalid data for patch 5" << std::endl << testPatches[5] << std::endl;
-        return -1;
+        return -8;
     }
+    return 0;
+}
+
+int test_imagePreprocessing()
+{
+    std::string refImgName = "roiID0003.tif";
+    std::string refImgPath = refStillImagesPath + refImgName;
+    ASSERT_LOG(bfs::is_regular_file(refImgPath), "Reference image employed for preprocessing test was not found");
+    
+    cv::Mat refImg = cv::imread(refImgPath, cv::IMREAD_GRAYSCALE);   
+    ASSERT_LOG(refImg.size() == cv::Size(96, 96), "Expected reference image shhould be of dimension 96x96");
+    int refImgSide = 48;
+    cv::resize(refImg, refImg, cv::Size(refImgSide, refImgSide), 0, 0, cv::INTER_CUBIC);    
+
+    cv::Size patchCount(3, 3);
+    int nPatches = patchCount.area();
+    std::vector<cv::Mat> refImgPatches = imSplitPatches(refImg, patchCount);
+    ASSERT_LOG(refImgPatches.size() == nPatches, "Reference image should have been split to expected number of patches");
+    for (size_t p = 0; p < nPatches; p++)
+        ASSERT_LOG(refImgPatches[p].size() == cv::Size(16,16), "Reference image should have been split to expected patches dimensions");
+
+    logstream logger(LOGGER_FILE);
+    std::vector<FeatureVector> hogPatches(nPatches);
+    FeatureExtractorHOG hog;
+    hog.initialize(refImgPatches[0].size(), cv::Size(2, 2), cv::Size(2, 2), cv::Size(2, 2), 3);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        hogPatches[p] = hog.compute(refImgPatches[p]);
+        logger << refImgName << " hog588-impl-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatches[p]) << std::endl;
+    }
+
+    // enforced double type and HOG call
+    std::vector<FeatureVector> hogPatchesDbl(nPatches);
+    int patchSide = refImgPatches[0].size().width;    
+    int* patchSize = new int[2]{ patchSide, patchSide };
+    double* patchData = new double[patchSide*patchSide];
+    double* hogParams = new double[5]{ 3, 2, 2, 0, 0.2 };
+    int nFeatures = hogPatches[0].size();
+    double *features = new double[nFeatures];
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        for (int y = 0; y < patchSide; y++)
+            for (int x = 0; x < patchSide; x++)                            
+                patchData[y + x * patchSide] = refImgPatches[p].data[y + x *  patchSide];
+        HOG(patchData, hogParams, patchSize, features, 1);
+        hogPatchesDbl[p] = std::vector<double>(features, features + nFeatures);
+        logger << refImgName << " hog588-impl-DBL-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDbl[p]) << std::endl;
+    }
+
+    // enforced double v2
+    std::vector<FeatureVector> hogPatchesDbl2(nPatches);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        for (int y = 0; y < patchSide; y++)
+            for (int x = 0; x < patchSide; x++)                
+                patchData[x + y * patchSide] = (double)refImgPatches[p].at<uchar>(x, y);    // !!!!!!!!!!!!!!!!!!!!! VERY SIMILAR
+        HOG(patchData, hogParams, patchSize, features, 1);
+        hogPatchesDbl2[p] = std::vector<double>(features, features + nFeatures);
+        logger << refImgName << " hog588-impl-DBL2-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDbl2[p]) << std::endl;
+    }
+
+    // access (NOW PROPERLY ACCESSED DIRECTLY IN HOG_IMPL?)     ---  VALIDATED with fix of issue #2 in 'FeatureExtractorHOG' repo
+    std::vector<FeatureVector> hogPatchesAccess(nPatches);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        hogPatchesAccess[p] = hog.compute(refImgPatches[p]);
+        logger << refImgName << " hog588-impl-Access-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesAccess[p]) << std::endl;
+    }
+
+
+    // employ 'text' image data without image reading            
+    double *refImgRawData = new double[refImgSide*refImgSide]{
+        197,196,199,165, 52, 33, 28, 25, 23, 28, 34, 43, 53, 73, 94,122,132,130,129,125,113, 96, 82, 69, 44, 45, 62, 59, 64, 60, 52, 47, 43, 38, 36, 24, 23, 16, 17, 21, 23, 23, 25, 24, 22, 22, 34,141,
+        196,196,196,103, 26, 33, 29, 31, 29, 33, 39, 51, 53, 81,111,129,138,141,142,140,138,132,118, 98, 53, 62, 49, 55, 63, 71, 64, 39, 31, 37, 49, 33, 27, 26, 17, 16, 18, 22, 21, 23, 26, 28, 22, 91,
+        195,198,170, 51, 26, 34, 31, 32, 31, 29, 49, 61, 53, 89,121,135,144,149,147,150,151,152,145,131, 84, 63, 52, 60, 72, 76, 80, 58, 28, 35, 49, 50, 24, 36, 23, 14, 16, 18, 19, 23, 22, 30, 27, 44,
+        195,199,108, 25, 32, 36, 32, 27, 27, 32, 59, 66, 53, 98,129,142,147,149,152,155,158,158,157,149,121, 62, 63, 64, 88, 82, 95, 81, 45, 30, 44, 62, 34, 39, 35, 18, 13, 15, 16, 22, 18, 26, 28, 29,
+        197,181, 55, 27, 33, 32, 29, 24, 31, 44, 64, 75, 64,109,135,144,148,150,155,158,161,163,162,156,141, 69, 59, 66, 79, 86,101, 93, 71, 29, 32, 60, 53, 40, 49, 28, 15, 13, 14, 19, 21, 20, 26, 27,
+        199,127, 30, 30, 30, 27, 27, 24, 41, 61, 72, 87, 80,117,136,139,147,152,157,157,159,160,159,159,150, 97, 44, 65, 82, 83,113,110, 97, 56, 23, 50, 71, 46, 56, 40, 21, 13, 12, 15, 20, 18, 23, 26,
+        189, 77, 30, 32, 27, 25, 22, 24, 51, 83, 82, 99,107,133,144,145,149,154,157,156,157,158,160,158,156,127, 49, 54, 86, 86,114,125,115, 90, 34, 38, 71, 63, 52, 52, 30, 18, 13, 12, 15, 19, 22, 27,
+        172, 44, 27, 30, 26, 25, 22, 29, 65, 99,106,111,130,142,145,148,151,156,158,158,160,162,162,160,162,158,103, 62, 92, 88,114,136,130,105, 66, 34, 62, 74, 56, 59, 44, 25, 15, 12, 12, 17, 25, 25,
+        139, 30, 26, 27, 27, 25, 23, 47, 94,117,121,126,134,140,146,150,153,156,159,162,161,164,165,165,165,165,153,109,113,110,120,134,137,129,104, 52, 45, 76, 65, 59, 61, 36, 20, 14, 13, 15, 23, 27,
+        107, 26, 25, 27, 26, 24, 30, 77,115,122,123,127,133,140,148,152,149,154,158,158,162,165,165,163,162,162,162,144,131,129,138,142,139,134,125,102, 62, 58, 74, 62, 66, 50, 25, 15, 13, 12, 16, 26,
+        118, 35, 22, 27, 22, 26, 57,104,119,120,123,129,131,137,142,144,146,149,152,151,152,152,151,151,152,157,155,149,140,134,136,139,135,130,124,118,103, 75, 71, 71, 62, 62, 35, 17, 11, 10, 12, 23,
+        122, 34, 25, 26, 23, 37, 85,114,121,117,118,118,107,114,117,122,129,134,135,136,136,136,138,141,145,144,140,135,130,128,128,127,121,117,111,106,102, 94, 83, 77, 70, 62, 48, 23, 12, 10, 10, 17,
+        130, 36, 25, 23, 28, 53,101,118,119,111,101, 93, 84, 82, 72, 71, 74, 89,108,119,119,121,127,134,137,135,126,119,116,115,107, 88, 78, 77, 74, 77, 82, 87, 87, 85, 78, 71, 57, 32, 15, 10, 10, 14,
+        114, 31, 26, 19, 33, 76,112,119,114,101, 93, 84, 78, 68, 56, 53, 48, 52, 72, 90,101,108,118,125,128,123,113,104, 95, 82, 58, 46, 40, 44, 53, 65, 70, 71, 70, 79, 82, 77, 67, 42, 20, 11, 11, 15,
+        119, 41, 24, 19, 41,100,120,117,108,102, 96, 90, 85, 80, 78, 68, 62, 65, 70, 73, 82, 98,110,115,116,109, 97, 84, 73, 60, 50, 49, 45, 47, 56, 65, 70, 70, 69, 73, 83, 81, 72, 52, 25, 13, 12, 18,
+        148, 47, 24, 19, 50,114,124,117,113,107,100, 97, 99,111,118,108, 92, 78, 75, 76, 74, 83,100,108,104, 94, 79, 68, 69, 61, 59, 66, 82, 90, 78, 76, 75, 71, 67, 74, 85, 85, 81, 62, 31, 14, 13, 17,
+        161, 62, 27, 19, 57,121,126,113, 98, 88, 90, 96,107,118,126,128,112, 92, 82, 80, 77, 80, 95, 97, 95, 85, 69, 66, 68, 67, 76,103,126,126,110, 95, 83, 74, 71, 73, 80, 85, 84, 71, 37, 14, 13, 16,
+        181, 94, 29, 19, 60,122, 97, 65, 72, 74, 69, 60, 58, 62, 65, 74, 83, 91, 86, 77, 75, 83, 97,102, 95, 84, 71, 71, 78, 82, 89,101,102, 84, 61, 53, 53, 51, 47, 54, 75, 89, 91, 79, 41, 13, 13, 16,
+        190,127, 34, 23, 58, 99, 28, 89,116, 92, 58, 41, 43, 58, 18, 17, 20, 50, 75, 74, 67, 64, 83, 88, 84, 76, 71, 74, 75, 76, 52, 27, 25, 19, 28, 29, 35, 49, 54, 48, 38, 73, 91, 81, 40, 12, 12, 16,
+        192,156, 53, 40, 67, 93, 26, 98,124,113, 95, 99,105,102, 57, 39, 47, 52, 74, 94,101, 63, 23, 55, 38, 25, 65, 81, 85, 69, 44, 34, 17, 19, 53, 42, 34, 36, 53, 77, 41, 25, 89, 76, 24, 12, 12, 15,
+        191,175, 90, 75, 90, 99, 38, 98,132,138,133,124,120,117,113,107,105,109,111,121,125, 56, 42,113, 82, 19, 76,114,116,102,105,103, 90, 86, 98, 94, 85, 77, 78, 90, 47, 21, 92, 83, 20, 15, 19, 20,
+        190,170, 74, 68,100,121, 80, 88,132,141,141,130,114,100, 92, 91, 97,116,130,136,102, 28, 45, 79, 71, 26, 47,115,127,126,112, 99, 92, 90, 90, 95,105,115,113,108, 45, 52, 89, 83, 42, 24, 36, 40,
+        191,162, 77, 57,104,120,108, 86,120,123,126,123,119,115,112,110,113,118,120,115, 72, 41, 86,149,127, 48, 32, 86,110,118,114,106, 96, 92, 95,105,116,117,115,103, 60,103, 96, 84, 52, 30, 37, 50,
+        190,161, 96, 73,104,120,115,108,113,110,117,121,120,119,116,116,117,118,119,107, 69, 80,130,155,138, 82, 45, 71,103,111,111,112,110,109,111,111,112,106,108, 99, 87,103, 92, 81, 53, 27, 42, 55,
+        189,164,112, 89,100,116,111,101, 96,111,123,126,128,131,132,131,131,133,130,117, 97,109,139,153,139,103, 78, 90,111,122,117,118,116,114,113,110,109,106,101, 96, 90, 83, 86, 80, 52, 31, 49, 57,
+        188,170,127,103,102,112,103,100, 97, 98,104,111,121,125,127,128,126,121,111, 97,101,131,144,152,140,112, 95, 85,100,113,118,123,122,118,110,105,104, 98, 86, 78, 72, 77, 82, 78, 50, 36, 55, 63,
+        185,170,135,115,103,109,104,102, 96, 91, 88, 92,100,104,104,104,101, 97, 90, 91,121,134,148,160,138,112, 99, 84, 79, 90, 97,101,101, 97, 91, 86, 85, 81, 75, 67, 65, 71, 79, 80, 50, 37, 59, 76,
+        186,162,128,131,108,104,100, 97,100, 99,102,112,119,130,129,123,117,112,110,114,132,139,151,165,139,115,110, 97, 87, 94, 98, 99, 98, 96, 89, 83, 75, 70, 64, 64, 67, 70, 78, 78, 53, 39, 64, 90,
+        184,158,133,135,109,102, 94, 95,103,112,119,115,119,138,140,138,137,132,125,131,137,135,142,144,132,120,119,116,101,117,128,131,131,128,123,114, 99, 82, 70, 69, 70, 70, 76, 76, 61, 64, 72, 93,
+        182,161,136,129,109, 99, 98,102,107,117,121,117,119,129,131,132,131,127,119,119,108,105,111,116,111,102, 95,100, 98,106,124,128,128,123,116,109,100, 87, 79, 71, 70, 69, 75, 75, 66, 83, 78, 97,
+        181,175,134,102, 97,101,100, 99,104,112,117,118,122,125,128,126,124,122,105, 74, 39, 47, 68, 75, 72, 58, 38, 49, 68, 92,114,117,118,113,110,105, 91, 82, 77, 70, 70, 70, 73, 73, 62, 80, 95,109,
+        179,176,165,135,120,102, 99, 99,102,104,109,109,115,120,121,123,124,130, 94, 47, 31, 29, 40, 43, 41, 34, 26, 35, 46, 89,113,108,107,107,104, 95, 85, 82, 77, 70, 68, 71, 73, 70, 56, 71, 96,120,
+        179,175,171,168,149,103, 99,105,104,103,101,106,110,113,118,119,126,138,114, 56, 49, 52, 46, 40, 40, 42, 41, 38, 49, 96,113,109,102, 98, 89, 81, 77, 80, 78, 70, 66, 70, 74, 73, 73, 85,107,120,
+        178,174,170,165,155,107,100,104,103, 99,101,104,103,108,114,120,130,136,129,113,100, 90, 74, 53, 47, 49, 55, 64, 81,101,110,113,105, 91, 80, 71, 73, 69, 66, 68, 67, 70, 73, 76, 88,100,110,120,
+        177,173,169,164,159,118, 97, 98,101,101,101, 99,101,104,110,112,126,131,125,123,121,112,100, 72, 64, 71, 79, 85, 94,101,108,112,107, 94, 82, 75, 74, 67, 63, 63, 66, 69, 72, 76, 88, 98,109,120,
+        176,172,168,164,161,134, 96, 97, 98, 97,100,101,101,104,110,114,116,115,114,116,120,126,127,109,115,119,103, 97, 95, 93, 95,100,103, 94, 85, 81, 74, 71, 66, 65, 66, 69, 72, 80, 91,102,112,121,
+        175,171,168,164,160,148,103, 96, 97, 96, 98,104,104,103,107,107, 99, 96,101,113,115,107,108,125,117, 93, 94, 95, 90, 80, 73, 81, 91, 89, 86, 87, 82, 75, 70, 67, 65, 69, 72, 83, 94,104,114,123,
+        175,171,167,163,159,154,117, 93, 95, 95, 97,102,106,105,101, 90, 65, 52, 59, 62, 49, 45, 49, 58, 48, 38, 39, 42, 48, 44, 42, 62, 83, 86, 91, 93, 83, 72, 70, 66, 66, 69, 74, 86, 95,105,114,124,
+        174,171,167,163,159,155,136, 93, 90, 91, 92, 97,103,102, 99, 80, 47, 35, 38, 50, 64, 64, 61, 54, 54, 64, 66, 59, 42, 39, 53, 66, 78, 82, 89, 85, 73, 67, 66, 64, 66, 69, 77, 87, 96,106,115,125,
+        174,171,167,163,159,154,149,107, 85, 85, 85, 88, 91, 98, 97, 87, 95,112,102, 92,101,117,124,123,124,119, 97, 76, 77, 93,106,108, 93, 86, 82, 74, 67, 63, 60, 62, 66, 67, 78, 88, 97,107,116,125,
+        173,170,167,164,159,155,151,128, 83, 77, 78, 79, 81, 89, 95,106,125,128,111, 91, 79, 82, 93, 98, 94, 81, 65, 62, 76, 92,108,111, 96, 83, 74, 65, 60, 58, 58, 62, 63, 70, 80, 89, 99,108,118,125,
+        173,170,167,163,159,155,151,144, 99, 72, 70, 71, 74, 81, 92,107,120,122,108, 85, 63, 55, 57, 59, 56, 51, 51, 57, 72, 91, 99, 94, 85, 76, 66, 58, 54, 53, 58, 61, 62, 74, 83, 91,100,110,119,127,
+        173,170,167,164,160,155,150,148,124, 74, 65, 65, 68, 76, 87, 98,109,115,110, 95, 73, 55, 45, 39, 38, 42, 49, 62, 78, 88, 90, 86, 81, 74, 63, 54, 51, 54, 57, 58, 66, 77, 83, 92,101,111,120,127,
+        173,170,167,164,160,156,151,149,118, 73, 64, 61, 63, 73, 86, 93, 99,103,103,102, 95, 84, 72, 62, 60, 62, 72, 80, 86, 88, 84, 80, 76, 69, 58, 51, 51, 53, 54, 58, 71, 78, 84, 93,103,112,120,126,
+        174,171,168,164,159,155,153,139, 65, 68, 63, 58, 57, 64, 76, 86, 93, 97,103,105,106,105,107,109,109,104,100, 96, 94, 88, 81, 77, 72, 61, 54, 50, 51, 50, 51, 61, 72, 78, 85, 94,104,113,119,126,
+        174,171,167,163,160,156,154,103, 42, 66, 64, 53, 51, 54, 62, 73, 88, 99,106,108,113,115,116,115,117,114,108,104, 98, 88, 80, 75, 65, 53, 48, 47, 46, 45, 50, 43, 66, 80, 86, 95,105,113,120,125,
+        174,170,167,163,159,157,142, 71, 38, 64, 69, 51, 47, 47, 49, 58, 72, 90,100,105,110,118,117,112,108,108,107,100, 92, 86, 75, 64, 52, 46, 45, 42, 41, 45, 50, 22, 47, 81, 87, 96,106,113,119,124,
+        174,171,167,164,160,157,114, 59, 34, 60, 72, 56, 46, 43, 43, 44, 49, 64, 81, 89, 94,100,101, 97, 93, 92, 88, 82, 74, 67, 59, 51, 44, 40, 38, 38, 40, 46, 43, 13, 29, 71, 87, 96,106,112,118,124,
+    };
+    cv::Mat refImgData = cv::Mat(refImgSide, refImgSide, CV_32F, refImgRawData);
+    ///refImgData.convertTo(refImgData, CV_32F, 1.0 / 256.0, 0);
+    std::vector<cv::Mat> refImgDataPatches = imSplitPatches(refImgData, patchCount);
+    std::vector<FeatureVector> hogPatchesData(nPatches);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        hogPatchesData[p] = hog.compute(refImgDataPatches[p]);
+        logger << "roiID0003.txt hog588-impl-data-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesData[p]) << std::endl;
+    }
+
+    // employ 'text' + enforce 'double'
+    std::vector<FeatureVector> hogPatchesDblData(nPatches);
+    int patchRow = 0;
+    int patchCol = 0;
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        for (int y = 0; y < patchSide; y++)
+            for (int x = 0; x < patchSide; x++)
+                patchData[y * patchSide + x] = refImgRawData[y + x * patchSide + patchCol * patchSide + patchRow * patchSide * refImg.size().width];
+        patchCol++;
+        if (patchCol >= patchCount.width)
+        {
+            patchCol = 0;
+            patchRow++;
+        }
+        HOG(patchData, hogParams, patchSize, features, 1);
+        hogPatchesDblData[p] = std::vector<double>(features, features + nFeatures);
+        logger << "roiID0003.txt hog588-impl-DBL-data-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDblData[p]) << std::endl;
+    }
+
+    // employ permuted[2,1] 'text' data (not equivalent to transpose)
+    double *refImgRawDataPermute = new double[refImgSide*refImgSide]{
+        197,196,195,195,197,199,189,172,139,107,118,122,130,114,119,148,161,181,190,192,191,190,191,190,189,188,185,186,184,182,181,179,179,178,177,176,175,175,174,174,173,173,173,173,174,174,174,174,
+        196,196,198,199,181,127, 77, 44, 30, 26, 35, 34, 36, 31, 41, 47, 62, 94,127,156,175,170,162,161,164,170,170,162,158,161,175,176,175,174,173,172,171,171,171,171,170,170,170,170,171,171,170,171,
+        199,196,170,108, 55, 30, 30, 27, 26, 25, 22, 25, 25, 26, 24, 24, 27, 29, 34, 53, 90, 74, 77, 96,112,127,135,128,133,136,134,165,171,170,169,168,168,167,167,167,167,167,167,167,168,167,167,167,
+        165,103, 51, 25, 27, 30, 32, 30, 27, 27, 27, 26, 23, 19, 19, 19, 19, 19, 23, 40, 75, 68, 57, 73, 89,103,115,131,135,129,102,135,168,165,164,164,164,163,163,163,164,163,164,164,164,163,163,164,
+         52, 26, 26, 32, 33, 30, 27, 26, 27, 26, 22, 23, 28, 33, 41, 50, 57, 60, 58, 67, 90,100,104,104,100,102,103,108,109,109, 97,120,149,155,159,161,160,159,159,159,159,159,160,160,159,160,159,160,
+         33, 33, 34, 36, 32, 27, 25, 25, 25, 24, 26, 37, 53, 76,100,114,121,122, 99, 93, 99,121,120,120,116,112,109,104,102, 99,101,102,103,107,118,134,148,154,155,154,155,155,155,156,155,156,157,157,
+         28, 29, 31, 32, 29, 27, 22, 22, 23, 30, 57, 85,101,112,120,124,126, 97, 28, 26, 38, 80,108,115,111,103,104,100, 94, 98,100, 99, 99,100, 97, 96,103,117,136,149,151,151,150,151,153,154,142,114,
+         25, 31, 32, 27, 24, 24, 24, 29, 47, 77,104,114,118,119,117,117,113, 65, 89, 98, 98, 88, 86,108,101,100,102, 97, 95,102, 99, 99,105,104, 98, 97, 96, 93, 93,107,128,144,148,149,139,103, 71, 59,
+         23, 29, 31, 27, 31, 41, 51, 65, 94,115,119,121,119,114,108,113, 98, 72,116,124,132,132,120,113, 96, 97, 96,100,103,107,104,102,104,103,101, 98, 97, 95, 90, 85, 83, 99,124,118, 65, 42, 38, 34,
+         28, 33, 29, 32, 44, 61, 83, 99,117,122,120,117,111,101,102,107, 88, 74, 92,113,138,141,123,110,111, 98, 91, 99,112,117,112,104,103, 99,101, 97, 96, 95, 91, 85, 77, 72, 74, 73, 68, 66, 64, 60,
+         34, 39, 49, 59, 64, 72, 82,106,121,123,123,118,101, 93, 96,100, 90, 69, 58, 95,133,141,126,117,123,104, 88,102,119,121,117,109,101,101,101,100, 98, 97, 92, 85, 78, 70, 65, 64, 63, 64, 69, 72,
+         43, 51, 61, 66, 75, 87, 99,111,126,127,129,118, 93, 84, 90, 97, 96, 60, 41, 99,124,130,123,121,126,111, 92,112,115,117,118,109,106,104, 99,101,104,102, 97, 88, 79, 71, 65, 61, 58, 53, 51, 56,
+         53, 53, 53, 53, 64, 80,107,130,134,133,131,107, 84, 78, 85, 99,107, 58, 43,105,120,114,119,120,128,121,100,119,119,119,122,115,110,103,101,101,104,106,103, 91, 81, 74, 68, 63, 57, 51, 47, 46,
+         73, 81, 89, 98,109,117,133,142,140,140,137,114, 82, 68, 80,111,118, 62, 58,102,117,100,115,119,131,125,104,130,138,129,125,120,113,108,104,104,103,105,102, 98, 89, 81, 76, 73, 64, 54, 47, 43,
+         94,111,121,129,135,136,144,145,146,148,142,117, 72, 56, 78,118,126, 65, 18, 57,113, 92,112,116,132,127,104,129,140,131,128,121,118,114,110,110,107,101, 99, 97, 95, 92, 87, 86, 76, 62, 49, 43,
+        122,129,135,142,144,139,145,148,150,152,144,122, 71, 53, 68,108,128, 74, 17, 39,107, 91,110,116,131,128,104,123,138,132,126,123,119,120,112,114,107, 90, 80, 87,106,107, 98, 93, 86, 73, 58, 44,
+        132,138,144,147,148,147,149,151,153,149,146,129, 74, 48, 62, 92,112, 83, 20, 47,105, 97,113,117,131,126,101,117,137,131,124,124,126,130,126,116, 99, 65, 47, 95,125,120,109, 99, 93, 88, 72, 49,
+        130,141,149,149,150,152,154,156,156,154,149,134, 89, 52, 65, 78, 92, 91, 50, 52,109,116,118,118,133,121, 97,112,132,127,122,130,138,136,131,115, 96, 52, 35,112,128,122,115,103, 97, 99, 90, 64,
+        129,142,147,152,155,157,157,158,159,158,152,135,108, 72, 70, 75, 82, 86, 75, 74,111,130,120,119,130,111, 90,110,125,119,105, 94,114,129,125,114,101, 59, 38,102,111,108,110,103,103,106,100, 81,
+        125,140,150,155,158,157,156,158,162,158,151,136,119, 90, 73, 76, 80, 77, 74, 94,121,136,115,107,117, 97, 91,114,131,119, 74, 47, 56,113,123,116,113, 62, 50, 92, 91, 85, 95,102,105,108,105, 89,
+        113,138,151,158,161,159,157,160,161,162,152,136,119,101, 82, 74, 77, 75, 67,101,125,102, 72, 69, 97,101,121,132,137,108, 39, 31, 49,100,121,120,115, 49, 64,101, 79, 63, 73, 95,106,113,110, 94,
+         96,132,152,158,163,160,158,162,164,165,152,136,121,108, 98, 83, 80, 83, 64, 63, 56, 28, 41, 80,109,131,134,139,135,105, 47, 29, 52, 90,112,126,107, 45, 64,117, 82, 55, 55, 84,105,115,118,100,
+         82,118,145,157,162,159,160,162,165,165,151,138,127,118,110,100, 95, 97, 83, 23, 42, 45, 86,130,139,144,148,151,142,111, 68, 40, 46, 74,100,127,108, 49, 61,124, 93, 57, 45, 72,107,116,117,101,
+         69, 98,131,149,156,159,158,160,165,163,151,141,134,125,115,108, 97,102, 88, 55,113, 79,149,155,153,152,160,165,144,116, 75, 43, 40, 53, 72,109,125, 58, 54,123, 98, 59, 39, 62,109,115,112, 97,
+         44, 53, 84,121,141,150,156,162,165,162,152,145,137,128,116,104, 95, 95, 84, 38, 82, 71,127,138,139,140,138,139,132,111, 72, 41, 40, 47, 64,115,117, 48, 54,124, 94, 56, 38, 60,109,117,108, 93,
+         45, 62, 63, 62, 69, 97,127,158,165,162,157,144,135,123,109, 94, 85, 84, 76, 25, 19, 26, 48, 82,103,112,112,115,120,102, 58, 34, 42, 49, 71,119, 93, 38, 64,119, 81, 51, 42, 62,104,114,108, 92,
+         62, 49, 52, 63, 59, 44, 49,103,153,162,155,140,126,113, 97, 79, 69, 71, 71, 65, 76, 47, 32, 45, 78, 95, 99,110,119, 95, 38, 26, 41, 55, 79,103, 94, 39, 66, 97, 65, 51, 49, 72,100,108,107, 88,
+         59, 55, 60, 64, 66, 65, 54, 62,109,144,149,135,119,104, 84, 68, 66, 71, 74, 81,114,115, 86, 71, 90, 85, 84, 97,116,100, 49, 35, 38, 64, 85, 97, 95, 42, 59, 76, 62, 57, 62, 80, 96,104,100, 82,
+         64, 63, 72, 88, 79, 82, 86, 92,113,131,140,130,116, 95, 73, 69, 68, 78, 75, 85,116,127,110,103,111,100, 79, 87,101, 98, 68, 46, 49, 81, 94, 95, 90, 48, 42, 77, 76, 72, 78, 86, 94, 98, 92, 74,
+         60, 71, 76, 82, 86, 83, 86, 88,110,129,134,128,115, 82, 60, 61, 67, 82, 76, 69,102,126,118,111,122,113, 90, 94,117,106, 92, 89, 96,101,101, 93, 80, 44, 39, 93, 92, 91, 88, 88, 88, 88, 86, 67,
+         52, 64, 80, 95,101,113,114,114,120,138,136,128,107, 58, 50, 59, 76, 89, 52, 44,105,112,114,111,117,118, 97, 98,128,124,114,113,113,110,108, 95, 73, 42, 53,106,108, 99, 90, 84, 81, 80, 75, 59,
+         47, 39, 58, 81, 93,110,125,136,134,142,139,127, 88, 46, 49, 66,103,101, 27, 34,103, 99,106,112,118,123,101, 99,131,128,117,108,109,113,112,100, 81, 62, 66,108,111, 94, 86, 80, 77, 75, 64, 51,
+         43, 31, 28, 45, 71, 97,115,130,137,139,135,121, 78, 40, 45, 82,126,102, 25, 17, 90, 92, 96,110,116,122,101, 98,131,128,118,107,102,105,107,103, 91, 83, 78, 93, 96, 85, 81, 76, 72, 65, 52, 44,
+         38, 37, 35, 30, 29, 56, 90,105,129,134,130,117, 77, 44, 47, 90,126, 84, 19, 19, 86, 90, 92,109,114,118, 97, 96,128,123,113,107, 98, 91, 94, 94, 89, 86, 82, 86, 83, 76, 74, 69, 61, 53, 46, 40,
+         36, 49, 49, 44, 32, 23, 34, 66,104,125,124,111, 74, 53, 56, 78,110, 61, 28, 53, 98, 90, 95,111,113,110, 91, 89,123,116,110,104, 89, 80, 82, 85, 86, 91, 89, 82, 74, 66, 63, 58, 54, 48, 45, 38,
+         24, 33, 50, 62, 60, 50, 38, 34, 52,102,118,106, 77, 65, 65, 76, 95, 53, 29, 42, 94, 95,105,111,110,105, 86, 83,114,109,105, 95, 81, 71, 75, 81, 87, 93, 85, 74, 65, 58, 54, 51, 50, 47, 42, 38,
+         23, 27, 24, 34, 53, 71, 71, 62, 45, 62,103,102, 82, 70, 70, 75, 83, 53, 35, 34, 85,105,116,112,109,104, 85, 75, 99,100, 91, 85, 77, 73, 74, 74, 82, 83, 73, 67, 60, 54, 51, 51, 51, 46, 41, 40,
+         16, 26, 36, 39, 40, 46, 63, 74, 76, 58, 75, 94, 87, 71, 70, 71, 74, 51, 49, 36, 77,115,117,106,106, 98, 81, 70, 82, 87, 82, 82, 80, 69, 67, 71, 75, 72, 67, 63, 58, 53, 54, 53, 50, 45, 45, 46,
+         17, 17, 23, 35, 49, 56, 52, 56, 65, 74, 71, 83, 87, 70, 69, 67, 71, 47, 54, 53, 78,113,115,108,101, 86, 75, 64, 70, 79, 77, 77, 78, 66, 63, 66, 70, 70, 66, 60, 58, 58, 57, 54, 51, 50, 50, 43,
+         21, 16, 14, 18, 28, 40, 52, 59, 59, 62, 71, 77, 85, 79, 73, 74, 73, 54, 48, 77, 90,108,103, 99, 96, 78, 67, 64, 69, 71, 70, 70, 70, 68, 63, 65, 67, 66, 64, 62, 62, 61, 58, 58, 61, 43, 22, 13,
+         23, 18, 16, 13, 15, 21, 30, 44, 61, 66, 62, 70, 78, 82, 83, 85, 80, 75, 38, 41, 47, 45, 60, 87, 90, 72, 65, 67, 70, 70, 70, 68, 66, 67, 66, 66, 65, 66, 66, 66, 63, 62, 66, 71, 72, 66, 47, 29,
+         23, 22, 18, 15, 13, 13, 18, 25, 36, 50, 62, 62, 71, 77, 81, 85, 85, 89, 73, 25, 21, 52,103,103, 83, 77, 71, 70, 70, 69, 70, 71, 70, 70, 69, 69, 69, 69, 69, 67, 70, 74, 77, 78, 78, 80, 81, 71,
+         25, 21, 19, 16, 14, 12, 13, 15, 20, 25, 35, 48, 57, 67, 72, 81, 84, 91, 91, 89, 92, 89, 96, 92, 86, 82, 79, 78, 76, 75, 73, 73, 74, 73, 72, 72, 72, 74, 77, 78, 80, 83, 83, 84, 85, 86, 87, 87,
+         24, 23, 23, 22, 19, 15, 12, 12, 14, 15, 17, 23, 32, 42, 52, 62, 71, 79, 81, 76, 83, 83, 84, 81, 80, 78, 80, 78, 76, 75, 73, 70, 73, 76, 76, 80, 83, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 96,
+         22, 26, 22, 18, 21, 20, 15, 12, 13, 13, 11, 12, 15, 20, 25, 31, 37, 41, 40, 24, 20, 42, 52, 53, 52, 50, 50, 53, 61, 66, 62, 56, 73, 88, 88, 91, 94, 95, 96, 97, 99,100,101,103,104,105,106,106,
+         22, 28, 30, 26, 20, 18, 19, 17, 15, 12, 10, 10, 10, 11, 13, 14, 14, 13, 12, 12, 15, 24, 30, 27, 31, 36, 37, 39, 64, 83, 80, 71, 85,100, 98,102,104,105,106,107,108,110,111,112,113,113,113,112,
+         34, 22, 27, 28, 26, 23, 22, 25, 23, 16, 12, 10, 10, 11, 12, 13, 13, 13, 12, 12, 19, 36, 37, 42, 49, 55, 59, 64, 72, 78, 95, 96,107,110,109,112,114,114,115,116,118,119,120,120,119,120,119,118,
+        141, 91, 44, 29, 27, 26, 27, 25, 27, 26, 23, 17, 14, 15, 18, 17, 16, 16, 16, 15, 20, 40, 50, 55, 57, 63, 76, 90, 93, 97,109,120,120,120,120,121,123,124,125,125,125,127,127,126,126,125,124,124,
+    };
+    cv::Mat refImgDataPermute = cv::Mat(refImgSide, refImgSide, CV_32F, refImgRawDataPermute);
+    std::vector<cv::Mat> refImgDataPermutePatches = imSplitPatches(refImgDataPermute, patchCount);
+    std::vector<FeatureVector> hogPatchesDataPermute(nPatches);
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        hogPatchesDataPermute[p] = hog.compute(refImgDataPermutePatches[p]);
+        logger << "roiID0003.txt hog588-impl-data-permute-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDataPermute[p]) << std::endl;
+    }
+
+    // employ permuted 'text' + enforce 'double'
+    std::vector<FeatureVector> hogPatchesDblDataPermute(nPatches);
+    patchRow = 0;
+    patchCol = 0;
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        for (int y = 0; y < patchSide; y++)
+            for (int x = 0; x < patchSide; x++)
+                patchData[y * patchSide + x] = refImgRawDataPermute[y + x * patchSide + patchCol * patchSide + patchRow * patchSide * refImg.size().width];
+        patchCol++;
+        if (patchCol >= patchCount.width)
+        {
+            patchCol = 0;
+            patchRow++;
+        }
+        HOG(patchData, hogParams, patchSize, features, 1);
+        hogPatchesDblDataPermute[p] = std::vector<double>(features, features + nFeatures);
+        logger << "roiID0003.txt hog588-impl-DBL-data-permute-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDblDataPermute[p]) << std::endl;
+    }
+
     return 0;
 }
 
@@ -301,6 +538,11 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[4] == 5,   "Maximum value should be found");
     ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
 
+    double minAll, maxAll;
+    findMinMaxOverall(v, &minAll, &maxAll);
+    ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
+    ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
+
     FeatureVector normAll = normalizeMinMaxAllFeatures(v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
     for (int f = 0; f < normAll.size(); f++)
         ASSERT_LOG(normAll[f] == v1_norm01[f], "Feature should be normalized with specified min/max values");
@@ -332,6 +574,50 @@ int test_normalizationFunctions()
     ASSERT_LOG(s1neg == 0, "Negative class score should be normalized as minimum similarity");
     ASSERT_LOG(s0mid == 0.5, "Indifferent class score should be normalized as middle similarity");
     ASSERT_LOG(sprob == 0.75, "Half-probable positive class score should be normalized as 3/4 simiarity");
+
+    return 0;
+}
+
+int test_performanceEvaluationFunctions()
+{    
+    // test basic confusion matrix operations
+    ASSERT_LOG(calcTPR(2250, 250) == 0.9,  "Invalid calculation result for TPR");
+    ASSERT_LOG(calcSPC(100, 900)  == 0.1,  "Invalid calculation result for SPC");
+    ASSERT_LOG(calcFPR(1500, 500) == 0.75, "Invalid calculation result for FPR");
+    ASSERT_LOG(calcPPV(2250, 1500) == 0.6, "Invalid calculation result for PPV");
+    ASSERT_LOG(calcTNR(500, 1500) == 0.25, "Invalid calculation result for TNR");
+    ASSERT_LOG(calcACC(2450, 650, 1650, 250) == 0.62, "Invalid calculation result for ACC");
+
+    // test area under curve calculation
+    std::vector<double> FPR = { 0.000, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
+    std::vector<double> TPR = { 0.900, 0.950, 0.975, 0.990, 0.990, 0.990, 0.990, 0.990, 0.990, 0.995, 1.000 };
+    double AUC_valid = 0.98100;         // AUC [0,1] of values
+    double pAUC20_valid = 0.18875;      // pAUC(20%) of values, lands perfectly on an existing FPR           
+    double pAUC35_valid = 0.33650;      // pAUC(35%) of values, lands between existing FPRs, interpolation applied   
+    double AUC_result = calcAUC(FPR, TPR);
+    double pAUC20_result = calcAUC(FPR, TPR, 0.20);
+    double pAUC35_result = calcAUC(FPR, TPR, 0.35);
+    ASSERT_LOG(doubleAlmostEquals(AUC_valid, AUC_result), "AUC calculation should return expected value");
+    ASSERT_LOG(doubleAlmostEquals(pAUC20_valid, pAUC20_result), "pAUC(20%) calculation should return expected value");
+    ASSERT_LOG(doubleAlmostEquals(pAUC35_valid, pAUC35_result), "pAUC(35%) calculation should return expected value");
+    
+    // test to display results (visual inspection in console / logger)
+    // should display like the table below with corresponding valid values
+    /*
+        Target IDs |      AUC      |   pAUC(10%)   |   pAUC(20%)   |      AUPR     
+        ---------------------------------------------------------------------------
+        TEST       |             1 |           0.1 |           0.2 |           0.8
+    */
+    logstream logger(LOGGER_FILE);
+    xstd::mvector<2, double> scores;
+    xstd::mvector<2, int> groundTruths;
+    std::vector<std::string> targets = { "TEST" };
+    std::vector<double> targetScores{ 0.9, 0.85, 0.92, 0.89, 0.87, 0.63, 0.42, 0.56 };
+    std::vector<int> targetOutputs{ 1, 1, 1, 1, 1, -1, -1, -1 };
+    scores.push_back(targetScores);
+    groundTruths.push_back(targetOutputs);
+    logger << "Displaying results table from dummy classification scores:" << std::endl;
+    eval_PerformanceClassificationSummary(targets, scores, groundTruths);
 
     return 0;
 }
@@ -539,41 +825,53 @@ int test_runBasicExemplarSvmReadSampleFile()
     logstream logger(LOGGER_FILE);
     logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
 
-    // create test sample files
+    // create test sample files inside test directory
     std::string testDir = "test_sample-read-file/";
     bfs::create_directory(testDir);
-    std::string validIndexSampleFileName1 = testDir + "test_valid-index-samples1.data";
-    std::string wrongIndexSampleFileName1 = testDir + "test_wrong-index-samples1.data";
-    std::string wrongIndexSampleFileName2 = testDir + "test_wrong-index-samples2.data";
-    std::string wrongIndexSampleFileName3 = testDir + "test_wrong-index-samples3.data";
-    std::string wrongIndexSampleFileName4 = testDir + "test_wrong-index-samples4.data";
-    std::string validSparseSampleFileName1 = testDir + "test_valid-sparse-samples1.data";
-    std::string wrongSparseSampleFileName1 = testDir + "test_wrong-sparse-samples1.data";
-    std::ofstream validIndexSampleFile1(validIndexSampleFileName1);
-    std::ofstream wrongIndexSampleFile1(wrongIndexSampleFileName1);
-    std::ofstream wrongIndexSampleFile2(wrongIndexSampleFileName2);
-    std::ofstream wrongIndexSampleFile3(wrongIndexSampleFileName3);
-    std::ofstream wrongIndexSampleFile4(wrongIndexSampleFileName4);
-    std::ofstream validSparseSampleFile1(validSparseSampleFileName1);
-    std::ofstream wrongSparseSampleFile1(wrongSparseSampleFileName1);
+    std::string validSampleFileName1 = testDir + "test_valid-index-samples1.data";  // for testing normal indexed features
+    std::string validSampleFileName2 = testDir + "test_valid-index-samples2.data";  // for testing sparse indexed features
+    std::string validSampleFileName3 = testDir + "test_valid-index-samples3.data";  // for testing ending index producing same feature sizes
+    std::string validSampleFileName4 = testDir + "test_valid-index-samples4.data";  // for testing omitted ending index
+    std::string wrongSampleFileName1 = testDir + "test_wrong-index-samples1.data";  // for testing non ascending indexes
+    std::string wrongSampleFileName2 = testDir + "test_wrong-index-samples2.data";  // for testing repeating indexes
+    std::string wrongSampleFileName3 = testDir + "test_wrong-index-samples3.data";  // for testing non matching sample sizes
+    std::string wrongSampleFileName4 = testDir + "test_wrong-index-samples4.data";  // for testing not found index:value separator
+    std::string wrongSampleFileName5 = testDir + "test_wrong-index-samples5.data";  // for testing missing target output class value    
+    std::ofstream validSampleFile1(validSampleFileName1);
+    std::ofstream validSampleFile2(validSampleFileName2);
+    std::ofstream validSampleFile3(validSampleFileName3);
+    std::ofstream validSampleFile4(validSampleFileName4);
+    std::ofstream wrongSampleFile1(wrongSampleFileName1);
+    std::ofstream wrongSampleFile2(wrongSampleFileName2);
+    std::ofstream wrongSampleFile3(wrongSampleFileName3);
+    std::ofstream wrongSampleFile4(wrongSampleFileName4);
+    std::ofstream wrongSampleFile5(wrongSampleFileName5);    
 
     // fill test sample files
-    validIndexSampleFile1 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;
-    validIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:90.123 2:80.456 3:-70.78 4:-90000 5:-50.00 -1:0" << std::endl;
-    wrongIndexSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
-    wrongIndexSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5
-    wrongIndexSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:99.111 2:88.222 3:77.333 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
-    wrongIndexSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;  // != size
-    wrongIndexSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:0" << std::endl;                    // != size
+    validSampleFile1 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;
+    validSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:90.123 2:80.456 3:-70.78 4:-90000 5:-50.00 -1:0" << std::endl;
+    validSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:12.345 4:6.7890 -1:0" << std::endl;                             // sparse
+    validSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:99.111 2:88.222 3:77.333 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
+    validSampleFile3 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:11.222 2:33.444 3:55.666 -1:0" << std::endl;                    // == size
+    validSampleFile4 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:90.111 2:80.222 3:70.333 4:60.444 5:50.555" << std::endl;;      // missing '-1:'
+    validSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.888 3:30.777 4:40.666 5:50.000" << std::endl;;      // missing '-1:'
+    wrongSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
+    wrongSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5    
+    wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;  // != size
+    wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:0" << std::endl;                    // != size
+    wrongSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;   // missing ':'
+    wrongSampleFile5 << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;                       // missing target output class
 
     // close test sample files
-    if (validIndexSampleFile1.is_open()) validIndexSampleFile1.close();
-    if (wrongIndexSampleFile1.is_open()) wrongIndexSampleFile1.close();
-    if (wrongIndexSampleFile2.is_open()) wrongIndexSampleFile2.close();
-    if (wrongIndexSampleFile3.is_open()) wrongIndexSampleFile3.close();
-    if (wrongIndexSampleFile4.is_open()) wrongIndexSampleFile4.close();
-    if (validSparseSampleFile1.is_open()) validSparseSampleFile1.close();
-    if (wrongSparseSampleFile1.is_open()) wrongSparseSampleFile1.close();
+    if (validSampleFile1.is_open()) validSampleFile1.close();
+    if (validSampleFile2.is_open()) validSampleFile2.close();
+    if (validSampleFile3.is_open()) validSampleFile3.close();
+    if (validSampleFile4.is_open()) validSampleFile4.close();
+    if (wrongSampleFile1.is_open()) wrongSampleFile1.close();
+    if (wrongSampleFile2.is_open()) wrongSampleFile2.close();
+    if (wrongSampleFile3.is_open()) wrongSampleFile3.close();
+    if (wrongSampleFile4.is_open()) wrongSampleFile4.close();
+    if (wrongSampleFile5.is_open()) wrongSampleFile5.close();
 
     /* --------
        tests 
@@ -583,8 +881,8 @@ int test_runBasicExemplarSvmReadSampleFile()
     std::vector<int> targetOutputs;
     try
     {
-        // test valid index samples (exception not expected)    
-        esvm.readSampleDataFile(validIndexSampleFileName1, samples, targetOutputs);        
+        // test valid normal indexed samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName1, samples, targetOutputs);        
         ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
         ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
@@ -604,56 +902,157 @@ int test_runBasicExemplarSvmReadSampleFile()
     }
     catch (std::exception& ex)
     {
-        logger << "Error: Valid samples indexes and file reading should not have generated an exception." << std::endl 
+        logger << "Error: Valid normal indexed samples and file reading should not have generated an exception." << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
         return -1;
     }
     try
     {
-        // test wrong index samples (exception expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName1, samples, targetOutputs);
-        logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
-        return -2;
-    }
-    catch (...) {}
-    try
-    {
-        // test wrong index samples (exception expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName2, samples, targetOutputs);
-        logger << "Error: Repeating indexes should have raised an exception." << std::endl;
-        return -3;
-    }
-    catch (...) {}
-    try
-    {
-        // test wrong index samples (exception not expected)
-        esvm.readSampleDataFile(wrongIndexSampleFileName3, samples, targetOutputs);
-        ASSERT_LOG(samples[1].size() == 3, "Sample features should be set until -1 index is reached, following ones should be ignored");
-        ASSERT_LOG(samples[0][0] == 99.111, "Sample feature value should match value in file");
-        ASSERT_LOG(samples[0][1] == 88.222, "Sample feature value should match value in file");
-        ASSERT_LOG(samples[0][2] == 77.333, "Sample feature value should match value in file");
+        // test valid sparse indexed samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName2, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 1, "File reading should result in 1 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
+        ASSERT_LOG(samples.size() == 1, "File reading should result in 1 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 4, "Sample feature vector should have proper size according to values in file");
+        ASSERT_LOG(samples[0][0] == 12.345, "Specified sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 0, "Not specified sparse sample feature value should be set to zero");
+        ASSERT_LOG(samples[0][2] == 0, "Not specified sparse sample feature value should be set to zero");
+        ASSERT_LOG(samples[0][3] == 6.7890, "Specified sample feature value should match value in file");
     }
     catch (std::exception& ex)
     {
-        logger << "Error: Valid samples indexes and file reading should not have generated an exception." << std::endl
+        logger << "Error: Valid sparse indexes samples and file reading should not have generated an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return -2;
+    }
+    try
+    {
+        // test valid limited final index (-1) samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName3, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
+        ASSERT_LOG(targetOutputs[1] == ESVM_POSITIVE_CLASS, "Second sample target output class should be positive class value");
+        ASSERT_LOG(samples.size() == 2, "File reading should result in 2 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 3, "Sample features should be set until -1 index is reached, following ones should be ignored");
+        ASSERT_LOG(samples[1].size() == 3, "Sample features should have corresponding number of feature in file");
+        ASSERT_LOG(samples[0][0] == 99.111, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 88.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][2] == 77.333, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][0] == 11.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][1] == 33.444, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][2] == 55.666, "Sample feature value should match value in file");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return -3;
+    }
+    try
+    {
+        // test valid omitted final index (-1) samples (exception not expected)
+        esvm.readSampleDataFile(validSampleFileName4, samples, targetOutputs);
+        ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
+        ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
+        ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
+        ASSERT_LOG(samples.size() == 2, "File reading should result in 2 loaded feature vector samples");
+        ASSERT_LOG(samples[0].size() == 5, "Sample features should be set until -1 index is reached, following ones should be ignored");
+        ASSERT_LOG(samples[1].size() == 5, "Sample features should have corresponding number of feature in file");
+        ASSERT_LOG(samples[0][0] == 90.111, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][1] == 80.222, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][2] == 70.333, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][3] == 60.444, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[0][4] == 50.555, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][0] == 10.999, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][1] == 20.888, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][2] == 30.777, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][3] == 40.666, "Sample feature value should match value in file");
+        ASSERT_LOG(samples[1][4] == 50.000, "Sample feature value should match value in file");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         return -4;
     }
+    try
+    {
+        // test wrong non ascending index samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName1, samples, targetOutputs);
+        logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
+        return -5;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong repeated index samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName2, samples, targetOutputs);
+        logger << "Error: Repeating indexes should have raised an exception." << std::endl;
+        return -6;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong non matching size samples (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName3, samples, targetOutputs);
+        logger << "Error: Non matching sample sizes should have raised an exception." << std::endl;
+        return -7;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong missing index:value separator (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName4, samples, targetOutputs);
+        logger << "Error: Not found 'index:value' seperator should have raised an exception." << std::endl;
+        return -8;
+    }
+    catch (...) {}
+    try
+    {
+        // test wrong missing target output class (exception expected)
+        esvm.readSampleDataFile(wrongSampleFileName5, samples, targetOutputs);
+        logger << "Error: Missing target output class value should have raised an exception." << std::endl;
+        return -9;
+    }
+    catch (...) {}
 
-    // asserts to check:
-    //   ASSERT_LOG(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS)
-    //   ASSERT_LOG(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
-    //   ASSERT_LOG(index - prev > 0, "Feature indexes must be in ascending order");
-    //   assert skip index reading if -1 found before
-    //   ASSERT_LOG(nFeatures == features.size()
-    //   ASSERT_LOG(trainingFile.eof()  ===>   add final fv without newline?
-
-
-
-
-
-    // delete test sample files
+    // delete test directory and sample files
     bfs::remove_all(testDir);
+
+    return 0;
+}
+
+int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
+{
+    ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
+    ASSERT_LOG(nFeatures > 0, "Number of samples must be greater than zero");
+
+    logstream logger(LOGGER_FILE);
+
+    // Generate test samples file
+    logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
+    std::string timingSampleFileName = "test_timing-samples.data";
+    std::ofstream timingSampleFile(timingSampleFileName);    
+    std::srand(0);
+    for (int s = 0; s < nSamples; s++)
+    {
+        timingSampleFile << std::to_string(ESVM_NEGATIVE_CLASS);
+        for (int f = 0; f < nFeatures; f++)
+            timingSampleFile << " " << f + 1 << ":" << ((double)std::rand() / (double)RAND_MAX);
+        timingSampleFile << " -1:0" << std::endl;
+    }
+    if (timingSampleFile.is_open()) timingSampleFile.close();
+
+    // Start reading to evaluate timing
+    ESVM esvm;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targetOutputs;
+    double t0 = (double)cv::getTickCount();
+    esvm.readSampleDataFile(timingSampleFileName, samples, targetOutputs);
+    double dt = ((double)cv::getTickCount() - t0) / cv::getTickFrequency();
+    logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features: " << dt << "s" << std::endl;
+
+    bfs::remove(timingSampleFileName);
 
     return 0;
 }
@@ -1216,25 +1615,38 @@ TEST DEFINITION
 **************************************************************************************************************************/
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
-    /* Training Targets:        single high quality still image for enrollment (same as Saman paper) */
-    std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };
-    /* Training Non-Targets:    as many video negatives as possible */
-    std::vector<std::string> negativesID = { "0001", "0002", "0006", "0007", "0010",
+    /* Training Targets:        single high quality still image for enrollment */    
+    /*std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };*/  // same as Saman paper
+    /// change to fit same positives as in SAMAN code
+    std::vector<std::string> positivesID = { "0003", "0005", "0006", "0010", "0024" };
+    /* Training Non-Targets:    as many video negatives as possible */    
+    /*std::vector<std::string> negativesID = { "0001", "0002", "0006", "0007", "0010",
                                              "0017", "0018", "0019", "0024", "0025",
-                                             "0027", "0028", "0030" };
-    /* Testing Probes:          some video positives and negatives */
-    std::vector<std::string> probesID = { "0004", "0009", "0011", "0012", "0013",
-                                          "0016", "0020", "0023", "0026", "0029" }; 
+                                             "0027", "0028", "0030" };*/
+    /// change to fit new positives/probes defined
+    std::vector<std::string> negativesID = { "0001", "0002", "0007", "0009", "0011",
+                                             "0013", "0014", "0016", "0017", "0018",
+                                             "0019", "0020", "0021", "0022", "0025" };
+    /* Testing Probes:          some video positives and negatives */    
+    /*std::vector<std::string> probesID = { "0004", "0009", "0011", "0012", "0013",
+                                          "0016", "0020", "0023", "0026", "0029" }; */
+    /// change to include new positives defined, and not any of the negatives
+    std::vector<std::string> probesID = { "0003", "0004", "0005", "0006", "0010",
+                                          "0012", "0015", "0023", "0024", "0028" }; 
+    /// not used:       0026, 0027, 0029, 0030
+    /// doesn't exist:  0008
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
     logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;    
+    bool useHistEqual = false;
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
-           << "   useSyntheticPositives: " << ESVM_USE_SYNTHETIC_GENERATION << std::endl
-           << "   imageSize:             " << imageSize << std::endl
-           << "   patchCounts:           " << patchCounts << std::endl;
+           << "   useSyntheticPositives:    " << TEST_USE_SYNTHETIC_GENERATION << std::endl
+           << "   imageSize:                " << imageSize << std::endl
+           << "   patchCounts:              " << patchCounts << std::endl
+           << "   useHistEqual:             " << useHistEqual << std::endl;
     
     size_t nDescriptors = 0;
     std::vector<std::string> descriptorNames;
@@ -1292,25 +1704,26 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     */
     size_t nPositives = positivesID.size();
     size_t nRepresentations = 1;                                                // single original enroll still
-    size_t nDuplications = ESVM_DUPLICATE_COUNT;
+    size_t nDuplications = TEST_DUPLICATE_COUNT;
     size_t dimsGroundTruths[2] { nPositives, 0 };
     size_t dimsImgPositives[3] { nPositives, nRepresentations, nPatches };   
     xstd::mvector<2, int> probeGroundTruth(dimsGroundTruths);                   // [positive][probe](int)
     xstd::mvector<3, cv::Mat> matPositiveSamples(dimsImgPositives);             // [positive][representation][patch](Mat[x,y])
     xstd::mvector<2, cv::Mat> matNegativeSamples;                               // [negative][patch](Mat[x,y])
     xstd::mvector<2, cv::Mat> matProbeSamples;                                  // [probe][patch](Mat[x,y])     
-    std::vector<std::string> probeID;                                           // [probe](string)
+    std::vector<std::string> negativeSamplesID;                                 // [negative](string)
+    std::vector<std::string> probeSamplesID;                                    // [probe](string)
 
     // Add samples to containers
     logger << "Loading positives image for all test sequences..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
         // Add additional positive representations as requested
-        #if ESVM_USE_SYNTHETIC_GENERATION
+        #if TEST_USE_SYNTHETIC_GENERATION
         
             // Get original positive image with preprocessing but without patches splitting
-            cv::Mat img = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
-                                       imageSize, cv::Size(1,1), WINDOW_NAME, cv::IMREAD_COLOR)[0];
+            cv::Mat img = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, cv::Size(1, 1),
+                                       useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE)[0];
             // Get synthetic representations from original and apply patches splitting each one
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
             // Reinitialize sub-container for augmented representations using synthetic images
@@ -1327,17 +1740,16 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             }
         
         // Only original representation otherwise (no synthetic images)
-        #else/*!ESVM_USE_SYNTHETIC_GENERATION*/
-        
-            //// matPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
-            std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".jpg",
-                                                        imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
+        #else/*!TEST_USE_SYNTHETIC_GENERATION*/
+
+            std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
+                                                        useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
             for (size_t p = 0; p < nPatches; p++)
                 matPositiveSamples[pos][0][p] = patches[p];
         
-        #endif/*ESVM_USE_SYNTHETIC_GENERATION*/
+        #endif/*TEST_USE_SYNTHETIC_GENERATION*/
     }
-
+    
     /// ################################################################################ DEBUG DISPLAY POSITIVES (+SYNTH)
     /*
     logger << "SHOWING DEBUG POSITIVE SAMPLES" << std::endl;
@@ -1358,7 +1770,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     // cv::destroyWindow(WINDOW_NAME);
     /// ################################################################################ DEBUG
 
-    logger << "Feature extraction of positive images for all test sequences..." << std::endl
+    logger << "Executing feature extraction of positive images for all test sequences..." << std::endl
            << "   nPositives:       " << nPositives << std::endl
            << "   nPatches:         " << nPatches << std::endl
            << "   nRepresentations: " << nRepresentations << std::endl
@@ -1385,7 +1797,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 /// ################################################## #pragma omp parallel for
                 for (int r = 0; r < nRepresentations; r++)
                 {
-                    // switch to (i,p,fe,r) order for (patch,feature)-based training of sample representations
+                    // switch to (i,p,d,r) order for (patch,feature)-based training of sample representations
                     #if ESVM_USE_HOG
                     if (descriptorNames[d] == descriptorHOG)
                         fvPositiveSamples[pos][p][d][r] = hog.compute(matPositiveSamples[pos][r][p]);
@@ -1395,6 +1807,13 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         fvPositiveSamples[pos][p][d][r] = lbp.compute(matPositiveSamples[pos][r][p]);                    
                     #endif/*ESVM_USE_LBP*/
                 }
+
+                /// ################################################################################ DEBUG DISPLAY FEATURES
+                /*
+                logger << "Positive " << positivesID[pos] << "-patch" << std::to_string(p) << ": " 
+                       << featuresToVectorString(fvPositiveSamples[pos][p][d][0]) << std::endl;
+                */
+                /// ################################################################################ DEBUG DISPLAY FEATURES
 
                 /// ################################################## 
                 // DUPLICATE EVEN MORE REPRESENTATIONS TO HELP LIBSVM PROBABILITY ESTIMATES CROSS-VALIDATION
@@ -1406,7 +1825,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             }
         }
     }
-    nRepresentations *= nDuplications;
+    if (nDuplications > 1)
+        nRepresentations *= nDuplications;
     for (size_t d = 0; d < nDescriptors; d++)
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
@@ -1429,7 +1849,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             // Reset vectors for next test sequences                    
             matNegativeSamples.clear();
             matProbeSamples.clear();
-            probeID.clear();
+            negativeSamplesID.clear();
+            probeSamplesID.clear();            
             for (size_t pos = 0; pos < nPositives; pos++)
                 probeGroundTruth[pos].clear();
             #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
@@ -1455,21 +1876,23 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                             {
                                 size_t neg = matNegativeSamples.size();
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize,
-                                                                            patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matNegativeSamples[neg][p] = patches[p];
+
+                                negativeSamplesID.push_back(strID);
                             }
                             else if (contains(probesID, strID))
                             {
                                 size_t prb = matProbeSamples.size();
                                 matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize,
-                                                                            patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matProbeSamples[prb][p] = patches[p];
 
-                                probeID.push_back(strID);
+                                probeSamplesID.push_back(strID);
                                 for (size_t pos = 0; pos < nPositives; pos++)
                                     probeGroundTruth[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);                                
                             } 
@@ -1485,11 +1908,21 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         
             // Destroy viewing window not required while training/testing is in progress
             cv::destroyWindow(WINDOW_NAME);
-                            
-            // Feature extraction of negatives and probes
+
+            // Validation of negatives and probe samples
             size_t nProbes = matProbeSamples.size();
             size_t nNegatives = matNegativeSamples.size();
-            logger << "Feature extraction of negative and probe samples (total negatives: " << nNegatives
+            ASSERT_LOG(negativeSamplesID.size() == nNegatives, "Mismatch between negative samples count and IDs");
+            ASSERT_LOG(probeSamplesID.size() == nProbes, "Mismatch between probe samples count and IDs");
+            for (int pos = 0; pos < nPositives; pos++)
+                ASSERT_LOG(!contains(negativeSamplesID, positivesID[pos]), "Positive ID found within negative samples ID");  
+            for (int neg = 0; neg < negativesID.size(); neg++)
+                ASSERT_LOG(!contains(probeSamplesID, negativesID[neg]), "Negative ID found within probe samples ID");            
+            for (int prb = 0; prb < probesID.size(); prb++)
+                ASSERT_LOG(!contains(negativeSamplesID, probesID[prb]), "Probe ID found within negative samples ID");
+
+            // Feature extraction of negatives and probes
+            logger << "Executing feature extraction of negative and probe samples (total negatives: " << nNegatives
                    << ", total probes: " << nProbes << ")..." << std::endl;
             /// ############################################# #pragma omp parallel for
                      
@@ -1536,20 +1969,33 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             logger << "Starting enrollment for sequence: " << seq << "..." << std::endl;
 
             // Feature vector normalization
-            #if !ESVM_USE_FEATURES_NORMALIZATION
-            logger << "Skipping features normalization" << std::endl;
-            #else/*ESVM_USE_FEATURES_NORMALIZATION*/
-            logger << "Getting feature normalization values..." << std::endl;
-            size_t dimsMinMax[2] { nPatches, nDescriptors };
-            size_t dimsAllVectors[3] { nPatches, nDescriptors, nPositives * nRepresentations + nNegatives + nProbes };            
-            xstd::mvector<2, FeatureVector> minFeatures(dimsMinMax);                // [patch][descriptor]
-            xstd::mvector<2, FeatureVector> maxFeatures(dimsMinMax);                // [patch][descriptor]
-            xstd::mvector<3, FeatureVector> allFeatureVectors(dimsAllVectors);      // [patch][descriptor][sample]
-            /// ############################################# #pragma omp parallel for
-            for (size_t p = 0; p < nPatches; p++)
-            {
-                //// allFeatureVectors[p] = std::vector< std::vector< FeatureVector > >(nFeatureExtraction);
-                for (size_t d = 0; d < nDescriptors; d++)
+            #if !TEST_FEATURES_NORMALIZATION_MODE
+            logger << "Skipping features normalization" << std::endl;            
+            #else // Prepare some containers employed by each normalization method
+            size_t dimsAllVectors[3]{ nPatches, nDescriptors, nPositives * nRepresentations + nNegatives + nProbes };
+            size_t dimsMinMax[2]{ nDescriptors, nPatches };
+            xstd::mvector<3, FeatureVector> allFeatureVectors(dimsAllVectors);      // [patch][descriptor][sample](FeatureVector)            
+            xstd::mvector<2, FeatureVector> minFeaturesCumul(dimsMinMax);           // [descriptor][patch](FeatureVector)
+            xstd::mvector<2, FeatureVector> maxFeaturesCumul(dimsMinMax);           // [descriptor][patch](FeatureVector)
+            #endif/*TEST_FEATURES_NORMALIZATION_MODE*/                        
+
+            // Specific min/max containers according to methods
+            #if TEST_FEATURES_NORMALIZATION_MODE == 1       // Per feature and per patch normalization
+            logger << "Searching feature normalization values (per feature, per patch)..." << std::endl;
+            #elif TEST_FEATURES_NORMALIZATION_MODE == 2     // Per feature and across patches normalization
+            logger << "Searching feature normalization values (per feature, across patches)..." << std::endl;
+            std::vector<FeatureVector> minFeatures(nDescriptors);                   // [descriptor](FeatureVector)
+            std::vector<FeatureVector> maxFeatures(nDescriptors);                   // [descriptor](FeatureVector)
+            #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
+            logger << "Searching feature normalization values (across features, across patches)..." << std::endl;
+            std::vector<double> minFeatures(nDescriptors, DBL_MAX);                 // [descriptor](double)
+            std::vector<double> maxFeatures(nDescriptors, -DBL_MAX);                // [descriptor](double)            
+            #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+
+            // Accumulate all positive/negative/probes samples to find min/max features according to normalization mode
+            for (size_t d = 0; d < nDescriptors; d++)
+            {                
+                for (size_t p = 0; p < nPatches; p++)
                 {
                     size_t s = 0;  // Sample index
                     for (size_t pos = 0; pos < nPositives; pos++)
@@ -1559,35 +2005,68 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         allFeatureVectors[p][d][s++] = fvNegativeSamples[p][d][neg];
                     for (size_t prb = 0; prb < nProbes; prb++)
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
-
-                    // Min/Max of each (patch,feature extraction) combination for normalization 
-                    findMinMaxFeatures(allFeatureVectors[p][d], &(minFeatures[p][d]), &(maxFeatures[p][d]));
-                    logger << "Found min/max features for (descriptor,patch) " << descriptorNames[d] << "," << p << ":" << std::endl
-                           << "   MIN: " << featuresToVectorString(minFeatures[p][d]) << std::endl
-                           << "   MAX: " << featuresToVectorString(maxFeatures[p][d]) << std::endl;
+                    
+                    // Find min/max features according to normalization mode
+                    findMinMaxFeatures(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
+                    #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+                    logger << "Found min/max features for (descriptor,patch) (" << descriptorNames[d] << "," << p << "):" << std::endl
+                           << "   MIN: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl
+                           << "   MAX: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl;                   
+                    #endif/*ESVM_USE_FEATURES_NORMALIZATION == 1*/
                 }
-            }      
+                #if TEST_FEATURES_NORMALIZATION_MODE == 2       // Per feature and across patches normalization
+                FeatureVector dummyFeatures(minFeaturesCumul[d][0].size());
+                findMinMaxFeatures(minFeaturesCumul[d], &(minFeatures[d]), &dummyFeatures);
+                findMinMaxFeatures(maxFeaturesCumul[d], &dummyFeatures, &(maxFeatures[d]));
+                logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
+                       << "   MIN: " << featuresToVectorString(minFeatures[d]) << std::endl
+                       << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
+                #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
+                double dummyMinMax;
+                findMinMaxOverall(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
+                findMinMaxOverall(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
+                       << "   MIN: " << minFeatures[d] << std::endl
+                       << "   MAX: " << maxFeatures[d] << std::endl;
+                #endif/*ESVM_USE_FEATURES_NORMALIZATION == (2|3)*/
+            }
             
-            logger << "Applying features normalization..." << std::endl;
+            #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+            logger << "Applying features normalization (per feature, per patch)..." << std::endl;
+            #elif TEST_FEATURES_NORMALIZATION_MODE == 2 // Per feature and across patches normalization
+            logger << "Applying features normalization (per feature, across patches)..." << std::endl;
+            #elif TEST_FEATURES_NORMALIZATION_MODE == 3 // Across features and across patches normalization
+            logger << "Applying features normalization (across feature, across patches)..." << std::endl;
+            #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+            FeatureVector minNorm, maxNorm;
             for (size_t p = 0; p < nPatches; p++)
             {    
                 for (size_t d = 0; d < nDescriptors; d++)
                 {
-                    FeatureVector mins = minFeatures[p][d];
-                    FeatureVector maxs = maxFeatures[p][d];
+                    #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
+                    minNorm = minFeaturesCumul[d][p];
+                    maxNorm = minFeaturesCumul[d][p];
+                    #elif TEST_FEATURES_NORMALIZATION_MODE == 2 // Per feature and across patches normalization
+                    minNorm = minFeatures[d];
+                    maxNorm = minFeatures[d];
+                    #elif TEST_FEATURES_NORMALIZATION_MODE == 3 // Across features and across patches normalization
+                    int nFeatures = fvPositiveSamples[0][0][0][0].size();
+                    minNorm = FeatureVector(nFeatures, minFeatures[d]);
+                    maxNorm = FeatureVector(nFeatures, maxFeatures[d]);
+                    #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
+
                     for (size_t pos = 0; pos < nPositives; pos++)
                         for (size_t r = 0; r < nRepresentations; r++)
-                            fvPositiveSamples[pos][p][d][r] = normalizeMinMaxPerFeatures(fvPositiveSamples[pos][p][d][r], mins, maxs);
+                            fvPositiveSamples[pos][p][d][r] = normalizeMinMaxPerFeatures(fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
                     for (size_t neg = 0; neg < nNegatives; neg++)
-                        fvNegativeSamples[p][d][neg] = normalizeMinMaxPerFeatures(fvNegativeSamples[p][d][neg], mins, maxs);
+                        fvNegativeSamples[p][d][neg] = normalizeMinMaxPerFeatures(fvNegativeSamples[p][d][neg], minNorm, maxNorm);
                     for (size_t prb = 0; prb < nProbes; prb++)
-                        fvProbeSamples[p][d][prb] = normalizeMinMaxPerFeatures(fvProbeSamples[p][d][prb], mins, maxs);
+                        fvProbeSamples[p][d][prb] = normalizeMinMaxPerFeatures(fvProbeSamples[p][d][prb], minNorm, maxNorm);
                 }
-            }            
-            #endif/*ESVM_USE_FEATURES_NORMALIZATION*/
+            }
 
             // ESVM samples files for each (sequence,positive,feature-extraction,train/test,patch) combination
-            #if ESVM_WRITE_DATA_FILES
+            #if TEST_WRITE_DATA_FILES
             logger << "Writing ESVM train/test samples files..." << std::endl;
             for (size_t p = 0; p < nPatches; p++)
             {
@@ -1596,8 +2075,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 {
                     for (size_t pos = 0; pos < nPositives; pos++)
                     {        
-                        std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
-                                                    descriptorNames[d] + "-patch" + strPatch;
+                        std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" + descriptorNames[d] + "-patch" + strPatch;
                         std::string trainFileName = fileTemplate + "-train.data";
                         std::string testFileName = fileTemplate + "-test.data";
                         logger << "   Writing ESVM files:" << std::endl
@@ -1606,14 +2084,20 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
                         std::ofstream trainFile(trainFileName);
                         std::ofstream testFile(testFileName);
-                
-                        // Add other gallery positives than the current one as additional negative representations (counter examples)                    
+                                        
+                        #if TEST_USE_OTHER_POSITIVES_AS_NEGATIVES
+                        // Add other gallery positives than the current one as additional negative representations (counter examples)
                         for (size_t galleryPos = 0; galleryPos < nPositives; galleryPos++)
                             for (size_t r = 0; r < nRepresentations; r++)
                         {
                             int gt = (pos == galleryPos ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
                             trainFile << featuresToSvmString(fvPositiveSamples[galleryPos][p][d][r], gt) << std::endl;
                         }
+                        #else/*TEST_USE_OTHER_POSITIVES_AS_NEGATIVES*/
+                        // Add only corresponding positive representations
+                        for (size_t r = 0; r < nRepresentations; r++)
+                            trainFile << featuresToSvmString(fvPositiveSamples[pos][p][d][r], ESVM_POSITIVE_CLASS) << std::endl;
+                        #endif/*TEST_USE_OTHER_POSITIVES_AS_NEGATIVES*/
                         for (size_t neg = 0; neg < nNegatives; neg++)
                             trainFile << featuresToSvmString(fvNegativeSamples[p][d][neg], ESVM_NEGATIVE_CLASS) << std::endl;
                         for (size_t prb = 0; prb < nProbes; prb++)
@@ -1621,7 +2105,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     }
                 }
             }
-            #endif/*ESVM_WRITE_DATA_FILES*/
+            #endif/*TEST_WRITE_DATA_FILES*/
             
             // Classifiers training and testing
             logger << "Starting classification training/testing..." << std::endl;
@@ -1641,14 +2125,14 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                             logger << "Running Exemplar-SVM training..." << std::endl;
                             esvmModels[pos][p][d] = ESVM(fvPositiveSamples[pos][p][d], fvNegativeSamples[p][d], positivesID[pos]);
 
-                            #if ESVM_WRITE_DATA_FILES
+                            #if TEST_WRITE_DATA_FILES
                             std::string esvmModelFile = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" +
                                                         descriptorNames[d] + "-patch" + std::to_string(p) + ".model";
                             logger << "Saving Exemplar-SVM model to file..." << std::endl;
                             bool isSaved = esvmModels[pos][p][d].saveModelFile(esvmModelFile);
                             logger << std::string(isSaved ? "Saved" : "Failed to save") + 
                                       " Exemplar-SVM model to file: '" + esvmModelFile + "'" << std::endl;                            
-                            #endif/*ESVM_WRITE_DATA_FILES*/
+                            #endif/*TEST_WRITE_DATA_FILES*/
                         }
                         catch (const std::exception& e)
                         {
@@ -1680,8 +2164,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                             combinedScores[prb] += patchScoresNorm[prb];    // accumulation of scores for (patch,descriptor)-based score fusion
                             combinedScoresRaw[prb] += patchScores[prb];     // accumulation of all probe scores without any pre-fusion normalization
 
-                            std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
-                            logger << "Score for patch " << p << " of probe " << prb << " (ID" << probeID[prb] << ", "
+                            std::string probeGT = (probeSamplesID[prb] == positivesID[pos] ? "positive" : "negative");
+                            logger << "Score for patch " << p << " of probe " << prb << " (ID" << probeSamplesID[prb] << ", "
                                    << probeGT << "): " << patchScoresNorm[prb] << std::endl;
                         }
                     }
@@ -1691,9 +2175,9 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         descriptorScores[prb] /= (double)nPatches;
                         // accumulation with normalized patch-fusioned scores for descriptor-based score fusion
                         fusionScores[prb] = descriptorScores[prb];
-                        std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
+                        std::string probeGT = (probeGroundTruth[pos][prb] > 0 ? "positive" : "negative");
                         logger << "Score for descriptor " << descriptorNames[d] << " (patch-fusion) of probe " << prb
-                               << " (ID" << probeID[prb] << ", " << probeGT << "): " << descriptorScores[prb] << std::endl;
+                               << " (ID" << probeSamplesID[prb] << ", " << probeGT << "): " << descriptorScores[prb] << std::endl;
                     }
                     logger << "Performance evaluation for patch-based score fusion for '" + descriptorNames[d] + "' descriptor:" << std::endl;
                     eval_PerformanceClassificationScores(descriptorScores, probeGroundTruth[pos]);
@@ -1703,12 +2187,12 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 for (size_t prb = 0; prb < nProbes; prb++)
                 {
                     // average of score accumulation for fusion per descriptor
-                    std::string probeGT = (probeID[prb] == positivesID[pos] ? "positive" : "negative");
+                    std::string probeGT = (probeGroundTruth[pos][prb] > 0 ? "positive" : "negative");
                     fusionScores[prb] /= (double)nDescriptors;
                     combinedScores[prb] /= (double)nCombined;
                     combinedScoresRaw[prb] /= (double)nCombined;
                     
-                    logger << "Score fusion (descriptor,patch) of probe " << prb << " (ID" << probeID[prb] << ", "
+                    logger << "Score fusion (descriptor,patch) of probe " << prb << " (ID" << probeSamplesID[prb] << ", "
                            << probeGT << "): " << fusionScores[prb] << std::endl;
                 }
 
@@ -1763,7 +2247,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
 {
     logstream logger(LOGGER_FILE);
 
-    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }    
+    std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }   
+    std::string dataFileDir = "data_ChokePoint_64x64_HOG-LBP-descriptors_whole-image/";
     #if ESVM_USE_HOG
     filenames.push_back({ dataFileDir + "chokepoint-S1-id0011-hog-train.data", dataFileDir + "chokepoint-S1-id0011-hog-test.data", "id0011" });
     filenames.push_back({ dataFileDir + "chokepoint-S2-id0011-hog-train.data", dataFileDir + "chokepoint-S2-id0011-hog-test.data", "id0011" });
@@ -1823,8 +2308,10 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
 
     logstream logger(LOGGER_FILE);
     
+    std::string dataFileDir = "data_48x48_HOG-LBP-descriptors+9-patches_fusion-patches1st-descriptors2nd/";
     std::vector< std::string > positivesID = { "id0011", "id0012", "id0013", "id0016", "id0020" };    
     std::vector< std::string > descriptorNames;
+    
     #if ESVM_USE_HOG
     descriptorNames.push_back("hog");
     #endif/*ESVM_USE_HOG*/
@@ -1914,8 +2401,13 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 {
     // Paths and logging
     logstream logger(LOGGER_FILE);
-    const std::string negativesDir = "negatives/";
-    const std::string probesFileDir = "data_SAMAN_48x48_HOG-descriptor+9-patches/";
+        
+    ASSERT_LOG(!(TEST_READ_DATA_FILES & 0b10000000) != !(TEST_READ_DATA_FILES & 0b01110000),
+               "Invalid 'TEST_READ_DATA_FILES' options flag (128) cannot be used simultaneously with [(16),(32),(64)]"); 
+    const std::string hogTypeFilesPreGen = (TEST_READ_DATA_FILES & 0b10000000) ? "-C++" : "-MATLAB";
+    const std::string imageTypeFilesPreGen = (TEST_READ_DATA_FILES & 0b10110000) ? "" : "-transposed";
+    const std::string negativesDir = "negatives" + hogTypeFilesPreGen + imageTypeFilesPreGen + "/";
+    const std::string probesFileDir = "data_SAMAN_48x48" + hogTypeFilesPreGen + imageTypeFilesPreGen + "_HOG-descriptor+9-patches/";
 
     // Check requirements
     ASSERT_LOG(ESVM_USE_HOG != 0, "HOG feature extraction is required for this test");
@@ -1928,7 +2420,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     /* Training Targets:    single high quality still image for enrollment (same as Saman code) */
     std::vector<int> positivesID = { 3, 5, 6, 10, 24 };
     /* Testing Probes:      some video positives and negatives */
-    std::vector<int> probesID = { 3, 4, 5, 6, 9, 10, 11, 12, 23, 24 };
+    std::vector<int> probesID = { 3, 4, 5, 6, 10, 12, 15, 23, 24, 28 };
     
     // Predefined parameters to match pre-generated files    
     cv::Size imageSize = cv::Size(48, 48);
@@ -1964,17 +2456,14 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     logger << "Loading positive enroll image stills..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {
-        std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".jpg";
-        std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
+        std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".tif";
+        std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
         for (size_t p = 0; p < nPatches; p++)
-        {
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
-            logger << featuresToVectorString(fvPositiveSamples[pos][p]) << std::endl;
-        }
     }
 
-    // Load probe images and extract features if required (ESVM_READ_DATA_FILES option 32)
-    #if ESVM_READ_DATA_FILES & 0b00100000
+    // Load probe images and extract features if required (TEST_READ_DATA_FILES & 16|128)
+    #if TEST_READ_DATA_FILES & 0b10010000
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
     std::string seq;    
@@ -1998,8 +2487,8 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
                     {                        
                         if (contains(probesID, id))
                         {                            
-                            std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize,
-                                                                        patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                            std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                        false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                             for (size_t p = 0; p < nPatches; p++)
                                 fvProbeLoadedSamples[p].push_back(hog.compute(patches[p]));
 
@@ -2010,73 +2499,79 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             }                        
         }
     }
-    #endif/*ESVM_READ_DATA_FILES & (32)*/
+    #endif/*TEST_READ_DATA_FILES & (16|128)*/
     cv::destroyWindow(WINDOW_NAME);
 
+    // load negatives from pre-generated files
+    ESVM tmpLoadESVM;                                                   // temporary ESVM only for file loading
+    size_t dimsNegatives[2]{ nPatches, 0 };                             // dynamically fill patches from file loading
+    xstd::mvector<2, FeatureVector> fvNegativeSamples(dimsNegatives);   // [patch][negative](FeatureVector)
+    for (int p = 0; p < nPatches; p++)
+    {
+        std::string strPatch = std::to_string(p);
+        std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
+        logger << "Loading pre-generated negative samples file for patch " << strPatch << "..." << std::endl 
+               << "   Using file: '" << negativeTrainFile << "'" << std::endl;
+        std::vector<FeatureVector> fvNegativeSamplesPatch;
+        std::vector<int> negativeGroundTruths;
+        tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativeSamplesPatch, negativeGroundTruths);
+        fvNegativeSamples[p] = xstd::mvector<1, FeatureVector>(fvNegativeSamplesPatch);
+    }
+
+    // execute feature normalization as required
+    //    N.B. Pre-generated negatives and probes samples from files are already normalized
+    #if TEST_FEATURES_NORMALIZATION_MODE == 3
+    logger << "Applying feature normalization (across features, across patches) for loaded positives and probes..." << std::endl;
+    double hardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test
+    double hardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test
+    int nProbesLoaded = fvProbeLoadedSamples[0].size();
+    for (int p = 0; p < nPatches; p++)
+    {
+        for (int pos = 0; pos < nPositives; pos++)
+            fvPositiveSamples[pos][p] = normalizeMinMaxAllFeatures(fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
+        for (int prb = 0; prb < nProbesLoaded; prb++)
+            fvProbeLoadedSamples[p][prb] = normalizeMinMaxAllFeatures(fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
+    }
+    #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
+
     // train and test ESVM
-    ESVM tmpLoadESVM;   // temporary ESVM only for file loading
     for (int pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<int> negativeGroundTruths, probeGroundTruthsPreGen, probeGroundTruthsLoaded;            // [probe](int)
+        std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
         xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
         std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (int p = 0; p < nPatches; p++)
         {
-            // load feature vector files
-            std::string strPatch = std::to_string(p);
-            std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
-            std::vector<FeatureVector> fvNegativePatch;
-            tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativePatch, negativeGroundTruths);
-
             // train with positive extracted features and negative loaded features
+            std::string strPatch = std::to_string(p);
             logger << "Starting ESVM training for '" << posID << "', patch " << strPatch << "..." << std::endl;
-            std::vector<FeatureVector> singlePositivePatch = { fvPositiveSamples[pos][p] };
-            esvm[pos][p] = ESVM(singlePositivePatch, fvNegativePatch, posID + "-" + strPatch);
+            std::vector<FeatureVector> fvPositiveSingleSamplePatch = { fvPositiveSamples[pos][p] };
+            std::vector<FeatureVector> fvNegativeSamplesPatch = std::vector<FeatureVector>(fvNegativeSamples[p]);
+            esvm[pos][p] = ESVM(fvPositiveSingleSamplePatch, fvNegativeSamplesPatch, posID + "-" + strPatch);
 
             // test against pre-generated probes and loaded probes
-            #if ESVM_READ_DATA_FILES & 0b00010000   // (16) use pre-generated probe sample file
-            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl;
-            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";            
-            std::vector<double> scoresPreGen = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
-            probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
-            #endif/*ESVM_READ_DATA_FILES & (16)*/
-            #if ESVM_READ_DATA_FILES & 0b00100000   // (32) use feature extraction on probe images
+            #if TEST_READ_DATA_FILES & 0b10010000   // (16|128) use feature extraction on probe images
             logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe images and extract feature)..." << std::endl;
             std::vector<double> scoresLoaded = esvm[pos][p].predict(fvProbeLoadedSamples[p]);
             probePatchScoresLoaded[p] = xstd::mvector<1, double>(scoresLoaded);
-            #endif/*ESVM_READ_DATA_FILES & (32)*/
+            #endif/*TEST_READ_DATA_FILES & (16|128)*/
+            #if TEST_READ_DATA_FILES & 0b01100000   // (32|64) use pre-generated probe sample file
+            std::string probePreGenTestFile = probesFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            logger << "Starting ESVM testing for '" << posID << "', patch " << strPatch << " (probe pre-generated samples files)..." << std::endl
+                   << "   Using file: '" << probePreGenTestFile << "'" << std::endl;                  
+            std::vector<double> scoresPreGen = esvm[pos][p].predict(probePreGenTestFile, &probeGroundTruthsPreGen);
+            probePatchScoresPreGen[p] = xstd::mvector<1, double>(scoresPreGen);
+            #endif/*TEST_READ_DATA_FILES & (32|64)*/
         }
+
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
-
-        /* -------------------------------------------
-           (16) use pre-generated probe sample file 
-        ------------------------------------------- */
-        #if ESVM_READ_DATA_FILES & 0b00010000 
-
-        // accumulated sum of scores for score fusion
-        int nProbesPreGen = probePatchScoresPreGen[0].size();
-        probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
-        for (int p = 0; p < nPatches; p++)
-            for (int prb = 0; prb < nProbesPreGen; prb++)
-                probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
-        
-        // average accumulated scores and execute post-fusion normalization
-        for (int prb = 0; prb < nProbesPreGen; prb++)
-            probeFusionScoresPreGen[prb] /= (double)nPatches;
-        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
-        
-        // evaluate results with fusioned patch scores
-        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
-        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
-        
-        #endif/*ESVM_READ_DATA_FILES & (16)*/
         
         /* ----------------------------------------------
-           (32) use feature extraction on probe images
+           (16|128) use feature extraction on probe images
         ---------------------------------------------- */
-        #if ESVM_READ_DATA_FILES & 0b00100000
+        #if TEST_READ_DATA_FILES & 0b10010000
 
         // accumulated sum of scores for score fusion
         int nProbesLoaded = probePatchScoresLoaded[0].size();
@@ -2098,7 +2593,30 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
         eval_PerformanceClassificationScores(probeFusionScoresLoaded, probeGroundTruthsLoaded);
         
-        #endif/*ESVM_READ_DATA_FILES & (32)*/       
+        #endif/*TEST_READ_DATA_FILES & (16|128)*/  
+
+        /* -------------------------------------------------------------------------------------------------------
+           (32|64) use pre-generated probe sample file ([normal|transposed] images employed to generate files) 
+        ------------------------------------------------------------------------------------------------------- */
+        #if TEST_READ_DATA_FILES & 0b01100000 
+
+        // accumulated sum of scores for score fusion
+        int nProbesPreGen = probePatchScoresPreGen[0].size();
+        probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
+        for (int p = 0; p < nPatches; p++)
+            for (int prb = 0; prb < nProbesPreGen; prb++)
+                probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
+        
+        // average accumulated scores and execute post-fusion normalization
+        for (int prb = 0; prb < nProbesPreGen; prb++)
+            probeFusionScoresPreGen[prb] /= (double)nPatches;
+        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        
+        // evaluate results with fusioned patch scores
+        logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
+        eval_PerformanceClassificationScores(probeFusionScoresPreGen, probeGroundTruthsPreGen);
+        
+        #endif/*TEST_READ_DATA_FILES & (32|64)*/
     }
     
     logger << "Test complete" << std::endl;
@@ -2151,15 +2669,19 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         roiTitanUnitFastDTTrackPath + "1 fixed/images/person_8",    // Roman
     };
 
+    std::string writingDataFileDir = "data_TITAN_48x48_HOG-descriptor+9-patches/";
+
     // Display and output
     cv::namedWindow(WINDOW_NAME);
     logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;    
+    bool useHistEqual = false;
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
            << "   useSyntheticPositives: " << useSyntheticPositives << std::endl
            << "   imageSize:             " << imageSize << std::endl
-           << "   patchCounts:           " << patchCounts << std::endl;
+           << "   patchCounts:           " << patchCounts << std::endl
+           << "   useHistEqual:          " << useHistEqual << std::endl;
     
     size_t nDescriptors = 0;
     std::vector<std::string> descriptorNames;
@@ -2207,6 +2729,7 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
                 Dimensions should therefore be mentionned explicitely using an array of size for each 'vector' level, be initialized later
                 as required with lower dimension 'mvector', or using a 'zero' dimension (empty).
     */
+    
     size_t nPositives = positiveImageStills.size();
     size_t nRepresentations = 1;
     size_t nDuplications = 10;
@@ -2226,7 +2749,7 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         if (useSyntheticPositives)
         {
             // Get original positive image with preprocessing but without patches splitting
-            cv::Mat img = imPreprocess(positiveImageStills[pos].Path, imageSize, cv::Size(1,1), WINDOW_NAME, cv::IMREAD_COLOR)[0];
+            cv::Mat img = imPreprocess(positiveImageStills[pos].Path, imageSize, cv::Size(1,1), useHistEqual, WINDOW_NAME, cv::IMREAD_COLOR)[0];
             // Get synthetic representations from original and apply patches splitting each one
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
             // Reinitialize sub-container for augmented representations using synthetic images
@@ -2246,7 +2769,8 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         else
         {
             //// matPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
-            std::vector<cv::Mat> patches = imPreprocess(positiveImageStills[pos].Path, imageSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
+            std::vector<cv::Mat> patches = imPreprocess(positiveImageStills[pos].Path, imageSize, patchCounts,
+                                                        useHistEqual, WINDOW_NAME, cv::IMREAD_COLOR);
             for (size_t p = 0; p < nPatches; p++)
                 matPositiveSamples[pos][0][p] = patches[p];
         }
@@ -2349,8 +2873,8 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
                             {                                
                                 size_t neg = matNegativeSamples.size();
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize,
-                                                                            patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matNegativeSamples[neg][p] = patches[p];
     } } } } } } }   // End of negatives loading
@@ -2358,18 +2882,18 @@ int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
     // Load probe samples
     /*
     else if (contains(probesID, strID))
-{
-    size_t prb = matProbeSamples.size();
-    matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-    std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize,
-        patchCounts, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-    for (size_t p = 0; p < nPatches; p++)
-        matProbeSamples[prb][p] = patches[p];
+    {
+        size_t prb = matProbeSamples.size();
+        matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+        std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts, 
+                                                    useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+        for (size_t p = 0; p < nPatches; p++)
+            matProbeSamples[prb][p] = patches[p];
 
-    probeID.push_back(strID);
-    for (size_t pos = 0; pos < nPositives; pos++)
-        probeGroundTruth[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
-}
+        probeID.push_back(strID);
+        for (size_t pos = 0; pos < nPositives; pos++)
+            probeGroundTruth[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
+    }
     */
 
 
@@ -2388,6 +2912,7 @@ TEST DEFINITION
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 {
     ASSERT_LOG(TEST_ESVM_SAMAN != 0, "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' not selected for running");
+    #if TEST_ESVM_SAMAN
 
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
     size_t nPositives = positivesID.size();
@@ -2395,10 +2920,16 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     size_t nProbes = 0;     // set when read from testing file
     #if TEST_ESVM_SAMAN == 1
     size_t nFeatures = 128;
-    std::string dataFileDir = "data_SAMAN_48x48_HOG-PCA-descriptor+9-patches/";
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB_HOG-PCA-descriptor+9-patches/";
     #elif TEST_ESVM_SAMAN == 2
     size_t nFeatures = 588;
-    std::string dataFileDir = "data_SAMAN_48x48_HOG-descriptor+9-patches/";
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB_HOG-descriptor+9-patches/";
+    #elif TEST_ESVM_SAMAN == 3
+    size_t nFeatures = 588;
+    std::string dataFileDir = "data_SAMAN_48x48-MATLAB-transposed_HOG-descriptor+9-patches/";
+    #elif TEST_ESVM_SAMAN == 4
+    size_t nFeatures = 588;
+    std::string dataFileDir = "data_ChokePoint_48x48_HOG-impl-588_9-patches_PreNormOverall-Mode3/";
     #endif/*TEST_ESVM_SAMAN*/
 
     size_t dimsESVM[2] = { nPositives, nPatches };
@@ -2420,14 +2951,21 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         std::vector<double> probeFusionScoresNormSkippedPostNorm;   // post-fusion normalization of scores obtained from skipped normalization
         for (size_t p = 0; p < nPatches; p++)
         {
-            std::string strPatch = std::to_string(p);
-            logger << "Starting training/testing ESVM evaluation for '" << posID << "', patch " << strPatch << "..." << std::endl;
-
             // run training / testing from files            
             std::vector<double> probePatchScores;
+            std::string strPatch = std::to_string(p);
+            #if TEST_ESVM_SAMAN == 4        // Using files generated by 'FullChokePoint' test             
+            std::string trainFile = dataFileDir + "chokepoint-S1-" + posID + "-hog-patch" + strPatch + "-train.data";
+            std::string testFile = dataFileDir + "chokepoint-S1-" + posID + "-hog-patch" + strPatch + "-test.data";
+            #else/*TEST_ESVM_SAMAN != 4*/   // Using files generated by the SAMAN MATLAB code
             std::string trainFile = dataFileDir + "train-target" + posID + "-patch" + strPatch + ".data";
             std::string testFile = dataFileDir + "test-target" + posID + "-patch" + strPatch + ".data";
+            #endif/*TEST_ESVM_SAMAN*/
+            logger << "Starting ESVM training from pre-generated file for '" << posID << "', patch " << strPatch << "..." << std::endl
+                   << "   Using file: '" << trainFile << "'" << std::endl;
             esvm[pos][p] = ESVM(trainFile, posID);
+            logger << "Starting ESVM testing from pre-generated file for '" << posID << "', patch " << strPatch << "..." << std::endl
+                   << "   Using file: '" << testFile << "'" << std::endl;
             probePatchScores = esvm[pos][p].predict(testFile, &probeGroundTruths);
 
             // score normalization for patch
@@ -2447,7 +2985,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
                     probeFusionScoresNormGradual[prb] += normPatchScores[prb];  // gradually accumulate normalized scores       
         } 
 
-        ASSERT_LOG(nProbes > 0, "Number of probes should have been initialized and be greater than zero");
+        ASSERT_LOG(nProbes > 0, "Number of probes should have been updated from loaded samples and be greater than zero");
 
         // score fusion of patches
         probeFusionScoresNormFinal = std::vector<double>(nProbes);
@@ -2501,6 +3039,113 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         eval_PerformanceClassificationScores(probeFusionScoresNormSkippedPostNorm, probeGroundTruths);
     }
 
+    #endif/*TEST_ESVM_SAMAN*/
+    return 0;
+}
+
+/**************************************************************************************************************************
+TEST DEFINITION
+
+    This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated 
+    negative samples files from the ChokePoint dataset (Sequence 1).  
+**************************************************************************************************************************/
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure()
+{
+    logstream logger(LOGGER_FILE);
+
+    // image and patch dimensions 
+    cv::Size imageSize(48, 48);
+    cv::Size patchCounts(3, 3);    
+    size_t nPatches = patchCounts.area();
+
+    // positive samples
+    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
+    size_t nPositives = positivesID.size();    
+    size_t dimsPositives[2]{ nPatches, nPositives };
+    xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
+
+    // negative samples    
+    size_t dimsNegatives[2]{ nPatches, 0 };                             // number of negatives unknown (loaded from file)
+    xstd::mvector<2, FeatureVector> negativeSamples(dimsNegatives);     // [patch][negative](FeatureVector)
+    
+    // probe samples
+    size_t dimsProbes[3]{ nPatches, nPositives, 0 };                    // number of probes unknown (loaded from file)
+    xstd::mvector<3, FeatureVector> probeSamples(dimsProbes);           // [patch][positive][probe](FeatureVector)    
+
+    // classification results    
+    size_t dimsResults[2]{ nPositives, 0 };                             // number of probes unknown (loaded from file)
+    xstd::mvector<3, double> scores(dimsProbes);                        // [patch][positive][probe](double)
+    xstd::mvector<2, double> classificationScores(dimsResults);         // [positive][probe](double)    
+    xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
+
+    // Exemplar-SVM
+    ESVM FileLoaderESVM;
+    xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM)    
+
+    // prepare hog feature extractor    
+    cv::Size blockSize(2, 2);
+    cv::Size blockStride(2, 2);
+    cv::Size cellSize(2, 2);
+    int nBins = 3;
+    FeatureExtractorHOG hog(imageSize, blockSize, blockStride, cellSize, nBins);
+    double hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    
+    // load positive target still images, extract features and normalize
+    logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {        
+        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
+        for (size_t p = 0; p < nPatches; p++)
+            positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
+    }
+
+    // load negative samples from pre-generated files for training (samples in files are pre-normalized)
+    logger << "Loading negative samples from files..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".data", negativeSamples[p]);    
+
+    // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
+    logger << "Loading probe samples from files..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + ".data",
+                                              probeSamples[p][pos], probeGroundTruths[pos]);  
+
+    // training
+    logger << "Training ESVM with positives and negatives..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
+
+    // testing, score fusion, normalization
+    logger << "Testing probe samples against enrolled targets..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++) 
+    {
+        int nProbes = probeSamples[0][pos].size();      // variable number of probes according to tested positive
+        classificationScores[pos] = xstd::mvector<1, double>(nProbes, 0);
+        for (size_t prb = 0; prb < nProbes; prb++)
+        {            
+            for (size_t p = 0; p < nPatches; p++)
+            {
+                scores[p][pos].push_back( esvm[p][pos].predict(probeSamples[p][pos][prb]) );
+                classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
+            }
+            classificationScores[pos][prb] /= (double)nPatches;                                 // average score fusion
+        }
+        classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
+    }
+
+    // performance evaluation
+
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {
+        logger << "Performance evaluation results for target " << positivesID[pos] << ":" << std::endl;
+        eval_PerformanceClassificationScores(classificationScores[pos], probeGroundTruths[pos]);
+    }
+    logger << "Summary of performance evaluation results:" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, classificationScores, probeGroundTruths);
+
     return 0;
 }
 
@@ -2509,27 +3154,98 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths)
 {
+    std::vector<double> FPR, TPR;
+    eval_PerformanceClassificationScores(normScores, probeGroundTruths, FPR, TPR);
+}
+
+/*
+    Evaluates various performance mesures of classification scores according to ground truths and return (FPR,TPR) results
+*/
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths,
+                                          std::vector<double>& FPR, std::vector<double>& TPR)
+{
     ASSERT_LOG(normScores.size() == probeGroundTruths.size(), "Number of classification scores and ground truth must match");
 
     logstream logger(LOGGER_FILE);
 
-    // Evaluate results
-    std::vector<double> TPR, FPR;
+    // Evaluate results    
     int steps = 100;
+    FPR = std::vector<double>(steps + 1, 0);
+    TPR = std::vector<double>(steps + 1, 0);
     for (int i = 0; i <= steps; i++)
     {
         int FP, FN, TP, TN;
         double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
         countConfusionMatrix(normScores, probeGroundTruths, T, &TP, &TN, &FP, &FN);
-        TPR.push_back(calcTPR(TP, FN));
-        FPR.push_back(calcFPR(FP, TN));
+        TPR[i] = calcTPR(TP, FN);
+        FPR[i] = calcFPR(FP, TN);
     }
-    double AUC = calcAUC(TPR, FPR);
-    double pAUC10 = calcAUC(TPR, FPR, 0.10);
-    double pAUC20 = calcAUC(TPR, FPR, 0.20);
+    double AUC = calcAUC(FPR, TPR);
+    double pAUC10 = calcAUC(FPR, TPR, 0.10);
+    double pAUC20 = calcAUC(FPR, TPR, 0.20);
     for (size_t j = 0; j < FPR.size(); j++)
         logger << "(FPR,TPR)[" << j << "] = " << FPR[j] << "," << TPR[j] << std::endl;
     logger << "AUC = " << AUC << std::endl              // Area Under ROC Curve
            << "pAUC(10%) = " << pAUC10 << std::endl     // Partial Area Under ROC Curve (FPR=10%)
            << "pAUC(20%) = " << pAUC20 << std::endl;    // Partial Area Under ROC Curve (FPR=20%)
+}
+
+/*
+    Makes a summary evaluation and display of multiple targets using their corresponding (FPR,TPR) values.
+
+    Format Requirements:
+
+        - positivesID:          matches the first dimension of the results multi-vectors
+        - normScores:           2D-vector indexed as [target][probe] scores
+        - probeGroundTruths:    2D-vector indexed as [target][probe] ground truths matching scores indexes
+*/
+void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID, 
+                                           xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths)
+{
+    // check targets
+    size_t nTargets = positivesID.size();
+    ASSERT_LOG(nTargets > 0, "Cannot make performance classification summary without target IDs");
+    ASSERT_LOG(nTargets == normScores.size(), "Number of target IDs must match number of scores (1st dimension)");
+    ASSERT_LOG(nTargets == probeGroundTruths.size(), "Number of target IDs must match number of ground truths (1st dimension)");
+
+    // evaluate results    
+    int steps = 100;
+    size_t dimsSummary[2]{ nTargets, 4 };                   
+    size_t dimsThresholds[2]{ nTargets, steps + 1 };        
+    xstd::mvector<2, double> summaryResults(dimsSummary);   // [target][0: AUC | 1: pAUC(10%) | 2: pAUC(20%) | 3: AUPR](double)
+    xstd::mvector<2, ConfusionMatrix> CM(dimsThresholds);   // [target][threshold](ConfusionMatrix)
+    for (size_t pos = 0; pos < nTargets; pos++)
+    {
+        for (int i = 0; i <= steps; i++)
+        {
+            ConfusionMatrix cm;
+            double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
+            countConfusionMatrix(normScores[pos], probeGroundTruths[pos], T, &cm);
+            CM[pos][i] = cm;
+        }
+        summaryResults[pos][0] = calcAUC(CM[pos]);          // AUC
+        summaryResults[pos][1] = calcAUC(CM[pos], 0.10);    // pAUC(10%)
+        summaryResults[pos][2] = calcAUC(CM[pos], 0.20);    // pAUC(20%)
+        summaryResults[pos][3] = calcAUPR(CM[pos]);         // AUPR
+    }
+
+    // display results
+    logstream logger(LOGGER_FILE);
+    std::string header = "Target IDs";
+    std::vector<std::string> cols = { "      AUC      ", "   pAUC(10%)   ", "   pAUC(20%)   ", "      AUPR     " };
+    size_t targetLen = header.size();    
+    for (size_t pos = 0; pos < nTargets; pos++)
+        targetLen = std::max(positivesID[pos].size(), targetLen);
+    targetLen++;
+    header += std::string(targetLen - header.size(), ' ');
+    for (size_t c = 0; c < cols.size(); c++)
+        header += "|" + cols[c];
+    logger << header << std::endl << std::string(header.size(), '-') << std::endl;    
+    for (size_t pos = 0; pos < nTargets; pos++)
+    {
+        logger << positivesID[pos] << std::string(targetLen - positivesID[pos].size() - 1, ' ');
+        for (size_t c = 0; c < cols.size(); c++)
+            logger << " |" << std::setw(cols[c].size() - 1) << summaryResults[pos][c];        
+        logger << std::endl;
+    }
 }

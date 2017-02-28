@@ -11,8 +11,10 @@ Normalization oprations
 double normalizeMinMax(double value, double min, double max);
 // Find the Min-Max values along a vector (not per feature)
 void findMinMax(FeatureVector vector, double* min, double* max, int* posMin = nullptr, int* posMax = nullptr);
+// Find the Min-Max values acros features and across a whole list of feature vectors
+void findMinMaxOverall(std::vector<FeatureVector> featureVectors, double* min, double* max);
 // Find the min/max per feature across a whole list of feature vectors
-void findMinMaxFeatures(std::vector< FeatureVector > featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures);
+void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures);
 // Normalization along a feature vector using the specified min/max features, min/max of vector are used if not specified
 FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector, double min, double max);
 FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector);

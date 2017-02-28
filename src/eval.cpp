@@ -23,27 +23,39 @@ void countConfusionMatrix(std::vector<double> scores, std::vector<int> targets, 
     }
 }
 
+void countConfusionMatrix(std::vector<double> scores, std::vector<int> targets, double threshold, ConfusionMatrix* cm)
+{
+    ASSERT_LOG(cm != nullptr, "Confusion matrix has to be specified");
+    countConfusionMatrix(scores, targets, threshold, &(cm->TP), &(cm->TN), &(cm->FP), &(cm->FN));
+}
+
 // Positive Predictive Value (Precision)
 double calcPPV(int TP, int FP) { return (double)TP / (double)(TP + FP); }
+double calcPPV(ConfusionMatrix cm) { return calcPPV(cm.TP, cm.FP); }
 
 // True Positive Rate (Recall - Sensitivity)
 double calcTPR(int TP, int FN) { return (double)TP / (double)(TP + FN); }
+double calcTPR(ConfusionMatrix cm) { return calcTPR(cm.TP, cm.FN); }
 
 // True Negative Rate (Specificity)
 double calcTNR(int TN, int FP) { return (double)TN / (double)(TN + FP); }
 double calcSPC(int TN, int FP) { return calcTNR(TN, FP); }
+double calcTNR(ConfusionMatrix cm) { return calcTNR(cm.TN, cm.FP); }
+double calcSPC(ConfusionMatrix cm) { return calcSPC(cm.TN, cm.FP); }
 
 // False Positive Rate 
 double calcFPR(int FP, int TN) { return (double)FP / (double)(FP + TN); }
+double calcFPR(ConfusionMatrix cm) { return calcFPR(cm.FP, cm.TN); }
 
 // Accuracy
-double calcACC(int Np, int Nn, double TPR, double FPR) { return (double)(Np * TPR + Nn * (1 - FPR)) / (double)(Np + Nn); }
+double calcACC(int Np, int Nn, double FPR, double TPR) { return (double)(Np * TPR + Nn * (1 - FPR)) / (double)(Np + Nn); }
 double calcACC(int TP, int TN, int FP, int FN) { return (double)(TP + TN) / (double)(TP + TN + FP + FN); }
+double calcACC(ConfusionMatrix cm) { return calcACC(cm.TP, cm.TN, cm.FP, cm.FN); }
 
 // Area or partial area under ROC curve (AUC or pAUC)
 // Partial area is obtained from zero FPR up to pFPR
-// The function assumes that (TPR,FPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..p] or [0..1])
-double calcAUC(std::vector<double> TPR, std::vector<double> FPR, double pFPR)
+// The function assumes that (FPR,TPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..p] or [0..1])
+double calcAUC(std::vector<double> FPR, std::vector<double> TPR, double pFPR)
 {
     ASSERT_LOG(TPR.size() == FPR.size(), "Number of TPR and FPR values must match");
     ASSERT_LOG(pFPR > 0 && pFPR <= 1, "Partial FPR value must be in ]0,1] interval");
@@ -71,4 +83,53 @@ double calcAUC(std::vector<double> TPR, std::vector<double> FPR, double pFPR)
         pAUC += (nextTPR + currTPR) * std::abs(nextFPR - currFPR) / 2;        
     }
     return pAUC;
+}
+
+double calcAUC(std::vector<ConfusionMatrix> cm, double pFPR)
+{
+    size_t nPoints = cm.size();
+    std::vector<double> FPR(nPoints), TPR(nPoints);
+    for (size_t i = 0; i < nPoints; i++)
+    {
+        FPR[i] = calcFPR(cm[i]);
+        TPR[i] = calcTPR(cm[i]);
+    }
+    return calcAUC(FPR, TPR, pFPR);
+}
+
+// Area under Precision-Recall curve (AUPR)
+// The function assumes that (TPR,PPV) pairs are sorted in ascending order of TPR (ie: TPR from [0..1])
+double calcAUPR(std::vector<double> TPR, std::vector<double> PPV)
+{
+    /* filter NaN values
+           these are possible and valid when the threshold is greater than the maximum obtained score, which makes PPV = 0/0
+           because all are evaluated as negatives (FP or TP ) by definition and [PPV = TP/(TP+FP)] is based only on positives 
+
+           since TPR is expected in ascending order, the corresponding PPV NaN values should be at the start of the vector
+    */
+    // find last NaN position
+    size_t nPoints = PPV.size();
+    size_t nanPos = 0;
+    for (size_t i = 0; i < nPoints; i++)
+    {
+        if (!std::isnan(PPV[i])) break;
+        nanPos++;
+    }
+    // remove the amount of NaN found
+    TPR = std::vector<double>(TPR.begin() + nanPos, TPR.end());
+    PPV = std::vector<double>(PPV.begin() + nanPos, PPV.end());
+
+    return calcAUC(TPR, PPV);   // employ the AUC functionality for similar calculation procedure
+}
+
+double calcAUPR(std::vector<ConfusionMatrix> cm)
+{
+    size_t nPoints = cm.size();
+    std::vector<double> PPV(nPoints), TPR(nPoints);
+    for (size_t i = 0; i < nPoints; i++)
+    {
+        PPV[i] = calcPPV(cm[i]);
+        TPR[i] = calcTPR(cm[i]);
+    }
+    return calcAUPR(TPR, PPV);
 }

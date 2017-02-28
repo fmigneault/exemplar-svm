@@ -1,6 +1,7 @@
 #include "norm.h"
 #include "generic.h"
 #include <algorithm>
+#include <float.h>
 
 double normalizeMinMax(double value, double min, double max)
 {
@@ -39,6 +40,18 @@ void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int
             if (posMax != nullptr)
                 *posMax = f;
         }
+    }
+}
+
+void findMinMaxOverall(std::vector<FeatureVector> featureVectors, double* min, double* max)
+{    
+    double minFound, maxFound;
+    int nSamples = featureVectors.size();
+    for (size_t s = 0; s < nSamples; s++)
+    {
+        findMinMax(featureVectors[s], &minFound, &maxFound);
+        if (s == 0 || minFound < *min) *min = minFound;
+        if (s == 0 || maxFound > *max) *max = maxFound;
     }
 }
 

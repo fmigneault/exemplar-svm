@@ -7,7 +7,7 @@ Image operations
 #include "opencv2/opencv.hpp"
 
 // Reads an image from file and displays it in a small window at the same time
-cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
+cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
 // Translation of an image with XY pixel offset
 cv::Mat imTranslate(cv::Mat image, cv::Point offset);
@@ -23,7 +23,7 @@ std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image);
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Size(0, 0));
 
 // Returns a vector of images combining patches splitting and other preprocessing steps (resizing, grayscale, hist.equal., etc.) 
-std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts,
-                                  std::string windowName, cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
+std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization = false,
+                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
 #endif/*IMG_UTILS_H*/
