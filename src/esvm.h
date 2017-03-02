@@ -8,6 +8,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+enum FileFormat { BINARY, LIBSVM };
+
 class ESVM
 {
 public:
@@ -15,8 +17,11 @@ public:
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");   
-    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
-    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors);
+    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
+                            std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
+    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
+    void writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
+                             std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
     bool saveModelFile(std::string modelFilePath);
     double predict(FeatureVector probeSample);
     std::vector<double> predict(std::vector<FeatureVector> probeSamples);
@@ -26,6 +31,10 @@ public:
 private:
     void trainEnsembleModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
     static std::vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
+    static void readSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
+    static void readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
+    static void writeSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
+    static void writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
     static svm_node* getFeatureVector(FeatureVector features);
     static svm_node* getFeatureVector(double* features, int featureCount);
     svm_model* ensembleModel = nullptr;

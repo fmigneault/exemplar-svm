@@ -65,6 +65,8 @@
 #define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
 // Evaluate timing performance for reading and parsing a samples file
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+// Test functionality of samples file reading LIBSVM/binary format comparison
+#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 
@@ -97,6 +99,13 @@
         4: run with raw feature vectors obtained from 'FullChokePoint' test (pre-feature norm overall, post-fusion norm)
 */
 #define TEST_ESVM_SAMAN 0
+/*
+    TEST_ESVM_WORKING_PROCEDURE:
+        0: not run
+        1: run with LIBSVM formatted sample files
+        2: run with binary formatted sample files
+*/
+#define TEST_ESVM_WORKING_PROCEDURE 2
 
 /* ------------------------------------------------------------
    Image paths
