@@ -27,6 +27,37 @@ std::string buildChokePointIndividualID(int id, bool withPrefixID)
     return (withPrefixID ? "ID" : "") + std::string(id > 9 ? 2 : 3, '0').append(std::to_string(id));
 }
 
+svm_node buildNode(int index, double value)
+{
+    svm_node node;
+    node.index = index;
+    node.value = value;
+    return node;
+}
+
+svm_model buildDummyExemplarSvmModel()
+{
+    svm_model model;
+    svm_parameter param;    
+    param.svm_type = C_SVC;
+    param.kernel_type = LINEAR;
+    model.param = param;
+    model.nr_class = 2;
+    model.l = 5;
+    model.sv_coef = new double*[model.nr_class - 1]{ new double[model.l]{ 5.0, -0.1, -0.2, -0.1, -0.2} };
+    model.label = new int[model.nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+    model.nSV = new int[model.nr_class]{ 1, model.l - 1 };
+    model.SV = new svm_node*[model.l]
+    {
+        new svm_node[4]{ buildNode(1, 0.50), buildNode(1, 0.75), buildNode(1, 0.25), buildNode(-1, 0) },
+        new svm_node[4]{ buildNode(1, 0.20), buildNode(1, 0.75), buildNode(1, 0.10), buildNode(-1, 0) },
+        new svm_node[4]{ buildNode(1, 0.30), buildNode(1, 0.75), buildNode(1, 0.05), buildNode(-1, 0) },
+        new svm_node[4]{ buildNode(1, 0.25), buildNode(1, 0.75), buildNode(1, 0.00), buildNode(-1, 0) },
+        new svm_node[4]{ buildNode(1, 0.15), buildNode(1, 0.75), buildNode(1, 0.15), buildNode(-1, 0) }
+    };
+    return model;
+}
+
 bool checkPathEndSlash(std::string path)
 {
     char end = *path.rbegin();
@@ -1049,7 +1080,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     esvm.writeSampleDataFile(validSampleFileName1, validSamples, validTargetOutputs, BINARY);
 
     /*=====================
-    TODO
+    TODO OTHER / MORE EXTENSIVE TESTS
     file not found
     missing/wrong header
     <= 0 n samples/features
@@ -1209,6 +1240,57 @@ int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
     bfs::remove(timingSampleFileName);
 
     return 0;
+}
+
+// Test functionality of binary model file reading and parsing of parameters allowing valid use afterwards
+int test_runBasicExemplarSvmReadModelFile_libsvm()
+{
+    logstream logger(LOGGER_FILE);
+
+    // create test model files inside test directory
+    std::string testDir = "test_model-read-libsvm-file/";
+    bfs::create_directory(testDir);
+    std::string validModelFileName1 = testDir + "test_valid-model1.model";
+    svm_model validModel1 = buildDummyExemplarSvmModel();
+    FeatureVector validSample({ 0.55, 0.70, 0.22 });    
+
+    // check for generated model files
+    ASSERT_LOG(svm_save_model(validModelFileName1.c_str(), &validModel1) == 0, "Failed to create dummy model file: '" + validModelFileName1 + "'");
+    ASSERT_LOG(bfs::exists(validModelFileName1), "Couldn't find dummy model file: '" + validModelFileName1 + "'");
+        
+    // test file loading
+    ESVM esvm;    
+    try
+    {
+        esvm.loadModelFile(validModelFileName1, LIBSVM, "test");
+        ASSERT_LOG(esvm.isModelTrained(), "Model should be trained after loading LIBSVM formatted model file");
+        ASSERT_LOG(esvm.getTargetID() == "test", "Target ID should have been properly set from model file loading function");
+        esvm.predict(validSample);  // call test to ensure file loading provided a working model
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid LIBSVM formatted model file should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
+        return -1;
+    }
+
+    bfs::remove_all(testDir);
+    return 0;
+}
+
+// Test functionality of LIBSVM model file reading and parsing of parameters allowing valid use afterwards
+int test_runBasicExemplarSvmReadModelFile_binary()
+{
+    //TODO - VALID USE AFTERWARDS!!
+    throw std::runtime_error("NOT IMPLEMENTED");
+}
+
+// Test functionality of model file reading/writing from (LIBSVM/binary,pre-trained/from samples) format comparison
+int test_runBasicExemplarSvmReadWriteModelFile_compare()
+{
+    //TODO - COMPARE ALL POSSIBILITIES (LIBSVM/binary,pre-trained/from samples) - COMPARE PREDICTION / PARAMS COUNTS
+    throw std::runtime_error("NOT IMPLEMENTED");
 }
 
 #if 0

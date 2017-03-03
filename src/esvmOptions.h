@@ -13,6 +13,8 @@
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
+#define ESVM_MODEL_BIN_FILE_HEADER "ESVM bin model"
+#define ESVM_SAMPLES_BIN_FILE_HEADER "ESVM bin samples"
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused
@@ -61,12 +63,16 @@
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test alternative MATLAB procedure (obsolete)
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-// Test functionality of samples file reading and parsing to feature vectors
+// Test functionality of LIBSVM/binary samples file reading and parsing to feature vectors
 #define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
-// Evaluate timing performance for reading and parsing a samples file
+// Evaluate timing performance for reading and parsing LIBSVM/binary samples file
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
 // Test functionality of samples file reading LIBSVM/binary format comparison
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
+// Test functionality of BINARY/LIBSVM model file reading and parsing of parameters allowing valid use afterwards
+#define TEST_ESVM_READ_MODEL_FILE_PARSER 1
+// Test functionality of model file reading/writing from (LIBSVM/binary,pre-trained/from samples) format comparison
+#define TEST_ESVM_READ_WRITE_MODEL_FILE_FORMAT_COMPARE 1
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 

@@ -140,6 +140,33 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runBasicExemplarSvmReadSampleFile_compare' completed." << std::endl;
         #endif/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
 
+        #if TEST_ESVM_READ_MODEL_FILE_PARSER
+        err = test_runBasicExemplarSvmReadModelFile_libsvm();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmReadModelFile_libsvm' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmReadModelFile_libsvm' completed." << std::endl;
+        err = test_runBasicExemplarSvmReadModelFile_binary();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmReadModelFile_binary' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmReadModelFile_binary' completed." << std::endl;
+        #endif/*TEST_ESVM_READ_MODEL_FILE_PARSER*/
+
+        #if TEST_ESVM_READ_WRITE_MODEL_FILE_FORMAT_COMPARE
+        err = test_runBasicExemplarSvmReadWriteModelFile_compare();
+        if (err)
+        {
+            logger << "Test 'test_runBasicExemplarSvmReadWriteModelFile_compare' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_runBasicExemplarSvmReadWriteModelFile_compare' completed." << std::endl;
+        #endif/*TEST_ESVM_READ_WRITE_MODEL_FILE_FORMAT_COMPARE*/
+
         #if TEST_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
         cv::Size patchCounts = cv::Size(1, 1);
