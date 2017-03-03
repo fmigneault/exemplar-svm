@@ -4,6 +4,9 @@
 #include "esvm.h"
 #include "esvmTypes.h"
 #include "svm.h"
+#include "mvector.hpp"      // Multi-Dimension vectors
+#include "feHOG.h"
+#include "esvmOptions.h"
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -37,6 +40,23 @@ private:
     // svm_model* ensembleModel = nullptr;
     std::string targetID;
     std::vector<ESVM> ensembleEsvm;
+    std::vector<FeatureVector> probeSampleFeats;
+    size_t nPatches;
+    cv::Size imageSize;
+    cv::Size patchCounts;
+    cv::Size blockSize;
+    cv::Size blockStride;
+    cv::Size cellSize;
+    int nBins;
+
+     xstd::mvector<1, double> scores;
+     xstd::mvector<1, double> classificationScores;
+
+     FeatureExtractorHOG hog;
+
+    double hogHardcodedFoundMin;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogHardcodedFoundMax;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+
 };
 
 #endif/*ENSEMBLEESVM_LIBSVM_H*/

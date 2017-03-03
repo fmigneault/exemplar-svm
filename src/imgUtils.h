@@ -26,4 +26,7 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Si
 std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization = false,
                                   std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
+std::vector<cv::Mat> imPreprocess(cv::Mat roi, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization = false,
+                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
+
 #endif/*IMG_UTILS_H*/

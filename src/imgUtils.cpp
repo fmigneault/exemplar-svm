@@ -76,3 +76,20 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
         cv::equalizeHist(img, img);
     return imSplitPatches(img, patchCounts);
 }
+
+std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
+                                  std::string windowName, cv::ImreadModes readMode)
+{
+    std::cout << "Preprocessing image: " << img.rows << " cols: " << img.cols << std::endl;
+    // if (windowName != "")
+    // {
+        cv::imshow(windowName, img);
+        cv::waitKey(1); // allow window redraw
+    // }
+    if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
+        cv::cvtColor(img, img, CV_BGR2GRAY);
+    cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);
+    if (useHistogramEqualization)
+        cv::equalizeHist(img, img);
+    return imSplitPatches(img, patchCounts);
+}
