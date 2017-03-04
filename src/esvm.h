@@ -15,6 +15,7 @@ class ESVM
 public:
     inline ESVM() {}
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
+    ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");   
     ~ESVM();
@@ -28,8 +29,8 @@ public:
     bool saveModelFile(std::string modelFilePath, FileFormat format = LIBSVM);
     double predict(FeatureVector probeSample);
     std::vector<double> predict(std::vector<FeatureVector> probeSamples);
-    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr);    
-    inline std::string getTargetID() { return targetID; }
+    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr);
+    std::string targetID;
 
 private:
     void trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
@@ -43,8 +44,7 @@ private:
     static FeatureVector getFeatureVector(svm_node* features);
     static svm_node* getFeatureNodes(FeatureVector features);
     static svm_node* getFeatureNodes(double* features, int featureCount);
-    svm_model* model = nullptr;
-    std::string targetID;
+    svm_model* model = nullptr;    
 };
 
 #endif/*ESVM_LIBSVM_H*/

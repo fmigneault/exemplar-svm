@@ -23,7 +23,7 @@ std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
 
 /* Test utilities */
 svm_node buildNode(int index, double value);
-svm_model buildDummyExemplarSvmModel();
+svm_model* buildDummyExemplarSvmModel();
 bool checkPathEndSlash(std::string path);
 
 /* Tests */
@@ -40,9 +40,9 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm();
 int test_runBasicExemplarSvmReadSampleFile_binary();
 int test_runBasicExemplarSvmReadSampleFile_compare();
 int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures);
-int test_runBasicExemplarSvmReadModelFile_libsvm();
-int test_runBasicExemplarSvmReadModelFile_binary();
-int test_runBasicExemplarSvmReadWriteModelFile_compare();
+int test_runBasicExemplarSvmSaveLoadModelFile_libsvm();
+int test_runBasicExemplarSvmSaveLoadModelFile_binary();
+int test_runBasicExemplarSvmSaveLoadModelFile_compare();
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();

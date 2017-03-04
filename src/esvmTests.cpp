@@ -35,26 +35,43 @@ svm_node buildNode(int index, double value)
     return node;
 }
 
-svm_model buildDummyExemplarSvmModel()
+// builds a dummy model with all valid parameters to test read/write procedures
+svm_model* buildDummyExemplarSvmModel()
 {
-    svm_model model;
-    svm_parameter param;    
-    param.svm_type = C_SVC;
-    param.kernel_type = LINEAR;
-    model.param = param;
-    model.nr_class = 2;
-    model.l = 5;
-    model.sv_coef = new double*[model.nr_class - 1]{ new double[model.l]{ 5.0, -0.1, -0.2, -0.1, -0.2} };
-    model.label = new int[model.nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
-    model.nSV = new int[model.nr_class]{ 1, model.l - 1 };
-    model.SV = new svm_node*[model.l]
+    svm_model *model = new svm_model;
+    try
+    {        
+        model->param.kernel_type = LINEAR;
+        model->param.svm_type = C_SVC;
+        model->nr_class = 2;
+        model->l = 5;
+        model->rho = new double[1]{ 2.5 };
+        model->sv_coef = new double*[model->nr_class - 1]{ new double[model->l]{ 3.5, -0.1, -0.2, -0.1, -0.2} };
+        model->label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+        model->nSV = new int[model->nr_class]{ 1, model->l - 1 };
+        model->SV = new svm_node*[model->l];
+        model->SV[0] = new svm_node[4]{ buildNode(1, 0.50), buildNode(1, 0.75), buildNode(1, 0.25), buildNode(-1, 0) };
+        model->SV[1] = new svm_node[4]{ buildNode(1, 0.20), buildNode(1, 0.75), buildNode(1, 0.10), buildNode(-1, 0) };
+        model->SV[2] = new svm_node[4]{ buildNode(1, 0.30), buildNode(1, 0.75), buildNode(1, 0.05), buildNode(-1, 0) };
+        model->SV[3] = new svm_node[4]{ buildNode(1, 0.25), buildNode(1, 0.75), buildNode(1, 0.00), buildNode(-1, 0) };
+        model->SV[4] = new svm_node[4]{ buildNode(1, 0.15), buildNode(1, 0.75), buildNode(1, 0.15), buildNode(-1, 0) };
+        model->free_sv = 1; // considered as 'pre-trained' model, not from samples training
+    }
+    catch (std::exception& ex)
     {
-        new svm_node[4]{ buildNode(1, 0.50), buildNode(1, 0.75), buildNode(1, 0.25), buildNode(-1, 0) },
-        new svm_node[4]{ buildNode(1, 0.20), buildNode(1, 0.75), buildNode(1, 0.10), buildNode(-1, 0) },
-        new svm_node[4]{ buildNode(1, 0.30), buildNode(1, 0.75), buildNode(1, 0.05), buildNode(-1, 0) },
-        new svm_node[4]{ buildNode(1, 0.25), buildNode(1, 0.75), buildNode(1, 0.00), buildNode(-1, 0) },
-        new svm_node[4]{ buildNode(1, 0.15), buildNode(1, 0.75), buildNode(1, 0.15), buildNode(-1, 0) }
-    };
+        logstream logger(LOGGER_FILE);
+        logger << "Error occured when building the dummy ESVM model for testing" << std::endl 
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        delete[]model->rho;
+        delete[]model->sv_coef;
+        delete[]model->label;
+        delete[]model->nSV;
+        for (int sv = model->l; sv > 0; sv--)
+            delete[]model->SV[sv];
+        delete[]model->SV;
+        delete model;        
+        throw ex;  // re-throw
+    }
     return model;
 }
 
@@ -1056,7 +1073,7 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     return 0;
 }
 
-// Tests binary sample file reading functionality of ESVM
+// Tests BINARY sample file reading functionality of ESVM
 int test_runBasicExemplarSvmReadSampleFile_binary()
 {
     logstream logger(LOGGER_FILE);
@@ -1065,7 +1082,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-binary-file/";
     bfs::create_directory(testDir);
-    std::string validSampleFileName1 = testDir + "test_valid-samples1.data";  // for testing valid binary formatted file
+    std::string validSampleFileName1 = testDir + "test_valid-samples1.data";  // for testing valid BINARY formatted file
     std::string wrongSampleFileName1 = testDir + "test_wrong-samples1.data";  // for testing missing header
     std::string wrongSampleFileName2 = testDir + "test_wrong-samples2.data";  // for testing invalid header
     std::string wrongSampleFileName3 = testDir + "test_wrong-samples3.data";  // for testing invalid number of samples
@@ -1095,25 +1112,25 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     {
         // test reading valid samples encoded in binary file
         esvm.readSampleDataFile(validSampleFileName1, readSamples, readTargetOutputs, BINARY);
-        ASSERT_LOG(readSamples.size() == validSamples.size(), "Number of samples read from binary file should match original");
-        ASSERT_LOG(readSamples[0].size() == validSamples[0].size(), "Number of features read from binary file should match original");
-        ASSERT_LOG(readTargetOutputs.size() == validTargetOutputs.size(), "Number of target outputs read from binary file should match original");
-        ASSERT_LOG(readSamples[0][0] == validSamples[0][0], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[0][1] == validSamples[0][1], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[0][2] == validSamples[0][2], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[0][3] == validSamples[0][3], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[0][4] == validSamples[0][4], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[1][0] == validSamples[1][0], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[1][1] == validSamples[1][1], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[1][2] == validSamples[1][2], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[1][3] == validSamples[1][3], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readSamples[1][4] == validSamples[1][4], "Sample feature value from binary file should match the original one");
-        ASSERT_LOG(readTargetOutputs[0] == validTargetOutputs[0], "Target output value from binary file should match the original one");
-        ASSERT_LOG(readTargetOutputs[1] == validTargetOutputs[1], "Target output value from binary file should match the original one");
+        ASSERT_LOG(readSamples.size() == validSamples.size(), "Number of samples read from BINARY file should match original");
+        ASSERT_LOG(readSamples[0].size() == validSamples[0].size(), "Number of features read from BINARY file should match original");
+        ASSERT_LOG(readTargetOutputs.size() == validTargetOutputs.size(), "Number of target outputs read from BINARY file should match original");
+        ASSERT_LOG(readSamples[0][0] == validSamples[0][0], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[0][1] == validSamples[0][1], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[0][2] == validSamples[0][2], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[0][3] == validSamples[0][3], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[0][4] == validSamples[0][4], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[1][0] == validSamples[1][0], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[1][1] == validSamples[1][1], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[1][2] == validSamples[1][2], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[1][3] == validSamples[1][3], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readSamples[1][4] == validSamples[1][4], "Sample feature value from BINARY file should match the original one");
+        ASSERT_LOG(readTargetOutputs[0] == validTargetOutputs[0], "Target output value from BINARY file should match the original one");
+        ASSERT_LOG(readTargetOutputs[1] == validTargetOutputs[1], "Target output value from BINARY file should match the original one");
     }
     catch (std::exception& ex)
     {
-        logger << "Error: Valid binary samples file reading should not have generated an exception." << std::endl
+        logger << "Error: Valid BINARY samples file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
         return -1;
@@ -1122,7 +1139,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     {
         // test wrong reading file format
         esvm.readSampleDataFile(wrongSampleFileName5, readSamples, readTargetOutputs, LIBSVM);
-        logger << "Error: Reading binary formatted file as LIBSVM format should result in parsing failure." << std::endl;
+        logger << "Error: Reading BINARY formatted file as LIBSVM format should result in parsing failure." << std::endl;
         return -2;
     }
     catch (...) {}
@@ -1131,7 +1148,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     return 0;
 }
 
-// Validation of identical sample features from LIBSVM / binary formatted files
+// Validation of identical sample features from LIBSVM/BINARY formatted files
 int test_runBasicExemplarSvmReadSampleFile_compare()
 {
     logstream logger(LOGGER_FILE);
@@ -1146,7 +1163,7 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
         std::vector<int> targetOutputsLIBSVM, targetOutputsBinary;
         std::string strPatch = std::to_string(p);
 
-        // load negatives samples and target ouputs from binary/LIBSVM formatted files        
+        // load negatives samples and target ouputs from BINARY/LIBSVM formatted files        
         std::string negativeSamplesPatchFile = negativeSamplesDir + "negatives-hog-patch" + strPatch;
         std::string currentNegativePatch = " (negatives, patch " + strPatch + ")";
         logger << "Loading samples files (binary/LIBSVM) for comparison" << currentNegativePatch << "..." << std::endl;
@@ -1157,13 +1174,13 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
         logger << "Comparing samples files (binary/LIBSVM) data" << currentNegativePatch << "..." << std::endl;
         size_t nNegatives = samplesLIBSVM.size();
         size_t nNegativeFeatures = samplesLIBSVM[0].size();        
-        ASSERT_LOG(nNegatives == samplesBinary.size(), "Inconsistent LIBSVM and binary samples count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == samplesBinary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentNegativePatch);
         ASSERT_LOG(nNegatives == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentNegativePatch);
-        ASSERT_LOG(nNegatives == targetOutputsBinary.size(), "Inconsistent binary target outputs count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == targetOutputsBinary.size(), "Inconsistent BINARY target outputs count" + currentNegativePatch);
         for (size_t neg = 0; neg < nNegatives; neg++)
         {            
             currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ")";
-            ASSERT_LOG(nNegativeFeatures == samplesBinary[neg].size(), "Inconsistent LIBSVM and binary features count" + currentNegativePatch);
+            ASSERT_LOG(nNegativeFeatures == samplesBinary[neg].size(), "Inconsistent LIBSVM and BINARY features count" + currentNegativePatch);
             ASSERT_LOG(targetOutputsLIBSVM[neg] == targetOutputsBinary[neg], "Target outputs should match" + currentNegativePatch);
             for (size_t f = 0; f < nNegativeFeatures; f++)
             {
@@ -1174,7 +1191,7 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
                 
         for (size_t pos = 0; pos < nPositives; pos++)
         {
-            // load probe samples and target ouputs from binary/LIBSVM formatted files
+            // load probe samples and target ouputs from BINARY/LIBSVM formatted files
             std::string probeSamplesPatchFile = testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + strPatch;
             std::string currentProbePatch = " (positive " + positivesID[pos] + ", probes, patch " + strPatch + ")";
             logger << "Loading samples files (binary/LIBSVM) for comparison" << currentProbePatch << "..." << std::endl;
@@ -1186,13 +1203,13 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
             size_t nProbes = samplesLIBSVM.size();
             size_t nProbeFeatures = samplesLIBSVM[0].size();
             ASSERT_LOG(nProbeFeatures == nNegativeFeatures, "Inconsistent negative and probe sample feature count" + currentProbePatch);
-            ASSERT_LOG(nProbes == samplesBinary.size(), "Inconsistent LIBSVM and binary samples count" + currentProbePatch);
+            ASSERT_LOG(nProbes == samplesBinary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentProbePatch);
             ASSERT_LOG(nProbes == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentProbePatch);
-            ASSERT_LOG(nProbes == targetOutputsBinary.size(), "Inconsistent binary target outputs count" + currentProbePatch);
+            ASSERT_LOG(nProbes == targetOutputsBinary.size(), "Inconsistent BINARY target outputs count" + currentProbePatch);
             for (size_t prb = 0; prb < nProbes; prb++)
             {
                 currentProbePatch = " (positive " + positivesID[pos] + ", probe " + std::to_string(prb) + ", patch " + strPatch + ")";
-                ASSERT_LOG(nProbeFeatures == samplesBinary[prb].size(), "Inconsistent LIBSVM and binary features count" + currentProbePatch);
+                ASSERT_LOG(nProbeFeatures == samplesBinary[prb].size(), "Inconsistent LIBSVM and BINARY features count" + currentProbePatch);
                 ASSERT_LOG(targetOutputsLIBSVM[prb] == targetOutputsBinary[prb], "Target outputs should match" + currentProbePatch);
                 for (size_t f = 0; f < nProbeFeatures; f++)
                 {
@@ -1242,29 +1259,38 @@ int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
     return 0;
 }
 
-// Test functionality of binary model file reading and parsing of parameters allowing valid use afterwards
-int test_runBasicExemplarSvmReadModelFile_libsvm()
+// Test functionality of BINARY model file saving/loading and parsing of parameters allowing valid use afterwards
+int test_runBasicExemplarSvmSaveLoadModelFile_libsvm()
 {
     logstream logger(LOGGER_FILE);
 
     // create test model files inside test directory
     std::string testDir = "test_model-read-libsvm-file/";
     bfs::create_directory(testDir);
-    std::string validModelFileName1 = testDir + "test_valid-model1.model";
-    svm_model validModel1 = buildDummyExemplarSvmModel();
-    FeatureVector validSample({ 0.55, 0.70, 0.22 });    
+    std::string validModelFileName = testDir + "test_valid-model1.model";
+    svm_model *validModel = buildDummyExemplarSvmModel();
+    FeatureVector validSample{ 0.55, 0.70, 0.22 };
 
     // check for generated model files
-    ASSERT_LOG(svm_save_model(validModelFileName1.c_str(), &validModel1) == 0, "Failed to create dummy model file: '" + validModelFileName1 + "'");
-    ASSERT_LOG(bfs::exists(validModelFileName1), "Couldn't find dummy model file: '" + validModelFileName1 + "'");
-        
+    try
+    {
+    logger << "ATTEMPT!" << std::endl;
+    ASSERT_LOG(svm_save_model(validModelFileName.c_str(), validModel) == 0, "Failed to create dummy model file: '" + validModelFileName + "'");
+    logger << "AFTER!" << std::endl;
+    ASSERT_LOG(bfs::exists(validModelFileName), "Couldn't find dummy model file: '" + validModelFileName + "'");
+     }
+    catch (std::exception& ex)
+    {
+        logger << "THE EXCEPT: " << ex.what() << std::endl;
+    }
+
     // test file loading
     ESVM esvm;    
     try
     {
-        esvm.loadModelFile(validModelFileName1, LIBSVM, "test");
+        esvm.loadModelFile(validModelFileName, LIBSVM, "TEST");
         ASSERT_LOG(esvm.isModelTrained(), "Model should be trained after loading LIBSVM formatted model file");
-        ASSERT_LOG(esvm.getTargetID() == "test", "Target ID should have been properly set from model file loading function");
+        ASSERT_LOG(esvm.targetID == "TEST", "Target ID should have been properly set from model file loading function");
         esvm.predict(validSample);  // call test to ensure file loading provided a working model
     }
     catch (std::exception& ex)
@@ -1279,18 +1305,144 @@ int test_runBasicExemplarSvmReadModelFile_libsvm()
     return 0;
 }
 
-// Test functionality of LIBSVM model file reading and parsing of parameters allowing valid use afterwards
-int test_runBasicExemplarSvmReadModelFile_binary()
+// Test functionality of LIBSVM model file saving/loading and parsing of parameters allowing valid use afterwards
+int test_runBasicExemplarSvmSaveLoadModelFile_binary()
 {
-    //TODO - VALID USE AFTERWARDS!!
-    throw std::runtime_error("NOT IMPLEMENTED");
+    logstream logger(LOGGER_FILE);
+
+    // create test model files inside test directory
+    std::string testDir = "test_model-read-binary-file/";
+    bfs::create_directory(testDir);
+    std::string validModelFileName = testDir + "test_valid-model.model";
+    std::string wrongModelFileName = testDir + "test_wrong-model.model";
+    svm_model *validModel = buildDummyExemplarSvmModel();
+    FeatureVector validSample({ 0.55, 0.70, 0.22 });
+
+    logger << "DEBUG -- 1" << std::endl;
+
+    try
+    {
+        ESVM esvmValid(validModel, "TEST-VALID");
+
+        logger << "DEBUG -- 1.5" << std::endl;
+
+    ASSERT_LOG(esvmValid.saveModelFile(validModelFileName, BINARY), 
+               "Binary model file saving from valid/trained model should not have returned a failure");
+    }
+    catch (std::exception& ex)
+    {
+        logger << ex.what() << std::endl;
+    }
+
+    logger << "DEBUG -- 2" << std::endl;
+
+    // ensure that trying to save the model from not initialized (not trained) ESVM fails
+    ESVM esvmWrong;
+    ASSERT_LOG(!esvmWrong.isModelTrained(), "ESVM should not be trained to test this functionality");
+    ASSERT_LOG(!esvmWrong.saveModelFile(wrongModelFileName, BINARY), 
+               "Binary model file saving from invalid/untrained model should not have returned a success");
+
+    logger << "DEBUG -- 3" << std::endl;
+
+    ESVM esvmLoaded;
+    try
+    {
+        esvmLoaded.loadModelFile(validModelFileName, LIBSVM);
+        logger << "Trying to load a BINARY model file in LIBSVM format should have raised an exception" << std::endl;
+        bfs::remove_all(testDir);
+        return -1;
+    }
+    catch (...) {}  // expected exception
+
+    ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY), "Loading valid BINARY model file should have returned a success"); 
+    ASSERT_LOG(esvmLoaded.targetID == validModelFileName, "Target ID should have been set to file name when not specified upon model file loading");
+    ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
+    ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY, "TEST-LOAD"), "Loading valid BINARY model file should have returned a success");
+    ASSERT_LOG(esvmLoaded.targetID == "TEST-LOAD", "Target ID should have been set to specified value upon model file loading");
+    ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
+
+    try
+    {
+        esvmLoaded.predict(validSample);  // call test to ensure file loading provided a working model
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid BINARY formatted model file should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
+        return -2;
+    }
+
+    bfs::remove_all(testDir);
+    return 0;
 }
 
-// Test functionality of model file reading/writing from (LIBSVM/binary,pre-trained/from samples) format comparison
-int test_runBasicExemplarSvmReadWriteModelFile_compare()
+// Test functionality of model file saving/loading from (LIBSVM/binary,pre-trained/from samples) format comparison
+int test_runBasicExemplarSvmSaveLoadModelFile_compare()
 {
-    //TODO - COMPARE ALL POSSIBILITIES (LIBSVM/binary,pre-trained/from samples) - COMPARE PREDICTION / PARAMS COUNTS
-    throw std::runtime_error("NOT IMPLEMENTED");
+    logstream logger(LOGGER_FILE);
+
+    // create test model files inside test directory and create testing data
+    std::string testDir = "test_model-read-compare-file/";
+    bfs::create_directory(testDir);
+    std::string validModelFileName_libsvm = testDir + "test_valid-model-libsvm.model";
+    std::string validModelFileName_binary = testDir + "test_valid-model-binary.model";    
+    FeatureVector probe{ 0.45, 0.20, 0.75, 0.05, 0.80 };
+    std::vector<FeatureVector> trainingSamples 
+    {
+        FeatureVector{ 0.50, 0.25, 0.75, 0.10, 0.90 },
+        FeatureVector{ 0.10, 0.20, 0.75, 0.10, 0.10 },
+        FeatureVector{ 0.20, 0.20, 0.75, 0.20, 0.80 },
+        FeatureVector{ 0.25, 0.30, 0.75, 0.20, 0.70 },
+        FeatureVector{ 0.15, 0.30, 0.75, 0.10, 0.20 }
+    };
+    std::vector<int> trainingLabels{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS, ESVM_NEGATIVE_CLASS, ESVM_NEGATIVE_CLASS, ESVM_NEGATIVE_CLASS };    
+
+    try
+    {
+        // train a model from testing data, save to pre-trained model files
+        ESVM esvmRef(trainingSamples, trainingLabels);
+        double scoreRef = esvmRef.predict(probe);
+        esvmRef.saveModelFile(validModelFileName_libsvm, LIBSVM);
+        esvmRef.saveModelFile(validModelFileName_binary, BINARY);
+        ASSERT_LOG(!doubleAlmostEquals(scoreRef, 0.0), 
+                   "Reference score should be different than zero to ensure validation of model file loading/saving procedures");
+
+        // load files and compare results
+        ESVM esvmLoad_libsvm, esvmLoad_binary;
+        esvmLoad_libsvm.loadModelFile(validModelFileName_libsvm, LIBSVM);
+        double score_libsvm = esvmLoad_libsvm.predict(probe);
+        ASSERT_LOG(doubleAlmostEquals(scoreRef, score_libsvm, 0.000001), 
+                   "Loaded LIBSVM format model file should result in same score as reference model trained from samples (scoreRef: " + 
+                   std::to_string(scoreRef) + ", score_libsvm: " + std::to_string(score_libsvm) + ")");
+        esvmLoad_binary.loadModelFile(validModelFileName_binary, BINARY);        
+        double score_binary = esvmLoad_binary.predict(probe);
+        ASSERT_LOG(doubleAlmostEquals(scoreRef, score_binary, 0.000001),
+                   "Loaded BINARY format model file should result in same score as reference model trained from samples (scoreRef: " +
+                   std::to_string(scoreRef) + ", score_libsvm: " + std::to_string(score_binary) + ")");
+        logger << "HERE" << std::endl;
+        // re-load already trained model with swapped formats and compare results
+        esvmLoad_libsvm.loadModelFile(validModelFileName_binary, BINARY);        
+        double score_libsvm_swap = esvmLoad_libsvm.predict(probe);
+        ASSERT_LOG(doubleAlmostEquals(scoreRef, score_libsvm_swap, 0.000001),
+                   "Re-loaded model file from different BINARY format should still result in same reference score (scoreRef: " + 
+                   std::to_string(scoreRef) + ", score_libsvm_swap: " + std::to_string(score_libsvm_swap) + ")");
+        esvmLoad_binary.loadModelFile(validModelFileName_libsvm, LIBSVM);
+        double score_binary_swap = esvmLoad_binary.predict(probe);
+        ASSERT_LOG(doubleAlmostEquals(scoreRef, score_binary_swap, 0.000001),
+                   "Re-loaded model file from different LIBSVM format should still result in same reference score (scoreRef: " + 
+                   std::to_string(scoreRef) + ", score_binary_swap: " + std::to_string(score_binary_swap) + ")");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid test procedures should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
+        return -1;
+    }
+
+    bfs::remove_all(testDir);
+    return 0;
 }
 
 #if 0

@@ -37,9 +37,8 @@ private:
 /* --------------------
 Compare
 ---------------------*/
-inline bool doubleAlmostEquals(double x1, double x2)
-{
-    static double eps = std::numeric_limits<double>::epsilon();
+inline bool doubleAlmostEquals(double x1, double x2, double eps = std::numeric_limits<double>::epsilon())
+{    
     return std::abs(x1 - x2) < std::abs(std::min(x1, x2)) * eps;
 }
 

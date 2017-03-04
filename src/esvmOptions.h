@@ -63,16 +63,16 @@
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test alternative MATLAB procedure (obsolete)
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-// Test functionality of LIBSVM/binary samples file reading and parsing to feature vectors
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
-// Evaluate timing performance for reading and parsing LIBSVM/binary samples file
+// Test functionality of LIBSVM/BINARY samples file reading and parsing to feature vectors
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 0
+// Evaluate timing performance for reading and parsing LIBSVM/BINARY samples file
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
-// Test functionality of samples file reading LIBSVM/binary format comparison
+// Test functionality of samples file reading LIBSVM/BINARY format comparison
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
-// Test functionality of BINARY/LIBSVM model file reading and parsing of parameters allowing valid use afterwards
-#define TEST_ESVM_READ_MODEL_FILE_PARSER 1
-// Test functionality of model file reading/writing from (LIBSVM/binary,pre-trained/from samples) format comparison
-#define TEST_ESVM_READ_WRITE_MODEL_FILE_FORMAT_COMPARE 1
+// Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER 0
+// Test functionality of model file loading/saving from (LIBSVM/BINARY,pre-trained/from samples) format comparison
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 
@@ -109,7 +109,7 @@
     TEST_ESVM_WORKING_PROCEDURE:
         0: not run
         1: run with LIBSVM formatted sample files
-        2: run with binary formatted sample files
+        2: run with BINARY formatted sample files
 */
 #define TEST_ESVM_WORKING_PROCEDURE 2
 
