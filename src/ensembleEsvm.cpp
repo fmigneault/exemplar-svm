@@ -8,7 +8,7 @@
 #include <sstream>
 
 /*
-    Initializes an ESVM
+    Initializes an ESVM Ensemble
 */
 EnsembleESVM::EnsembleESVM()
 { 
@@ -51,6 +51,52 @@ EnsembleESVM::EnsembleESVM()
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
             ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
+
+}
+
+/*
+    Initializes an ESVM Ensemble
+*/
+EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveRois)
+{ 
+    setContants();
+
+    probeSampleFeats = std::vector<FeatureVector>(nPatches);
+
+    hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
+
+    // positive samples
+    nPositives = positiveRois.size();    
+    size_t dimsPositives[2]{ nPatches, nPositives };
+    xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
+
+    // negative samples    
+    size_t dimsNegatives[2]{ nPatches, 0 };                             // number of negatives unknown (loaded from file)
+    xstd::mvector<2, FeatureVector> negativeSamples(dimsNegatives);
+
+    // Exemplar-SVM
+    ESVM FileLoaderESVM;
+    ensembleEsvm = xstd::mvector<2, ESVM>(dimsPositives);                         // [patch][positive](ESVM)    
+
+    // load positive target still images, extract features and normalize
+    std::cout << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
+    for (size_t pos = 0; pos < nPositives; pos++)
+    {        
+        std::vector<cv::Mat> patches = imPreprocess(positiveRois[pos], imageSize, patchCounts);
+        for (size_t p = 0; p < nPatches; p++)
+            positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
+    }
+
+    // load negative samples from pre-generated files for training (samples in files are pre-normalized)
+    std::cout << "Loading negative samples from files..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
+                                          sampleFileExt, negativeSamples[p], sampleFileFormat);
+    // training
+    std::cout << "Training ESVM with positives and negatives..." << std::endl;
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t pos = 0; pos < nPositives; pos++)
+            ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], std::to_string(pos) + "-patch" + std::to_string(p));
 
 }
 
@@ -98,7 +144,7 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
         // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
         classificationScores[pos] /= (double)nPatches;                                 // average score fusion
         // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
-        classificationScores[pos] = normalizeMinMax(classificationScores[pos], hogHardcodedFoundMin, hogHardcodedFoundMax);      // score normalization post-fusion
+        // classificationScores[pos] = normalizeMinMax(classificationScores[pos], hogHardcodedFoundMin, hogHardcodedFoundMax);      // score normalization post-fusion
         // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
     }
 
