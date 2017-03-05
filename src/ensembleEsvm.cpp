@@ -10,16 +10,22 @@
 /*
     Initializes an ESVM Ensemble
 */
-EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveRois, std::string negativesDir)
+EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs)
 { 
     setContants();
 
     probeSampleFeats = std::vector<FeatureVector>(nPatches);
-
     hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
 
+    if (positiveIDs.size() != positiveROIs.size())
+    {
+        positiveIDs = std::vector<std::string>(positiveIDs.size());
+        for (size_t pos = 0; pos < nPositives; pos++)
+            positiveIDs[pos] = std::to_string(pos);
+    }
+
     // positive samples
-    nPositives = positiveRois.size();    
+    nPositives = positiveROIs.size();
     size_t dimsPositives[2]{ nPatches, nPositives };
     xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
 
@@ -35,7 +41,7 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveRois, std::string negati
     std::cout << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<cv::Mat> patches = imPreprocess(positiveRois[pos], imageSize, patchCounts);
+        std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
             positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
     }
@@ -49,7 +55,7 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveRois, std::string negati
     std::cout << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
-            ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], std::to_string(pos) + "-patch" + std::to_string(p));
+            ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positiveIDs[pos] + "-patch" + std::to_string(p));
 
 }
 
@@ -63,11 +69,13 @@ void EnsembleESVM::setContants()
     nBins = 3;
     nPatches = patchCounts.area();
 
-    hogHardcodedFoundMin = 0;
-    hogHardcodedFoundMax = 0.675058;
+    hogHardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    hogHardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test with SAMAN pre-generated files
 
-    scoreHardcodedFoundMin = -1.578030;
-    scoreHardcodedFoundMax = -0.478968;
+    ///scoreHardcodedFoundMin = -1.578030;     // Min found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
+    ///scoreHardcodedFoundMax = -0.478968;     // Max found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
+    scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
+    scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
 
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
