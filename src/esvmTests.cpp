@@ -3285,6 +3285,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 
     // testing, score fusion, normalization
     logger << "Testing probe samples against enrolled targets..." << std::endl;
+    double minscore = DBL_MAX, maxscore = -DBL_MAX;
     for (size_t pos = 0; pos < nPositives; pos++) 
     {
         size_t nProbes = probeSamples[0][pos].size();   // variable number of probes according to tested positive
@@ -3297,9 +3298,14 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
                 classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
             }
             classificationScores[pos][prb] /= (double)nPatches;                                 // average score fusion
+            if (minscore > classificationScores[pos][prb])
+                minscore = classificationScores[pos][prb];
+            if (maxscore < classificationScores[pos][prb])
+                maxscore = classificationScores[pos][prb];
         }
         classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
     }
+    logger << "Found min/max classification fusionned scores accross all probes: " << minscore << ", " << maxscore << std::endl;
 
     // performance evaluation
     for (size_t pos = 0; pos < nPositives; pos++)
