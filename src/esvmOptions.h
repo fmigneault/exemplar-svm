@@ -112,10 +112,10 @@
 ------------------------------------------------------------ */
 
 // Local
-const std::string roiVideoImagesPath = "../esvm/img/roi/";                               // Person ROI tracks obtained from face detection + tracking
-const std::string refStillImagesPath = "../esvm/img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
-const std::string negativeSamplesDir = "../esvm/data/negatives/";                        // Pre-generated ChokePoint negative samples files
-const std::string testingSamplesDir = "../esvm/data/testing/";                           // Pre-generated ChokePoint probe samples files
+const std::string roiVideoImagesPath = "../img/roi/";                               // Person ROI tracks obtained from face detection + tracking
+const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
+const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
+const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
 // ChokePoint
 const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
 const std::string roiChokePointCroppedFacePath = rootChokePointPath + "Cropped face images/";   // Path of extracted 96x96 ROI from all videos 
