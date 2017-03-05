@@ -1,5 +1,5 @@
-#ifndef ENSEMBLEESVM_LIBSVM_H
-#define ENSEMBLEESVM_LIBSVM_H
+#ifndef ENSEMBLE_ESVM_LIBSVM_H
+#define ENSEMBLE_ESVM_LIBSVM_H
 
 #include "esvm.h"
 #include "esvmTypes.h"
@@ -47,4 +47,4 @@ private:
 
 };
 
-#endif/*ENSEMBLEESVM_LIBSVM_H*/
+#endif/*ENSEMBLE_ESVM_LIBSVM_H*/
