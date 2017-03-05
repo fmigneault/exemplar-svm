@@ -66,7 +66,8 @@ void EnsembleESVM::setContants()
     hogHardcodedFoundMin = 0;
     hogHardcodedFoundMax = 0.675058;
 
-    scoreHardcodedFoundMin = -1.578030;    scoreHardcodedFoundMax = -0.478968;
+    scoreHardcodedFoundMin = -1.578030;
+    scoreHardcodedFoundMax = -0.478968;
 
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
