@@ -41,10 +41,11 @@ private:
 
     FeatureExtractorHOG hog;
     xstd::mvector<2, ESVM> ensembleEsvm; 
+    
+    double hogHardcodedFoundMin;    // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogHardcodedFoundMax;    // Max found using 'FullChokePoint' test with SAMAN pre-generated files
 
-    double hogHardcodedFoundMin;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
-    double hogHardcodedFoundMax;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
-
+    double scoreHardcodedFoundMin;  // Min found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files    double scoreHardcodedFoundMax;  // Max found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
 };
 
 #endif/*ENSEMBLE_ESVM_LIBSVM_H*/

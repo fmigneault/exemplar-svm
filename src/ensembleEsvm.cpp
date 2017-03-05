@@ -63,8 +63,10 @@ void EnsembleESVM::setContants()
     nBins = 3;
     nPatches = patchCounts.area();
 
-    hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
-    hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    hogHardcodedFoundMin = 0;
+    hogHardcodedFoundMax = 0.675058;
+
+    scoreHardcodedFoundMin = -1.578030;    scoreHardcodedFoundMax = -0.478968;
 
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
@@ -92,13 +94,11 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
         for (size_t p = 0; p < nPatches; p++)
         {                
             scores[p][pos] = ensembleEsvm[p][pos].predict(probeSampleFeats[p]);
-            classificationScores[pos] += scores[p][pos];                          // score accumulation
+            classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion
         }
-        // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
-        classificationScores[pos] /= (double)nPatches;                                 // average score fusion
-        // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
-        // classificationScores[pos] = normalizeMinMax(classificationScores[pos], hogHardcodedFoundMin, hogHardcodedFoundMax);      // score normalization post-fusion
-        // std::cout << "ESVM Vals: pos:" << pos << " val: " << classificationScores[pos] << std::endl;
+        // average score fusion and normalization post-fusion
+        classificationScores[pos] /= (double)nPatches;  
+        classificationScores[pos] = normalizeMinMax(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
     }
 
     return classificationScores;
