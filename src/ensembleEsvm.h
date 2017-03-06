@@ -35,6 +35,8 @@ private:
     int nBins;
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
+    double max;
+    double min;
 
     xstd::mvector<2, double> scores;
     xstd::mvector<1, double> classificationScores;

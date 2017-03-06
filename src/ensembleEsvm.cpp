@@ -53,9 +53,18 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negati
                                           sampleFileExt, negativeSamples[p], sampleFileFormat);
     // training
     std::cout << "Training ESVM with positives and negatives..." << std::endl;
-    for (size_t p = 0; p < nPatches; p++)
-        for (size_t pos = 0; pos < nPositives; pos++)
-            ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positiveIDs[pos] + "-patch" + std::to_string(p));
+    for (size_t p = 0; p < nPatches; p++){
+        for (size_t pos = 0; pos < nPositives; pos++){
+            xstd::mvector<2, FeatureVector> tempNegativeSamples(negativeSamples);
+            std::cout << "Size before: " << tempNegativeSamples[p].size() << std::endl;
+            for (size_t posInt = 0; posInt < nPositives; posInt++)
+                if(pos != posInt)
+                    tempNegativeSamples[p].push_back(positiveSamples[p][posInt]);
+            
+            std::cout << "Size after: " << tempNegativeSamples[p].size() << std::endl;
+            ensembleEsvm[p][pos] = ESVM({ positiveSamples[p][pos] }, tempNegativeSamples[p], positiveIDs[pos] + "-patch" + std::to_string(p));
+        }
+    }
 
 }
 
@@ -68,15 +77,19 @@ void EnsembleESVM::setContants()
     cellSize = cv::Size(2, 2);  
     nBins = 3;
     nPatches = patchCounts.area();
+    min = 999;
+    max = -999;
 
     hogHardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     hogHardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test with SAMAN pre-generated files
 
     ///scoreHardcodedFoundMin = -1.578030;     // Min found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
     ///scoreHardcodedFoundMax = -0.478968;     // Max found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-    scoreHardcodedFoundMin = 0.085;         // Testing
     ///scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
-    scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
+    // scoreHardcodedFoundMin = 0.085;         // Testing
+    // scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
+    scoreHardcodedFoundMin = -1.5928;       
+    scoreHardcodedFoundMax =  0.057202;    
 
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
@@ -106,7 +119,17 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
             classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion
         }
         // average score fusion and normalization post-fusion
-        classificationScores[pos] /= (double)nPatches;  
+        classificationScores[pos] /= (double)nPatches; 
+
+        if(classificationScores[pos] > max) {
+            max = classificationScores[pos];
+        } 
+        if(classificationScores[pos] < min) {
+            min = classificationScores[pos];
+        }
+
+        cout << "MIN: " << min << " MAX: " << max << std::endl;
+
         classificationScores[pos] = normalizeMinMax(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
     }
 
