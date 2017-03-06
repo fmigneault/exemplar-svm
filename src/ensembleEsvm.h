@@ -15,8 +15,8 @@
 class EnsembleESVM
 {
 public:
-    EnsembleESVM();
-    EnsembleESVM(std::vector<cv::Mat> positiveRois);
+    EnsembleESVM() {};
+    EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
     std::vector<double> predict(const cv::Mat roi);
     inline std::string getTargetID() { return targetID; }
 
@@ -41,10 +41,12 @@ private:
 
     FeatureExtractorHOG hog;
     xstd::mvector<2, ESVM> ensembleEsvm; 
+    
+    double hogHardcodedFoundMin;
+    double hogHardcodedFoundMax;
 
-    double hogHardcodedFoundMin;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
-    double hogHardcodedFoundMax;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
-
+    double scoreHardcodedFoundMin;
+    double scoreHardcodedFoundMax;
 };
 
 #endif/*ENSEMBLE_ESVM_LIBSVM_H*/
