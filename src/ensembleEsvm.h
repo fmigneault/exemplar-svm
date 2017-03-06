@@ -16,7 +16,7 @@ class EnsembleESVM
 {
 public:
     EnsembleESVM() {};
-    EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
+    EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
     std::vector<double> predict(const cv::Mat roi);
     inline std::string getTargetID() { return targetID; }
 
