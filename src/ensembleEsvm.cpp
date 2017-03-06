@@ -74,7 +74,8 @@ void EnsembleESVM::setContants()
 
     ///scoreHardcodedFoundMin = -1.578030;     // Min found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
     ///scoreHardcodedFoundMax = -0.478968;     // Max found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-    scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
+    scoreHardcodedFoundMin = 0.085;         // Testing
+    ///scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
     scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
 
     sampleFileExt = ".bin";
