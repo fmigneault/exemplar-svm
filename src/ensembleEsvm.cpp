@@ -35,7 +35,7 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negati
 
     // Exemplar-SVM
     ESVM FileLoaderESVM;
-    ensembleEsvm = xstd::mvector<2, ESVM>(dimsPositives);                         // [patch][positive](ESVM)    
+    ensembleEsvm = xstd::mvector<2, ESVM>(dimsPositives);               // [patch][positive](ESVM)    
 
     // load positive target still images, extract features and normalize
     std::cout << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
@@ -80,7 +80,6 @@ void EnsembleESVM::setContants()
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
 }
-
 
 /*
     Predicts the classification value for the specified roi using the trained ESVM model.
