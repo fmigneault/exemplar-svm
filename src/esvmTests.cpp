@@ -498,6 +498,7 @@ int test_multiLevelVectors()
 
 int test_normalizationFunctions()
 {
+    // testing values
     FeatureVector v1 { -1, 2, 3, 4, 5, 14 };
     FeatureVector v2 { 8, 4, 6, 0.5, 1, 5 };
     FeatureVector v1_norm01 = { 0.0, 0.2, 4.0/15.0, 1.0/3.0, 0.4, 1.0 };
@@ -506,7 +507,22 @@ int test_normalizationFunctions()
     FeatureVector v2_norm = { 1, 0.5, 0.5, 0.125, 0.25, 0 };    
     std::vector<FeatureVector> v = { v1, v2 };    
 
-    ASSERT_LOG(normalizeMinMax(0.5, -1.0, 1.0) == 0.75, "Value should have been normalized with min-max rule");
+    // normal operation
+
+    ASSERT_LOG(normalizeMinMax(0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalizeMinMax(1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalizeMinMax(0.25, -1.0, 1.0) == 0.625, "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalizeMinMax(1.00, -2.0, 0.5) == 1.20,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalizeMinMax(-3.0, -2.0, 0.5) == -0.4,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalizeMinMax(1.00, -2.0, 0.5, true) == 1.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(normalizeMinMax(-3.0, -2.0, 0.5, true) == 0.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(normalizeZScore(1.0, 0.0, 1.0) == 2.0/3.0, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalizeZScore(3.0, 0.0, 1.0) == 1.0,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalizeZScore(-0.75, 0.0, 1.0) == 0.375, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalizeZScore(0.0, 0.0, 1.0) == 0.5,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalizeZScore(-12, 0.0, 1.0) == -1.5,    "Value should have been normalized with z-score rule");    
+    ASSERT_LOG(normalizeZScore(6.0, 0.0, 1.0, true) == 1.0, "Value should be cliped from normalization with z-score rule");
+    ASSERT_LOG(normalizeZScore(-12, 0.0, 1.0, true) == 0.0, "Value should be cliped from normalization with z-score rule");
     
     double min1 = -1, max1 = -1, min2 = -1, max2 = -1;
     int posMin1 = -1, posMax1 = -1, posMin2 = -1, posMax2 = -1;
@@ -574,6 +590,56 @@ int test_normalizationFunctions()
     ASSERT_LOG(s1neg == 0, "Negative class score should be normalized as minimum similarity");
     ASSERT_LOG(s0mid == 0.5, "Indifferent class score should be normalized as middle similarity");
     ASSERT_LOG(sprob == 0.75, "Half-probable positive class score should be normalized as 3/4 simiarity");
+
+    // exception cases
+
+    double dummyValue;
+    FeatureVector vEmpty;
+    try { 
+        normalizeMinMax(1.0, 1.0, -1.0); 
+        throw std::runtime_error("Minimum value greater than maximum value should have raised an exception");
+        return -1;
+    } catch (...) {}    // expceted exception
+    try { 
+        normalizeZScore(1.0, 1.0, 0.0); 
+        throw std::runtime_error("Zero value standard deviation should have raised an exception");
+        return -2;
+    } catch (...) {}    // expceted exception
+    try { 
+        findMinMax(v1, nullptr, &dummyValue);
+        throw std::runtime_error("Null reference for minimum value should have raised an exception");
+        return -3;
+    } catch (...) {}    // expceted exception
+    try { 
+        findMinMax(v1, &dummyValue, nullptr);
+        throw std::runtime_error("Null reference for maximum value should have raised an exception");
+        return -4;
+    } catch (...) {}    // expceted exception
+    try { 
+        findMinMax(vEmpty, &dummyValue, &dummyValue);
+        throw std::runtime_error("Empty feature vector should have raised an exception");
+        return -5;
+    } catch (...) {}    // expceted exception
+    try { 
+        findMinMaxFeatures(v, nullptr, &vEmpty);
+        throw std::runtime_error("Null reference for minimum features should have raised an exception");
+        return -6;
+    } catch (...) {}    // expceted exception
+    try { 
+        findMinMaxFeatures(v, &vEmpty, nullptr);
+        throw std::runtime_error("Null reference for maximum features should have raised an exception");
+        return -7;
+    } catch (...) {}    // expceted exception
+    try { 
+        normalizeMinMaxPerFeatures(v1, vEmpty, v1);
+        throw std::runtime_error("Inconsistent size for minimum features should have raised an exception");
+        return -8;
+    } catch (...) {}    // expceted exception
+    try { 
+        normalizeMinMaxPerFeatures(v1, v1, vEmpty);
+        throw std::runtime_error("Inconsistent size for maximum features should have raised an exception");
+        return -9;
+    } catch (...) {}    // expceted exception
 
     return 0;
 }
@@ -3240,6 +3306,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     size_t dimsResults[2]{ nPositives, 0 };                             // number of probes unknown (loaded from file)
     xstd::mvector<3, double> scores(dimsProbes);                        // [patch][positive][probe](double)
     xstd::mvector<2, double> classificationScores(dimsResults);         // [positive][probe](double)    
+    xstd::mvector<2, double> minmaxClassificationScores(dimsResults);   // [positive][probe](double)
+    xstd::mvector<2, double> zscoreClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
 
     // Exemplar-SVM
@@ -3285,12 +3353,16 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 
     // testing, score fusion, normalization
     logger << "Testing probe samples against enrolled targets..." << std::endl;
-    double minscore = DBL_MAX, maxscore = -DBL_MAX;
+    double minScore = DBL_MAX, maxScore = -DBL_MAX, meanScore = 0, stddevScore = 0, varScore = 0;
+    std::vector<double> meanScorePerPatch(nPatches, 0.0), stddevScorePerPatch(nPatches, 0.0), varScorePerPatch(nPatches, 0.0);
+    std::vector<size_t> nProbesPerPositive(nPositives, 0);
     for (size_t pos = 0; pos < nPositives; pos++) 
     {
-        size_t nProbes = probeSamples[0][pos].size();   // variable number of probes according to tested positive
-        classificationScores[pos] = xstd::mvector<1, double>(nProbes, 0.0);
-        for (size_t prb = 0; prb < nProbes; prb++)
+        nProbesPerPositive[pos] = probeSamples[0][pos].size();   // variable number of probes according to tested positive
+        classificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
+        minmaxClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
+        zscoreClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
+        for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
         {            
             for (size_t p = 0; p < nPatches; p++)
             {                
@@ -3298,14 +3370,54 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
                 classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
             }
             classificationScores[pos][prb] /= (double)nPatches;                                 // average score fusion
-            if (minscore > classificationScores[pos][prb])
-                minscore = classificationScores[pos][prb];
-            if (maxscore < classificationScores[pos][prb])
-                maxscore = classificationScores[pos][prb];
+            if (minScore > classificationScores[pos][prb])
+                minScore = classificationScores[pos][prb];
+            if (maxScore < classificationScores[pos][prb])
+                maxScore = classificationScores[pos][prb];
         }
-        classificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]);      // score normalization post-fusion
+        // score normalization post-fusion
+        minmaxClassificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]); 
+        zscoreClassificationScores[pos] = normalizeZScoreClassScores(classificationScores[pos]);
     }
-    logger << "Found min/max classification fusionned scores accross all probes: " << minscore << ", " << maxscore << std::endl;
+    // mean / stddev evaluation
+    std::vector<size_t> nTotalPatch(nPatches, 0);
+    size_t nTotal = 0;
+    for (size_t p = 0; p < nPatches; p++)
+    {        
+        for (size_t pos = 0; pos < nPositives; pos++)
+        {
+            for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
+            {
+                meanScore += scores[p][pos][prb];
+                meanScorePerPatch[p] += scores[p][pos][prb];
+                nTotal++;
+                nTotalPatch[p]++;
+            }
+        }
+        meanScorePerPatch[p] /= (double)nTotalPatch[p];
+    }    
+    meanScore /= (double)nTotal;
+    for (size_t p = 0; p < nPatches; p++)
+    {
+        for (size_t pos = 0; pos < nPositives; pos++)
+        {
+            for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
+            {
+                varScore += (scores[p][pos][prb] - meanScore) * (scores[p][pos][prb] - meanScore);
+                varScorePerPatch[p] += (scores[p][pos][prb] - meanScorePerPatch[p]) * (scores[p][pos][prb] - meanScorePerPatch[p]);
+            }
+        }
+        varScorePerPatch[p] /= (double)nTotalPatch[p];
+        stddevScorePerPatch[p] = std::sqrt(varScorePerPatch[p]);
+    }
+    varScore /= (double)nTotal;
+    stddevScore = std::sqrt(varScore);
+
+    logger << "Found min/max/mean/stddev/var classification fusionned scores accross all probes: " 
+           << minScore << ", " << maxScore << ", " << meanScore << ", " << stddevScore << ", " << varScore << std::endl;
+    logger << "Found mean classification scores per patch accross all probes:   " << featuresToVectorString(meanScorePerPatch) << std::endl;
+    logger << "Found stddev classification scores per patch accross all probes: " << featuresToVectorString(stddevScorePerPatch) << std::endl;
+    logger << "Found var classification scores per patch accross all probes:    " << featuresToVectorString(varScorePerPatch) << std::endl;
 
     // performance evaluation
     for (size_t pos = 0; pos < nPositives; pos++)

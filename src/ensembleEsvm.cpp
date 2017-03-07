@@ -78,6 +78,9 @@ void EnsembleESVM::setContants()
     ///scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
     scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
 
+    scoresHardCodedFoundMean = -1.26193;
+    scoresHardCodedFoundStdDev = 0.247168;
+
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
 }
@@ -107,7 +110,11 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
         }
         // average score fusion and normalization post-fusion
         classificationScores[pos] /= (double)nPatches;  
+        #if ESVM_SCORE_NORMALIZATION_MODE == 1
         classificationScores[pos] = normalizeMinMax(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        #elif ESVM_SCORE_NORMALIZATION_MODE == 2
+        classificationScores[pos] = normalizeZScore(classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
+        #endif
     }
 
     return classificationScores;

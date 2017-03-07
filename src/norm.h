@@ -1,4 +1,4 @@
-/* --------------------
+﻿/* --------------------
 Normalization oprations
 -------------------- */
 #ifndef NORM_H
@@ -7,8 +7,10 @@ Normalization oprations
 #include "esvmTypes.h"
 #include <vector>
 
-// Min-Max normalization formula
-double normalizeMinMax(double value, double min, double max);
+// Min-Max normalization formula, clip value to [0,1] if specified
+double normalizeMinMax(double value, double min, double max, bool clipValue = false);
+// Z-Score normalization formula centered around 0.5 with ±3σ, clip value to [0,1] if specified
+double normalizeZScore(double value, double mean, double stddev, bool clipValue = false);
 // Find the Min-Max values along a vector (not per feature)
 void findMinMax(FeatureVector vector, double* min, double* max, int* posMin = nullptr, int* posMax = nullptr);
 // Find the Min-Max values acros features and across a whole list of feature vectors

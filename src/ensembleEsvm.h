@@ -47,6 +47,9 @@ private:
 
     double scoreHardcodedFoundMin;
     double scoreHardcodedFoundMax;
+
+    double scoresHardCodedFoundMean;
+    double scoresHardCodedFoundStdDev;
 };
 
 #endif/*ENSEMBLE_ESVM_LIBSVM_H*/

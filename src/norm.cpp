@@ -3,20 +3,29 @@
 #include <algorithm>
 #include <float.h>
 
-double normalizeMinMax(double value, double min, double max)
+double normalizeMinMax(double value, double min, double max, bool clipValue)
 {
-    ASSERT_LOG(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
-    return (value - min) / (max - min);
+    ASSERT_THROW(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
+    double normValue = (value - min) / (max - min);
+    return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
+}
+
+double normalizeZScore(double value, double mean, double stddev, bool clipValue)
+{
+    ASSERT_THROW(stddev != 0, "stddev must be different than zero");
+    double sigmaFactor = 3.0;
+    double normValue = ((value - mean) / stddev) / (2.0 * sigmaFactor * stddev) + 0.5;
+    return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
 }
 
 void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int* posMax)
 {
     // check values/references
-    ASSERT_LOG(min != nullptr, "min reference not specified");
-    ASSERT_LOG(max != nullptr, "max reference not specified");
+    ASSERT_THROW(min != nullptr, "min reference not specified");
+    ASSERT_THROW(max != nullptr, "max reference not specified");
 
     int nFeatures = vector.size();
-    ASSERT_LOG(nFeatures > 0, "vector cannot be empty");
+    ASSERT_THROW(nFeatures > 0, "vector cannot be empty");
 
     // initialization
     *min = vector[0], *max = vector[0];
@@ -57,8 +66,8 @@ void findMinMaxOverall(std::vector<FeatureVector> featureVectors, double* min, d
 
 void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
 {
-    ASSERT_LOG(minFeatures != nullptr, "feature vector for min features not specified");
-    ASSERT_LOG(maxFeatures != nullptr, "feature vector for max features not specified");
+    ASSERT_THROW(minFeatures != nullptr, "feature vector for min features not specified");
+    ASSERT_THROW(maxFeatures != nullptr, "feature vector for max features not specified");
 
     // initialize with first vector
     int nFeatures = featureVectors[0].size();
@@ -102,8 +111,8 @@ FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVec
 {
     // check number of features
     int nFeatures = featureVector.size();
-    ASSERT_LOG(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
-    ASSERT_LOG(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
+    ASSERT_THROW(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
+    ASSERT_THROW(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
 
     // normalize values    
     for (int f = 0; f < nFeatures; f++)
