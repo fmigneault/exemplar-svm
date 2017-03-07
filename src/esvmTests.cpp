@@ -526,7 +526,7 @@ int test_normalizationFunctions()
     
     double min1 = -1, max1 = -1, min2 = -1, max2 = -1;
     int posMin1 = -1, posMax1 = -1, posMin2 = -1, posMax2 = -1;
-    findMinMax(v1, &min1, &max1, &posMin1, &posMax1);
+    findNormParams<MinMax>(v1, &min1, &max1, &posMin1, &posMax1);
     findMinMax(v2, &min2, &max2, &posMin2, &posMax2);
     ASSERT_LOG(min1 == -1,   "Minimum value of vector should be assigned to variable by reference");
     ASSERT_LOG(max1 == 14,   "Maximum value of vector should be assigned to variable by reference");
