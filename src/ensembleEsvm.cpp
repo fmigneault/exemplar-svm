@@ -43,7 +43,7 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negati
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<cv::Mat> processedImages = imSyntheticGenerationScaleAndTranslation(positiveROIs[pos], 10, 2, 0.6);
+        std::vector<cv::Mat> processedImages = imSyntheticGenerationScaleAndTranslation(positiveROIs[pos], 4, 4, 0.6);
         int nRepresentations = processedImages.size();
         for (size_t rep = 0; rep < nRepresentations; rep++)
         {
