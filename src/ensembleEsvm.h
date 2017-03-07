@@ -8,6 +8,8 @@
 #include "feHOG.h"
 #include "esvmOptions.h"
 
+#include <logger.h>
+#include <memory>
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -38,7 +40,10 @@ private:
     double max;
     double min;
 
+	// std::shared_ptr<logstream> logger;
+
     xstd::mvector<2, double> scores;
+    xstd::mvector<1, double> patchThreshold;
     xstd::mvector<1, double> classificationScores;
 
     FeatureExtractorHOG hog;
