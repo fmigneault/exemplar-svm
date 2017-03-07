@@ -69,9 +69,9 @@ std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat imag
                     cv::Mat image_roi = image(newRect);
                     image_roi.copyTo(cropedImage);
                     synthImages.push_back(cropedImage);
-                    std::stringstream ss;
-                    ss << "cropedImage_" << scale << "_" << x << "_" << y <<  ".jpg";
-                    cv::imwrite(ss.str(), image_roi);
+                    // std::stringstream ss;
+                    // ss << "cropedImage_" << scale << "_" << x << "_" << y <<  ".jpg";
+                    // cv::imwrite(ss.str(), image_roi);
                 }
             }
         }
