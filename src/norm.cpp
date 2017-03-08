@@ -148,6 +148,13 @@ FeatureVector NormFunction::normalizePerFeatures(FeatureVector featureVector, Fe
     return featureVector;
 }
 
+std::vector<double> NormFunction::normalizeClassScores(std::vector<double> scores)
+{
+    double param1, param2;
+    findNormParams(scores, &param1, &param2);
+    return normalizeAllFeatures(scores, param1, param2);
+}
+
 #if NORM_TEMPLATES == 1
 
 template<class NormFunction>
@@ -210,13 +217,6 @@ std::vector<double> normalizeClassScores<NormFunction>(std::vector<double> score
     double param1, param2;
     findNormParams<NormFunction>(scores, &param1, &param2);
     return normalizeAllFeatures<NormFunction>(scores, param1, param2);
-}
-
-std::vector<double> NormFunction::normalizeClassScores(std::vector<double> scores)
-{
-    double param1, param2;
-    findNormParams(scores, &param1, &param2);
-    return normalizeAllFeatures(scores, param1, param2);
 }
 
 #endif/*NORM_TEMPLATES*/

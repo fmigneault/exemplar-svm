@@ -509,25 +509,25 @@ int test_normalizationFunctions()
 
     // normal operation
 
-    ASSERT_LOG(normalize<MinMax>(0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(0.25, -1.0, 1.0) == 0.625, "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(1.00, -2.0, 0.5) == 1.20,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(-3.0, -2.0, 0.5) == -0.4,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(1.00, -2.0, 0.5, true) == 1.0, "Value should be cliped from normalization with min-max rule");
-    ASSERT_LOG(normalize<MinMax>(-3.0, -2.0, 0.5, true) == 0.0, "Value should be cliped from normalization with min-max rule");
-    ASSERT_LOG(normalize<ZScore>(1.0, 0.0, 1.0) == 2.0/3.0, "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalize<ZScore>(3.0, 0.0, 1.0) == 1.0,     "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalize<ZScore>(-0.75, 0.0, 1.0) == 0.375, "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalize<ZScore>(0.0, 0.0, 1.0) == 0.5,     "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalize<ZScore>(-12, 0.0, 1.0) == -1.5,    "Value should have been normalized with z-score rule");    
-    ASSERT_LOG(normalize<ZScore>(6.0, 0.0, 1.0, true) == 1.0, "Value should be cliped from normalization with z-score rule");
-    ASSERT_LOG(normalize<ZScore>(-12, 0.0, 1.0, true) == 0.0, "Value should be cliped from normalization with z-score rule");
+    ASSERT_LOG(MinMax::normalize(0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(MinMax::normalize(1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(MinMax::normalize(0.25, -1.0, 1.0) == 0.625, "Value should have been normalized with min-max rule");
+    ASSERT_LOG(MinMax::normalize(1.00, -2.0, 0.5) == 1.20,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(MinMax::normalize(-3.0, -2.0, 0.5) == -0.4,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(MinMax::normalize(1.00, -2.0, 0.5, true) == 1.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(MinMax::normalize(-3.0, -2.0, 0.5, true) == 0.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(ZScore::normalize(1.0, 0.0, 1.0) == 2.0/3.0, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(ZScore::normalize(3.0, 0.0, 1.0) == 1.0,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(ZScore::normalize(-0.75, 0.0, 1.0) == 0.375, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(ZScore::normalize(0.0, 0.0, 1.0) == 0.5,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(ZScore::normalize(-12, 0.0, 1.0) == -1.5,    "Value should have been normalized with z-score rule");    
+    ASSERT_LOG(ZScore::normalize(6.0, 0.0, 1.0, true) == 1.0, "Value should be cliped from normalization with z-score rule");
+    ASSERT_LOG(ZScore::normalize(-12, 0.0, 1.0, true) == 0.0, "Value should be cliped from normalization with z-score rule");
     
     double min1 = -1, max1 = -1, min2 = -1, max2 = -1;
     int posMin1 = -1, posMax1 = -1, posMin2 = -1, posMax2 = -1;
-    findNormParams<MinMax>(v1, &min1, &max1, &posMin1, &posMax1);
-    findNormParams<MinMax>(v2, &min2, &max2, &posMin2, &posMax2);
+    MinMax::findNormParams(v1, &min1, &max1, &posMin1, &posMax1);
+    MinMax::findNormParams(v2, &min2, &max2, &posMin2, &posMax2);
     ASSERT_LOG(min1 == -1,   "Minimum value of vector should be assigned to variable by reference");
     ASSERT_LOG(max1 == 14,   "Maximum value of vector should be assigned to variable by reference");
     ASSERT_LOG(posMin1 == 0, "Index position of minimum value of vector should be assigned to variable by reference");
@@ -538,7 +538,7 @@ int test_normalizationFunctions()
     ASSERT_LOG(posMax2 == 0, "Index position of maximum value of vector should be assigned to variable by reference");
 
     FeatureVector vmin, vmax;
-    findNormParamsFeatures<MinMax>(v, &vmin, &vmax);
+    MinMax::findNormParamsFeatures(v, &vmin, &vmax);
     ASSERT_LOG(vmin.size() == v1.size(), "Minimum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmax.size() == v1.size(), "Maximum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmin[0] == -1,  "Minimum value should be found");
@@ -555,7 +555,7 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
 
     double minAll, maxAll;
-    findNormParamsOverall<MinMax>(v, &minAll, &maxAll);
+    MinMax::findNormParamsOverall(v, &minAll, &maxAll);
     ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
     ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
 
@@ -596,37 +596,37 @@ int test_normalizationFunctions()
     double dummyValue;
     FeatureVector vEmpty;
     try { 
-        normalize<MinMax>(1.0, 1.0, -1.0); 
+        MinMax::normalize(1.0, 1.0, -1.0); 
         throw std::runtime_error("Minimum value greater than maximum value should have raised an exception");
         return -1;
     } catch (...) {}    // expceted exception
     try { 
-        normalize<ZScore>(1.0, 1.0, 0.0); 
+        ZScore::normalize(1.0, 1.0, 0.0); 
         throw std::runtime_error("Zero value standard deviation should have raised an exception");
         return -2;
     } catch (...) {}    // expceted exception
     try { 
-        findNormParams<MinMax>(v1, nullptr, &dummyValue);
+        MinMax::findNormParams(v1, nullptr, &dummyValue);
         throw std::runtime_error("Null reference for minimum value should have raised an exception");
         return -3;
     } catch (...) {}    // expceted exception
     try { 
-        findNormParams<MinMax>(v1, &dummyValue, nullptr);
+        MinMax::findNormParams(v1, &dummyValue, nullptr);
         throw std::runtime_error("Null reference for maximum value should have raised an exception");
         return -4;
     } catch (...) {}    // expceted exception
     try { 
-        findNormParams<MinMax>(vEmpty, &dummyValue, &dummyValue);
+        MinMax::findNormParams(vEmpty, &dummyValue, &dummyValue);
         throw std::runtime_error("Empty feature vector should have raised an exception");
         return -5;
     } catch (...) {}    // expceted exception
     try { 
-        findNormParamsFeatures<MinMax>(v, nullptr, &vEmpty);
+        MinMax::findNormParamsFeatures(v, nullptr, &vEmpty);
         throw std::runtime_error("Null reference for minimum features should have raised an exception");
         return -6;
     } catch (...) {}    // expceted exception
     try { 
-        findNormParamsFeatures<MinMax>(v, &vEmpty, nullptr);
+        MinMax::findNormParamsFeatures(v, &vEmpty, nullptr);
         throw std::runtime_error("Null reference for maximum features should have raised an exception");
         return -7;
     } catch (...) {}    // expceted exception
@@ -2227,7 +2227,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
                     
                     // Find min/max features according to normalization mode
-                    findNormParamsFeatures<MinMax>(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
+                    MinMax::findNormParamsFeatures(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
                     #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
                     logger << "Found min/max features for (descriptor,patch) (" << descriptorNames[d] << "," << p << "):" << std::endl
                            << "   MIN: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl
@@ -2243,8 +2243,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                        << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
                 #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
                 double dummyMinMax;
-                findNormParamsOverall<MinMax>(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
-                findNormParamsOverall<MinMax>(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                MinMax::findNormParamsOverall(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
+                MinMax::findNormParamsOverall(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
                 logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
                        << "   MIN: " << minFeatures[d] << std::endl
                        << "   MAX: " << maxFeatures[d] << std::endl;

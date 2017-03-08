@@ -111,9 +111,9 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
         // average score fusion and normalization post-fusion
         classificationScores[pos] /= (double)nPatches;  
         #if ESVM_SCORE_NORMALIZATION_MODE == 1
-        classificationScores[pos] = normalize<MinMax>(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        classificationScores[pos] = MinMax::normalize(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
         #elif ESVM_SCORE_NORMALIZATION_MODE == 2
-        classificationScores[pos] = normalize<ZScore>(classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
+        classificationScores[pos] = ZScore::normalize(classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
         #endif
     }
 
