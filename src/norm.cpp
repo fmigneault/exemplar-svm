@@ -3,14 +3,14 @@
 #include <algorithm>
 #include <float.h>
 
-double MinMax(double value, double min, double max, bool clipValue)
+double MinMax::normalize(double value, double min, double max, bool clipValue)
 {
     ASSERT_THROW(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
     double normValue = (value - min) / (max - min);
     return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
 }
 
-double ZScore(double value, double mean, double stddev, bool clipValue)
+double ZScore::normalize(double value, double mean, double stddev, bool clipValue)
 {
     ASSERT_THROW(stddev != 0, "stddev must be different than zero");
     double sigmaFactor = 3.0;
@@ -18,14 +18,7 @@ double ZScore(double value, double mean, double stddev, bool clipValue)
     return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
 }
 
-template<double NormFunction(double, double, double, bool)>
-double normalize(double value, double param1, double param2, bool clipValue)
-{
-    return NormFunction(value, param1, param2, clipValue);
-}
-
-template<double NormFunction(double, double, double, bool)>
-void findNormParams<NormFunction>(FeatureVector featureVector, double* min, double* max, int* posMin, int* posMax)
+void MinMax::findNormParams(FeatureVector featureVector, double* min, double* max, int* posMin, int* posMax)
 {
     // check values/references
     ASSERT_THROW(min != nullptr, "min reference not specified");
@@ -59,21 +52,24 @@ void findNormParams<NormFunction>(FeatureVector featureVector, double* min, doub
     }
 }
 
-template<>
-void findNormParamsOverall<MinMax>(std::vector<FeatureVector> featureVectors, double* min, double* max)
-{    
+void ZScore::findNormParams(FeatureVector featureVector, double *mean, double *stddev, int *posMean, int *posStdDev)
+{
+    throw std::runtime_error("NOT IMPLEMENTED");
+}
+
+void MinMax::findNormParamsOverall(std::vector<FeatureVector> featureVectors, double *min, double *max)
+{
     double minFound, maxFound;
     size_t nSamples = featureVectors.size();
     for (size_t s = 0; s < nSamples; s++)
     {
-        findNormParams<MinMax>(featureVectors[s], &minFound, &maxFound);
+        findNormParams(featureVectors[s], &minFound, &maxFound);
         if (s == 0 || minFound < *min) *min = minFound;
         if (s == 0 || maxFound > *max) *max = maxFound;
     }
 }
 
-template<double NormFunction(double, double, double, bool)>
-void findNormParamsOverall<ZScore>(std::vector<FeatureVector> featureVectors, double* mean, double* stddev)
+void ZScore::findNormParamsOverall(std::vector<FeatureVector> featureVectors, double *mean, double *stddev)
 {    
     size_t nSamples = featureVectors.size();
     ASSERT_LOG(nSamples > 0, "vector must contain at least one feature vector");
@@ -95,11 +91,10 @@ void findNormParamsOverall<ZScore>(std::vector<FeatureVector> featureVectors, do
     *stddev = stdDevFound;
 }
 
-template<double NormFunction(double, double, double, bool)>
-void findNormParamsFeatures<MinMax>(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
+void MinMax::findNormParamsFeatures(std::vector<FeatureVector> featureVectors, FeatureVector *featuresMin, FeatureVector *featuresMax)
 {
-    ASSERT_THROW(minFeatures != nullptr, "feature vector for min features not specified");
-    ASSERT_THROW(maxFeatures != nullptr, "feature vector for max features not specified");
+    ASSERT_THROW(featuresMin != nullptr, "feature vector for min features not specified");
+    ASSERT_THROW(featuresMax != nullptr, "feature vector for max features not specified");
 
     // initialize with first vector
     int nFeatures = featureVectors[0].size();
@@ -120,29 +115,26 @@ void findNormParamsFeatures<MinMax>(std::vector<FeatureVector> featureVectors, F
     }
 
     // update values
-    *minFeatures = min;
-    *maxFeatures = max;
+    *featuresMin = min;
+    *featuresMax = max;
 }
 
-template<double NormFunction(double, double, double, bool)>
-FeatureVector normalizeAllFeatures<NormFunction>(FeatureVector featureVector, double param1, double param2)
-{    
+FeatureVector NormFunction::normalizeAllFeatures(FeatureVector featureVector, double param1, double param2)
+{
     int nFeatures = featureVector.size();
     for (int f = 0; f < nFeatures; f++)
-        featureVector[f] = NormFunction(featureVector[f], param1, param2);
+        featureVector[f] = normalize(featureVector[f], param1, param2);
     return featureVector;
 }
 
-template<double NormFunction(double, double, double, bool)>
-FeatureVector normalizeAllFeatures<NormFunction>(FeatureVector featureVector)
+FeatureVector NormFunction::normalizeAllFeatures(FeatureVector featureVector)
 {
     double param1, param2;
-    findNormParams<NormFunction>(featureVector, &param1, &param2);
-    return normalizeAllFeatures<NormFunction>(featureVector, param1, param2);
+    findNormParams(featureVector, &param1, &param2);
+    return normalizeAllFeatures(featureVector, param1, param2);
 }
 
-template<double NormFunction(double, double, double, bool)>
-FeatureVector normalizePerFeatures<NormFunction>(FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2)
+FeatureVector NormFunction::normalizePerFeatures(FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2)
 {
     // check number of features
     size_t nFeatures = featureVector.size();
@@ -151,15 +143,80 @@ FeatureVector normalizePerFeatures<NormFunction>(FeatureVector featureVector, Fe
 
     // normalize values    
     for (size_t f = 0; f < nFeatures; f++)
-        featureVector[f] = NormFunction(featureVector[f], featuresParam1[f], featuresParam2[f]);
+        featureVector[f] = normalize(featureVector[f], featuresParam1[f], featuresParam2[f]);
 
     return featureVector;
 }
 
-template<double NormFunction(double, double, double, bool)>
+#if NORM_TEMPLATES == 1
+
+template<class NormFunction>
+double normalize(double value, double param1, double param2, bool clipValue)
+{
+    return NormFunction::normalize(value, param1, param2, clipValue);
+}
+
+template<>
+double normalize<MinMax>(double value, double param1, double param2, bool clipValue)
+{
+    return MinMax::normalize(value, param1, param2, clipValue);
+}
+
+template<>
+double normalize<ZScore>(double value, double param1, double param2, bool clipValue)
+{
+    return ZScore::normalize(value, param1, param2, clipValue);
+}
+
+template<class NormFunction>
+void findNormParams<NormFunction>(FeatureVector featureVector, double* min, double* max, int* posMin, int* posMax)
+{
+    findNormParams(featureVector, min, max, posMin, posMax);
+}
+
+template<class NormFunction>
+void findNormParamsOverall<NormFunction>(std::vector<FeatureVector> featureVectors, double *min, double *max)
+{
+    findNormParamsOverall(featureVectors, min, max);
+}
+
+template<class NormFunction>
+void findNormParamsFeatures<NormFunction>(std::vector<FeatureVector> featureVectors, FeatureVector *featuresMin, FeatureVector *featuresMax)
+{
+    findNormParamsFeatures(featureVector, featuresMin, featuresMax);
+}
+
+template<class NormFunction>
+FeatureVector normalizeAllFeatures<NormFunction>(FeatureVector featureVector, double param1, double param2)
+{
+    normalizeAllFeatures(featureVector, param1, param2);
+}
+
+template<class NormFunction>
+FeatureVector normalizeAllFeatures<NormFunction>(FeatureVector featureVector)
+{
+    normalizeAllFeatures(featureVector)
+}
+
+template<class NormFunction>
+FeatureVector normalizePerFeatures<NormFunction>(FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2)
+{
+    normalizePerFeatures(featureVector, featuresParam1, featuresParam2);
+}
+
+template<class NormFunction>
 std::vector<double> normalizeClassScores<NormFunction>(std::vector<double> scores)
 {
     double param1, param2;
     findNormParams<NormFunction>(scores, &param1, &param2);
     return normalizeAllFeatures<NormFunction>(scores, param1, param2);
 }
+
+std::vector<double> NormFunction::normalizeClassScores(std::vector<double> scores)
+{
+    double param1, param2;
+    findNormParams(scores, &param1, &param2);
+    return normalizeAllFeatures(scores, param1, param2);
+}
+
+#endif/*NORM_TEMPLATES*/

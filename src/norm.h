@@ -11,9 +11,56 @@ Normalization oprations
 Calculation functions
 -------------------- */
 
+class NormFunction
+{
+public:
+    virtual double operator() (double value, double param1, double param2, bool clipValue = false) { normalize(value, param1, param2, clipValue); }
+    virtual double normalize(double value, double param1, double param2, bool clipValue = false) {};
+    virtual void findNormParams(FeatureVector featureVector, double *param1, double *param2, int *posParam1 = nullptr, int *posParam2 = nullptr) {}
+    virtual void findNormParamsOverall(std::vector<FeatureVector> featureVectors, double* param1, double* param2) {}
+    virtual void findNormParamsFeatures(std::vector<FeatureVector> featureVectors, FeatureVector *featuresParam1 = nullptr, FeatureVector *featuresParam2 = nullptr) {}
+    virtual FeatureVector normalizeAllFeatures(FeatureVector featureVector);
+    virtual FeatureVector normalizeAllFeatures(FeatureVector featureVector, double param1, double param2);
+    virtual FeatureVector normalizePerFeatures(FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2);
+    virtual std::vector<double> normalizeClassScores(std::vector<double> scores);
+};
+
+
+class MinMax : public NormFunction 
+{
+public:    
+    static double normalize(double value, double min, double max, bool clipValue = false);
+    static void findNormParams(FeatureVector featureVector, double *min, double *max, int *posMin = nullptr, int *posMax = nullptr);
+    static void findNormParamsOverall(std::vector<FeatureVector> featureVectors, double *min, double *max);
+    static void findNormParamsFeatures(std::vector<FeatureVector> featureVectors, FeatureVector *featuresMin, FeatureVector *featuresMax);
+};
+
+class ZScore : public NormFunction 
+{
+public:    
+    static double normalize(double value, double mean, double stddev, bool clipValue = false);
+    static void findNormParams(FeatureVector featureVector, double *mean, double *stddev, int *posMean = nullptr, int *posStdDev = nullptr);
+    static void findNormParamsOverall(std::vector<FeatureVector> featureVectors, double *mean, double *stddev);
+};
+
+
+
+/*
+class NormFunction
+{
+public:
+    double operator() (double value, double min, double max, bool clipValue);
+};
+*/
 // Structure for templated function calculation using Min-Max
 // Min-Max normalization formula, clip value to [0,1] if specified
-double MinMax(double value, double min, double max, bool clipValue);
+///NormFunction MinMax;
+/*
+template<class NormFunction>
+struct MinMax {
+    double operator() (double value, double min, double max, bool clipValue);
+};
+*/
 /*
 class MinMax {
     double operator() (double value, double min, double max, bool clipValue = false);
@@ -21,14 +68,20 @@ class MinMax {
 */
 // Structure for templated function calculation using Standard Score (z-score)
 // Z-Score normalization formula centered around 0.5 with ±3σ, clip value to [0,1] if specified
-double ZScore(double value, double mean, double stddev, bool clipValue);
+///NormFunction ZScore;
+/*
+template<class NormFunction>
+struct ZScore {
+    double operator() (double value, double mean, double stddev, bool clipValue);
+};
+*/
 /*
 class ZScore {
     double operator() (double value, double min, double max, bool clipValue = false);
 };
 */
 /*
-template<double NormFunction(double, double, double, bool)>
+template<class NormFunction>
 inline double normalize(double value, double min, double max, bool clipValue = false)
 {
     NormFunction::operator();
@@ -39,31 +92,44 @@ inline double normalize(double value, double min, double max, bool clipValue = f
 Operation function using Calculation functions
 --------------------------------------------- */
 
+#define NORM_TEMPLATES 0
+#if NORM_TEMPLATES == 1
+
 // Normalization formula, clip value to [0,1] if specified
-template<double NormFunction(double, double, double, bool)>
-double normalize(double value, double min, double max, bool clipValue = false);
+template<class NormFunction>
+double normalize(double value, double param1, double param2, bool clipValue = false);
+
 // Find the norm parameters along a vector (not per feature)
-template<double NormFunction(double, double, double, bool)>
-void findNormParams(FeatureVector featureVector, double* param1, double* param2, int* posParam1 = nullptr, int* posParam2 = nullptr);
+template<class NormFunction>
+void findNormParams(FeatureVector featureVector, double *param1, double *param2, int *posParam1 = nullptr, int *posParam2 = nullptr);
+template<>
+void findNormParams<MinMax>(FeatureVector featureVector, double *min, double *max, int *posMin, int *posMax);
+template<>
+void findNormParams<ZScore>(FeatureVector featureVector, double *mean, double *stddev, int *posMean, int *posStdDev);
+
 // Find the norm parameters acros features and across a whole list of feature vectors
-template<double NormFunction(double, double, double, bool)>
-void findNormParamsOverall(std::vector<FeatureVector> featureVectors, double* param1, double* param2);
+template<class NormFunction>
+void findNormParamsOverall(std::vector<FeatureVector> featureVectors, double *param1, double *param2);
+
 // Find the norm parameters per feature across a whole list of feature vectors
-template<double NormFunction(double, double, double, bool)>
-void findNormParamsFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* param1Features, FeatureVector* param2Features);
-template<double NormFunction(double, double, double, bool)>
-void findNormParamsFeatures<MinMax>(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures);
+template<class NormFunction>
+void findNormParamsFeatures(std::vector<FeatureVector> featureVectors, FeatureVector *param1Features, FeatureVector *param2Features);
+
 // Normalization along a feature vector using the specified norm features, norm values of vector are used if not specified
-template<double NormFunction(double, double, double, bool)>
+template<class NormFunction>
 FeatureVector normalizeAllFeatures(FeatureVector featureVector, double param1, double param2);
-template<double NormFunction(double, double, double, bool)>
+template<class NormFunction>
 FeatureVector normalizeAllFeatures(FeatureVector featureVector);
+
 // Normalization [0, 1] across a feature vector using the corresponding norm features
-template<double NormFunction(double, double, double, bool)>
+template<class NormFunction>
 FeatureVector normalizePerFeatures(FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2);
+
 // Normalization [0, 1] over all the scores specified in the vector using the found norm values
-template<double NormFunction(double, double, double, bool)>
+template<class NormFunction>
 std::vector<double> normalizeClassScores(std::vector<double> scores);
+
+#endif/*NORM_TEMPLATES*/
 
 /* --------------
 Extra functions
