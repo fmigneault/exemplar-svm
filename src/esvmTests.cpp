@@ -509,25 +509,25 @@ int test_normalizationFunctions()
 
     // normal operation
 
-    ASSERT_LOG(normalizeMinMax(0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalizeMinMax(1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalizeMinMax(0.25, -1.0, 1.0) == 0.625, "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalizeMinMax(1.00, -2.0, 0.5) == 1.20,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalizeMinMax(-3.0, -2.0, 0.5) == -0.4,  "Value should have been normalized with min-max rule");
-    ASSERT_LOG(normalizeMinMax(1.00, -2.0, 0.5, true) == 1.0, "Value should be cliped from normalization with min-max rule");
-    ASSERT_LOG(normalizeMinMax(-3.0, -2.0, 0.5, true) == 0.0, "Value should be cliped from normalization with min-max rule");
-    ASSERT_LOG(normalizeZScore(1.0, 0.0, 1.0) == 2.0/3.0, "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalizeZScore(3.0, 0.0, 1.0) == 1.0,     "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalizeZScore(-0.75, 0.0, 1.0) == 0.375, "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalizeZScore(0.0, 0.0, 1.0) == 0.5,     "Value should have been normalized with z-score rule");
-    ASSERT_LOG(normalizeZScore(-12, 0.0, 1.0) == -1.5,    "Value should have been normalized with z-score rule");    
-    ASSERT_LOG(normalizeZScore(6.0, 0.0, 1.0, true) == 1.0, "Value should be cliped from normalization with z-score rule");
-    ASSERT_LOG(normalizeZScore(-12, 0.0, 1.0, true) == 0.0, "Value should be cliped from normalization with z-score rule");
+    ASSERT_LOG(normalize<MinMax>(0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(0.25, -1.0, 1.0) == 0.625, "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(1.00, -2.0, 0.5) == 1.20,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(-3.0, -2.0, 0.5) == -0.4,  "Value should have been normalized with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(1.00, -2.0, 0.5, true) == 1.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(normalize<MinMax>(-3.0, -2.0, 0.5, true) == 0.0, "Value should be cliped from normalization with min-max rule");
+    ASSERT_LOG(normalize<ZScore>(1.0, 0.0, 1.0) == 2.0/3.0, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalize<ZScore>(3.0, 0.0, 1.0) == 1.0,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalize<ZScore>(-0.75, 0.0, 1.0) == 0.375, "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalize<ZScore>(0.0, 0.0, 1.0) == 0.5,     "Value should have been normalized with z-score rule");
+    ASSERT_LOG(normalize<ZScore>(-12, 0.0, 1.0) == -1.5,    "Value should have been normalized with z-score rule");    
+    ASSERT_LOG(normalize<ZScore>(6.0, 0.0, 1.0, true) == 1.0, "Value should be cliped from normalization with z-score rule");
+    ASSERT_LOG(normalize<ZScore>(-12, 0.0, 1.0, true) == 0.0, "Value should be cliped from normalization with z-score rule");
     
     double min1 = -1, max1 = -1, min2 = -1, max2 = -1;
     int posMin1 = -1, posMax1 = -1, posMin2 = -1, posMax2 = -1;
     findNormParams<MinMax>(v1, &min1, &max1, &posMin1, &posMax1);
-    findMinMax(v2, &min2, &max2, &posMin2, &posMax2);
+    findNormParams<MinMax>(v2, &min2, &max2, &posMin2, &posMax2);
     ASSERT_LOG(min1 == -1,   "Minimum value of vector should be assigned to variable by reference");
     ASSERT_LOG(max1 == 14,   "Maximum value of vector should be assigned to variable by reference");
     ASSERT_LOG(posMin1 == 0, "Index position of minimum value of vector should be assigned to variable by reference");
@@ -538,7 +538,7 @@ int test_normalizationFunctions()
     ASSERT_LOG(posMax2 == 0, "Index position of maximum value of vector should be assigned to variable by reference");
 
     FeatureVector vmin, vmax;
-    findMinMaxFeatures(v, &vmin, &vmax);
+    findNormParamsFeatures<MinMax>(v, &vmin, &vmax);
     ASSERT_LOG(vmin.size() == v1.size(), "Minimum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmax.size() == v1.size(), "Maximum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmin[0] == -1,  "Minimum value should be found");
@@ -555,27 +555,27 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
 
     double minAll, maxAll;
-    findMinMaxOverall(v, &minAll, &maxAll);
+    findNormParamsOverall<MinMax>(v, &minAll, &maxAll);
     ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
     ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
 
-    FeatureVector normAll = normalizeMinMaxAllFeatures(v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
+    FeatureVector normAll = normalizeAllFeatures<MinMax>(v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
     for (int f = 0; f < normAll.size(); f++)
         ASSERT_LOG(normAll[f] == v1_norm01[f], "Feature should be normalized with specified min/max values");
 
-    FeatureVector normAllMore = normalizeMinMaxAllFeatures(v1, -1, 29); // using max == 29 makes (max-min)=30, 1/2 norm values
+    FeatureVector normAllMore = normalizeAllFeatures<MinMax>(v1, -1, 29); // using max == 29 makes (max-min)=30, 1/2 norm values
     for (int f = 0; f < normAllMore.size(); f++)
         ASSERT_LOG(normAllMore[f] == v1_norm01[f] / 2.0, "Feature normalization should be enforced with specified min/max values");
 
-    FeatureVector normAllAuto = normalizeMinMaxAllFeatures(v1);         // min/max not specified, find them
+    FeatureVector normAllAuto = normalizeAllFeatures<MinMax>(v1);         // min/max not specified, find them
     for (int f = 0; f < normAllAuto.size(); f++)
         ASSERT_LOG(normAllAuto[f] == v1_norm01[f], "Feature should be normalized with min/max found within the specified vector");
     
-    std::vector<double> scores = normalizeMinMaxClassScores(v1);        // same as 'normalizeMinMaxAllFeatures'
+    std::vector<double> scores = normalizeClassScores<MinMax>(v1);        // same as 'normalizeAllFeatures<MinMax>'
     for (int f = 0; f < scores.size(); f++)
         ASSERT_LOG(scores[f] == v1_norm01[f], "Score should be normalized with min/max of all scores");
 
-    FeatureVector v2_normPerFeat = normalizeMinMaxPerFeatures(v2, v2_min, v2_max);
+    FeatureVector v2_normPerFeat = normalizePerFeatures<MinMax>(v2, v2_min, v2_max);
     for (int f = 0; f < v2_normPerFeat.size(); f++)
     {
         cout << v2_normPerFeat[f] << " " << v2_norm[f] << std::endl;
@@ -596,47 +596,47 @@ int test_normalizationFunctions()
     double dummyValue;
     FeatureVector vEmpty;
     try { 
-        normalizeMinMax(1.0, 1.0, -1.0); 
+        normalize<MinMax>(1.0, 1.0, -1.0); 
         throw std::runtime_error("Minimum value greater than maximum value should have raised an exception");
         return -1;
     } catch (...) {}    // expceted exception
     try { 
-        normalizeZScore(1.0, 1.0, 0.0); 
+        normalize<ZScore>(1.0, 1.0, 0.0); 
         throw std::runtime_error("Zero value standard deviation should have raised an exception");
         return -2;
     } catch (...) {}    // expceted exception
     try { 
-        findMinMax(v1, nullptr, &dummyValue);
+        findNormParams<MinMax>(v1, nullptr, &dummyValue);
         throw std::runtime_error("Null reference for minimum value should have raised an exception");
         return -3;
     } catch (...) {}    // expceted exception
     try { 
-        findMinMax(v1, &dummyValue, nullptr);
+        findNormParams<MinMax>(v1, &dummyValue, nullptr);
         throw std::runtime_error("Null reference for maximum value should have raised an exception");
         return -4;
     } catch (...) {}    // expceted exception
     try { 
-        findMinMax(vEmpty, &dummyValue, &dummyValue);
+        findNormParams<MinMax>(vEmpty, &dummyValue, &dummyValue);
         throw std::runtime_error("Empty feature vector should have raised an exception");
         return -5;
     } catch (...) {}    // expceted exception
     try { 
-        findMinMaxFeatures(v, nullptr, &vEmpty);
+        findNormParamsFeatures<MinMax>(v, nullptr, &vEmpty);
         throw std::runtime_error("Null reference for minimum features should have raised an exception");
         return -6;
     } catch (...) {}    // expceted exception
     try { 
-        findMinMaxFeatures(v, &vEmpty, nullptr);
+        findNormParamsFeatures<MinMax>(v, &vEmpty, nullptr);
         throw std::runtime_error("Null reference for maximum features should have raised an exception");
         return -7;
     } catch (...) {}    // expceted exception
     try { 
-        normalizeMinMaxPerFeatures(v1, vEmpty, v1);
+        normalizePerFeatures<MinMax>(v1, vEmpty, v1);
         throw std::runtime_error("Inconsistent size for minimum features should have raised an exception");
         return -8;
     } catch (...) {}    // expceted exception
     try { 
-        normalizeMinMaxPerFeatures(v1, v1, vEmpty);
+        normalizePerFeatures<MinMax>(v1, v1, vEmpty);
         throw std::runtime_error("Inconsistent size for maximum features should have raised an exception");
         return -9;
     } catch (...) {}    // expceted exception
@@ -2227,7 +2227,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
                     
                     // Find min/max features according to normalization mode
-                    findMinMaxFeatures(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
+                    findNormParamsFeatures<MinMax>(allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
                     #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
                     logger << "Found min/max features for (descriptor,patch) (" << descriptorNames[d] << "," << p << "):" << std::endl
                            << "   MIN: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl
@@ -2236,15 +2236,15 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }
                 #if TEST_FEATURES_NORMALIZATION_MODE == 2       // Per feature and across patches normalization
                 FeatureVector dummyFeatures(minFeaturesCumul[d][0].size());
-                findMinMaxFeatures(minFeaturesCumul[d], &(minFeatures[d]), &dummyFeatures);
-                findMinMaxFeatures(maxFeaturesCumul[d], &dummyFeatures, &(maxFeatures[d]));
+                findNormParamsFeatures<MinMax>(minFeaturesCumul[d], &(minFeatures[d]), &dummyFeatures);
+                findNormParamsFeatures<MinMax>(maxFeaturesCumul[d], &dummyFeatures, &(maxFeatures[d]));
                 logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
                        << "   MIN: " << featuresToVectorString(minFeatures[d]) << std::endl
                        << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
                 #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
                 double dummyMinMax;
-                findMinMaxOverall(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
-                findMinMaxOverall(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                findNormParamsOverall<MinMax>(minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
+                findNormParamsOverall<MinMax>(maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
                 logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
                        << "   MIN: " << minFeatures[d] << std::endl
                        << "   MAX: " << maxFeatures[d] << std::endl;
@@ -2277,11 +2277,11 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
                     for (size_t pos = 0; pos < nPositives; pos++)
                         for (size_t r = 0; r < nRepresentations; r++)
-                            fvPositiveSamples[pos][p][d][r] = normalizeMinMaxPerFeatures(fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
+                            fvPositiveSamples[pos][p][d][r] = normalizePerFeatures<MinMax>(fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
                     for (size_t neg = 0; neg < nNegatives; neg++)
-                        fvNegativeSamples[p][d][neg] = normalizeMinMaxPerFeatures(fvNegativeSamples[p][d][neg], minNorm, maxNorm);
+                        fvNegativeSamples[p][d][neg] = normalizePerFeatures<MinMax>(fvNegativeSamples[p][d][neg], minNorm, maxNorm);
                     for (size_t prb = 0; prb < nProbes; prb++)
-                        fvProbeSamples[p][d][prb] = normalizeMinMaxPerFeatures(fvProbeSamples[p][d][prb], minNorm, maxNorm);
+                        fvProbeSamples[p][d][prb] = normalizePerFeatures<MinMax>(fvProbeSamples[p][d][prb], minNorm, maxNorm);
                 }
             }
 
@@ -2370,7 +2370,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         // test probes per patch and normalize scores
                         for (size_t prb = 0; prb < nProbes; prb++)
                             patchScores[prb] = esvmModels[pos][p][d].predict(fvProbeSamples[p][d][prb]);
-                        std::vector<double> patchScoresNorm = normalizeMinMaxClassScores(patchScores);
+                        std::vector<double> patchScoresNorm = normalizeClassScores<MinMax>(patchScores);
 
                         /*########################################### DEBUG */
                         std::string strPatch = std::to_string(p);
@@ -2417,7 +2417,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }
 
                 // Normalization of scores post-fusion
-                std::vector<double> combinedScoresNorm = normalizeMinMaxClassScores(combinedScoresRaw);
+                std::vector<double> combinedScoresNorm = normalizeClassScores<MinMax>(combinedScoresRaw);
                 logger << "Score fusion (descriptor,patch) with post-fusion normalization for '" << positivesID[pos] << "':" << std::endl
                        << featuresToVectorString(combinedScoresNorm) << std::endl;
 
@@ -2493,7 +2493,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
         logger << "Testing ESVM with data file: '" << testFileName << "'" << std::endl;
         std::vector<int> probeGroundTruths;
         std::vector<double> scores = esvm.predict(testFileName, &probeGroundTruths);
-        std::vector<double> normScores = normalizeMinMaxClassScores(scores);
+        std::vector<double> normScores = normalizeClassScores<MinMax>(scores);
         for (int prb = 0; prb < scores.size(); prb++)
         {
             std::string probeGT = (probeGroundTruths[prb] > 0 ? "positive" : "negative");
@@ -2561,7 +2561,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
                 ESVM esvm = ESVM(trainFileName, *posID);
                 logger << "Testing ESVM with data file: '" << testFileName << "'..." << std::endl;                
                 std::vector<double> scores = esvm.predict(testFileName, &probeGroundTruths);
-                std::vector<double> normScores = normalizeMinMaxClassScores(scores);
+                std::vector<double> normScores = normalizeClassScores<MinMax>(scores);
                 
                 nProbes = scores.size();
                 if (p == 0)
@@ -2748,9 +2748,9 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     for (int p = 0; p < nPatches; p++)
     {
         for (int pos = 0; pos < nPositives; pos++)
-            fvPositiveSamples[pos][p] = normalizeMinMaxAllFeatures(fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
+            fvPositiveSamples[pos][p] = normalizeAllFeatures<MinMax>(fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
         for (int prb = 0; prb < nProbesLoaded; prb++)
-            fvProbeLoadedSamples[p][prb] = normalizeMinMaxAllFeatures(fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
+            fvProbeLoadedSamples[p][prb] = normalizeAllFeatures<MinMax>(fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
     }
     #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
 
@@ -2807,7 +2807,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             probeGroundTruthsLoaded.push_back(probesLoadedID[prb] == posID ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
             probeFusionScoresLoaded[prb] /= (double)nPatches;
         }        
-        probeFusionScoresLoaded = normalizeMinMaxClassScores(probeFusionScoresLoaded);
+        probeFusionScoresLoaded = normalizeClassScores<MinMax>(probeFusionScoresLoaded);
         
         // evaluate results with fusioned patch scores
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
@@ -2830,7 +2830,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         // average accumulated scores and execute post-fusion normalization
         for (int prb = 0; prb < nProbesPreGen; prb++)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
-        probeFusionScoresPreGen = normalizeMinMaxClassScores(probeFusionScoresPreGen);
+        probeFusionScoresPreGen = normalizeClassScores<MinMax>(probeFusionScoresPreGen);
         
         // evaluate results with fusioned patch scores
         logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
@@ -3189,7 +3189,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
             probePatchScores = esvm[pos][p].predict(testFile, &probeGroundTruths);
 
             // score normalization for patch
-            std::vector<double> normPatchScores = normalizeMinMaxClassScores(probePatchScores);
+            std::vector<double> normPatchScores = normalizeClassScores<MinMax>(probePatchScores);
             logger << "Scores for '" << posID << "', patch " << strPatch << ":" << std::endl
                    << featuresToVectorString(probePatchScores) << std::endl;
             logger << "Scores normalized for '" << posID << "', patch " << strPatch << ":" << std::endl
@@ -3220,15 +3220,15 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
                 tmpProbeScores.push_back(probeFusionScoresCumul[p][prb]);
                 probeScoresSum += probeFusionScoresCumul[p][prb];               // accumulate across patch scores of corresponding probe 
             }
-            std::vector<double> normProbeScores = normalizeMinMaxClassScores(tmpProbeScores);
+            std::vector<double> normProbeScores = normalizeClassScores<MinMax>(tmpProbeScores);
             for (size_t p = 0; p < nPatches; p++)
                 probeNormScoresSum += normProbeScores[p];                       // accumulate across normalized patch scores of corresponding probe 
             probeFusionScoresNormFinal[prb] = probeNormScoresSum / (double)nPatches;
             probeFusionScoresNormSkipped[prb] = probeScoresSum / (double)nPatches;
         }
-        probeFusionScoresNormGradualPostNorm = normalizeMinMaxClassScores(probeFusionScoresNormGradual);
-        probeFusionScoresNormFinalPostNorm = normalizeMinMaxClassScores(probeFusionScoresNormFinal);
-        probeFusionScoresNormSkippedPostNorm = normalizeMinMaxClassScores(probeFusionScoresNormSkipped);
+        probeFusionScoresNormGradualPostNorm = normalizeClassScores<MinMax>(probeFusionScoresNormGradual);
+        probeFusionScoresNormFinalPostNorm = normalizeClassScores<MinMax>(probeFusionScoresNormFinal);
+        probeFusionScoresNormSkippedPostNorm = normalizeClassScores<MinMax>(probeFusionScoresNormSkipped);
         
         // output resulting score fusion
         logger << "Score fusion of gradual normalization scores for '" << posID << "':" << std::endl 
@@ -3329,7 +3329,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
+            positiveSamples[p][pos] = normalizeAllFeatures<MinMax>(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
@@ -3376,8 +3376,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
                 maxScore = classificationScores[pos][prb];
         }
         // score normalization post-fusion
-        minmaxClassificationScores[pos] = normalizeMinMaxClassScores(classificationScores[pos]); 
-        zscoreClassificationScores[pos] = normalizeZScoreClassScores(classificationScores[pos]);
+        minmaxClassificationScores[pos] = normalizeClassScores<MinMax>(classificationScores[pos]); 
+        zscoreClassificationScores[pos] = normalizeClassScores<ZScore>(classificationScores[pos]);
     }
     // mean / stddev evaluation
     std::vector<size_t> nTotalPatch(nPatches, 0);
