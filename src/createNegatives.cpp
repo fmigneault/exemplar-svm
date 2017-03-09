@@ -134,7 +134,7 @@ int create_negatives(){
     std::cout << "DONE!" << std::endl;
 }
 
-int create_probes(std::string positives, std::string negatives, int id){
+int create_probes(std::string positives, std::string negatives){
     size_t nPatches = 9;
     xstd::mvector<2, cv::Mat> matPositiveSamples, matNegativeSamples;
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
@@ -154,8 +154,6 @@ int create_probes(std::string positives, std::string negatives, int id){
     // ChokePoint Path
     std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";         // ChokePoint dataset root
     std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
-
-    std::vector<std::string> negativesID = { "0003" };
 
     // Add ROI to corresponding sample vectors according to individual IDs
     cout << "Loading probe images for sequence " << positives << "...: " << std::endl;

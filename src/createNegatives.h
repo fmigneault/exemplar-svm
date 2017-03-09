@@ -17,6 +17,6 @@
 
 /* Tests */
 int create_negatives();
-int create_probes();
+int create_probes(std::string positives, std::string negatives);
 
 #endif/*CREATE_NEGATIVES_H*/
