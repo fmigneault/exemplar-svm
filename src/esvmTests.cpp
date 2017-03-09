@@ -3277,6 +3277,29 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
             FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + 
                                               sampleFileExt, probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);
 
+    // // Add ROI to corresponding sample vectors according to individual IDs            
+    // if (bfs::is_directory(dirPath))
+    // {
+    //     for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
+    //     {
+    //         if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
+    //         {
+    //             std::string strID = buildChokePointIndividualID(id);
+    //             if (contains(negativesID, strID))
+    //             {
+    //                 size_t neg = matNegativeSamples.size();
+    //                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+    //                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+    //                                                             useHistEqual, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+    //                 for (size_t p = 0; p < nPatches; p++)
+    //                     matNegativeSamples[neg][p] = patches[p];
+
+    //                 negativeSamplesID.push_back(strID);
+    //             }
+    //         }                  
+    //     }
+    // }                        
+
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)

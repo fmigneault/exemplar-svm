@@ -93,7 +93,7 @@ int create_negatives(){
     }
 
     ofstream outputFile;
-    outputFile.open ("example.txt");
+    outputFile.open ("example1.txt");
 
     cout << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
     for (size_t p = 0; p < nPatches; p++)
@@ -107,5 +107,102 @@ int create_negatives(){
     outputFile.close();
 
     std::cout << "DONE!" << std::endl;
+}
+
+int create_probes(std::string positives, std::string negatives, int id){
+    size_t nPatches = 9;
+    xstd::mvector<2, cv::Mat> matPositiveSamples, matNegativeSamples;
+    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    cv::Size patchCounts = cv::Size(3, 3);
+    cv::Size imageSize = cv::Size(48, 48);
+    xstd::mvector<2, FeatureVector> fvNegativeSamples, fvPositiveSamples;                   // [patch][descriptor][negative](FeatureVector)
+
+    // Hog init
+    cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
+    cv::Size blockSize = cv::Size(2, 2);
+    cv::Size blockStride = cv::Size(2, 2);
+    cv::Size cellSize = cv::Size(2, 2);
+    int nBins = 3;
+    FeatureExtractorHOG hog;
+    hog.initialize(patchSize, blockSize, blockStride, cellSize, nBins);
+
+    // ChokePoint Path
+    std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";         // ChokePoint dataset root
+    std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
+
+    std::vector<std::string> negativesID = { "0003" };
+    bool useHistEqual = true;
+
+    // Add ROI to corresponding sample vectors according to individual IDs
+    cout << "Loading probe images for sequence " << positives << "...: " << std::endl;
+    load_pgm_images_from_directory(positives, matPositiveSamples);
+    cout << "Loading probe images for sequence " << negatives << "...: " << std::endl;
+    load_pgm_images_from_directory(negatives, matNegativeSamples);
+
+    size_t nPositives = matPositiveSamples.size();
+    size_t nNegatives = matNegativeSamples.size();
+
+    size_t dims[2] = { nPatches, 0 };                             // [patch][negative/positive]
+    fvNegativeSamples = xstd::mvector<2, FeatureVector>(dims);
+    fvPositiveSamples = xstd::mvector<2, FeatureVector>(dims);
+
+    // Calculate Feature Vectors
+    for (size_t p = 0; p < nPatches; p++){
+        for (size_t pos = 0; pos < nPositives; pos++)
+            fvPositiveSamples[p].push_back(hog.compute(matPositiveSamples[pos][p]));
+        for (size_t neg = 0; neg < nNegatives; neg++)
+            fvNegativeSamples[p].push_back(hog.compute(matNegativeSamples[neg][p]));
+    }
+
+
+    for (size_t p = 0; p < nPatches; p++)
+    {    
+        double minAll, maxAll;
+        findMinMaxOverall(fvNegativeSamples[p], &minAll, &maxAll);
+
+        std::cout << "Patch Number: " << p << " Min: " << minAll << " Max: " << maxAll << std::endl;
+
+        for (size_t neg = 0; neg < nNegatives; neg++)
+            fvNegativeSamples[p][neg] = normalizeMinMaxAllFeatures(fvNegativeSamples[p][neg], minAll, maxAll);
+    }
+
+    for (size_t p = 0; p < nPatches; p++)
+        writeSampleDataFile("ID003.bin", fvNegativeSamples[p], std::vector<> (fvNegativeSamples[p].size(), ), BINARY);
+
+    // ofstream outputFile;
+    // outputFile.open ("example1.txt");
+
+    // cout << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
+    // for (size_t p = 0; p < nPatches; p++)
+    //     for (size_t neg = 0; neg < nNegatives; neg++){
+    //         for (size_t i = 0; i < fvNegativeSamples[p][neg].size(); i++){
+    //             outputFile << fvNegativeSamples[p][neg][i];
+    //         }
+    //         outputFile << endl;
+    //     }
+
+    // outputFile.close();
+
+    std::cout << "DONE!" << std::endl;
+}
+
+void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& imgVector){
+    bfs::directory_iterator endDir;
+
+    if (bfs::is_directory(dir))
+    {
+        for (bfs::directory_iterator itDir(dir); itDir != endDir; ++itDir)
+        {
+            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
+            {
+                size_t neg = imgVector.size();
+                imgVector.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                            useHistEqual, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+                for (size_t p = 0; p < nPatches; p++)
+                    imgVector[neg][p] = patches[p];
+            }                  
+        }
+    }
 }
 
