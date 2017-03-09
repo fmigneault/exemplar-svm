@@ -4,5 +4,6 @@
 #include <vector>
 
 typedef std::vector<double> FeatureVector;
+enum FileFormat { BINARY, LIBSVM };
 
 #endif/*ESVM_TYPES_H*/
