@@ -8,14 +8,14 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
     size_t nPatches = 9;
     cv::Size imageSize = cv::Size(48, 48);
     cv::Size patchCounts = cv::Size(3, 3);
-    bool useHistEqual = true;
+    bool useHistEqual = false;
     bfs::directory_iterator endDir;
 
     if (bfs::is_directory(dir))
     {
         for (bfs::directory_iterator itDir(dir); itDir != endDir; ++itDir)
         {
-            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
+            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".png")
             {
                 size_t neg = imgVector.size();
                 imgVector.push_back(xstd::mvector<1, cv::Mat>(nPatches));
@@ -135,6 +135,8 @@ int create_negatives(){
 }
 
 int create_probes(std::string positives, std::string negatives){
+    double hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     size_t nPatches = 9;
     xstd::mvector<2, cv::Mat> matPositiveSamples, matNegativeSamples;
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
@@ -176,15 +178,11 @@ int create_probes(std::string positives, std::string negatives){
             fvNegativeSamples[p].push_back(hog.compute(matNegativeSamples[neg][p]));
     }
 
-    // Determined by finding the min/max in all chokepoint
-    std::vector<double> minAll = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    std::vector<double> maxAll = { 0.679895, 0.668085, 0.654637, 0.674558, 0.682703, 0.677886, 0.58588, 0.572811, 0.582209 };
-
     for (size_t p = 0; p < nPatches; p++){
         for (size_t pos = 0; pos < nPositives; pos++)
-            fvPositiveSamples[p][pos] = normalizeMinMaxAllFeatures(fvPositiveSamples[p][pos], minAll[p], maxAll[p]);
+            fvPositiveSamples[p][pos] = normalizeMinMaxAllFeatures(fvPositiveSamples[p][pos], hogHardcodedFoundMin, hogHardcodedFoundMax);
         for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamples[p][neg] = normalizeMinMaxAllFeatures(fvNegativeSamples[p][neg], minAll[p], maxAll[p]);
+            fvNegativeSamples[p][neg] = normalizeMinMaxAllFeatures(fvNegativeSamples[p][neg], hogHardcodedFoundMin, hogHardcodedFoundMax);
     }
 
     for (size_t p = 0; p < nPatches; p++)
@@ -194,12 +192,12 @@ int create_probes(std::string positives, std::string negatives){
     std::vector<int> targetOutputsNeg(nNegatives, -1);
     targetOutputs.insert(targetOutputs.end(), targetOutputsNeg.begin(), targetOutputsNeg.end());
 
-    cout << "Size check - pos: " << nPositives << " neg: " << nNegatives << " total: " << fvPositiveSamples.size() << std::endl;
+    cout << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     ESVM esvm;
 
     for (size_t p = 0; p < nPatches; p++)
-        esvm.writeSampleDataFile("ID003-test-probes-hog-patch" + std::to_string(p) + ".bin", fvNegativeSamples[p], targetOutputs, BINARY);
+        esvm.writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");
