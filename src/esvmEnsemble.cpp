@@ -15,9 +15,11 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     setConstants();
     size_t nPositives = positiveROIs.size();
     size_t nPatches = getPatchCount();
-    if (positiveIDs.size() != nPositives)
+    if (positiveIDs.size() == nPositives)
+        enrolledPositiveIDs = positiveIDs;
+    else
     {
-        positiveIDs = std::vector<std::string>(positiveIDs.size());
+        enrolledPositiveIDs = std::vector<std::string>(nPositives);
         for (size_t pos = 0; pos < nPositives; pos++)
             enrolledPositiveIDs[pos] = std::to_string(pos);
     }    
