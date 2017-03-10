@@ -8,46 +8,37 @@
 #include "feHOG.h"
 #include "esvmOptions.h"
 
-#include <logger.h>
-#include <memory>
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-class EnsembleESVM
+class esvmEnsemble
 {
 public:
-    EnsembleESVM() {};
-    EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
+    esvmEnsemble() {};
+    esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
     std::vector<double> predict(const cv::Mat roi);
-    inline std::string getTargetID() { return targetID; }
+    inline size_t getPositiveCount() { return enrolledPositiveIDs.size(); }
+    inline size_t getPatchCount() { return patchCounts.area(); }
+    inline std::string getPositiveID(int positiveIndex);
 
 private:
-    void setContants();
+    void setConstants();    
+    std::vector<std::string> enrolledPositiveIDs;
+
     // Constants
-    std::string targetID;
-    xstd::mvector<1, FeatureVector> probeSampleFeats;
-    size_t nPatches;
-    size_t nPositives;
     cv::Size imageSize;
     cv::Size patchCounts;
     cv::Size blockSize;
     cv::Size blockStride;
     cv::Size cellSize;
     int nBins;
+    FeatureExtractorHOG hog;
+    
+    xstd::mvector<2, ESVM> EoESVM; 
+
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
-    double max;
-    double min;
-
-	// std::shared_ptr<logstream> logger;
-
-    xstd::mvector<2, double> scores;
-    xstd::mvector<1, double> patchThreshold;
-    xstd::mvector<1, double> classificationScores;
-
-    FeatureExtractorHOG hog;
-    xstd::mvector<2, ESVM> ensembleEsvm; 
     
     double hogHardcodedFoundMin;
     double hogHardcodedFoundMax;
