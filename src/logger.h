@@ -41,9 +41,10 @@ inline logstream& operator<< (logstream& log, const std::vector<T>& v)
 {
     std::ostringstream oss;
     oss << "[";
-    for (typename std::vector<T>::const_iterator it = v.begin(); it != v.end()-1; ++it)
+    typename std::vector<T>::const_iterator it;
+    for (it = v.begin(); it != v.end()-1; ++it)
         oss << *it << " ";
-    oss << *v.end() << "]";
+    oss << *(++it) << "]";
 
     string s = oss.str();
     log.coss << s;

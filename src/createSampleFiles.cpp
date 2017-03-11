@@ -30,7 +30,7 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
 
 int create_negatives()
 {
-    logstream logger(LOGGER_FILE);
+    logstream logger("negatives-output.txt");
     
     // outputs
     bool writeBinaryFormat = true;
@@ -49,6 +49,8 @@ int create_negatives()
     double scaleFactor = 1.01;
     int nmsThreshold = 2;
     cv::Size minSize(20, 20), maxSize = imageSize;
+    std::string faceCascadeFilePath = "C:/Libraries/opencv/opencv_3_2_0/sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
+    assert(bfs::is_regular_file(faceCascadeFilePath));
 
     // feature extraction HOG parameters
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
@@ -70,7 +72,7 @@ int create_negatives()
     hog.initialize(patchSize, blockSize, blockStride, cellSize, nBins);
     cv::CascadeClassifier faceCascade;
     if (useRefineROI)
-        assert(faceCascade.load("C:/Libraries/opencv/opencv_3_2_0/sources/data/lbpcascades/lbpcascade_frontalface_improved.xml"));
+        assert(faceCascade.load(faceCascadeFilePath));
 
     // Loop for all ChokePoint cropped faces
     std::vector<int> perSessionNegatives(SESSION_QUANTITY, 0);
@@ -191,7 +193,7 @@ int create_negatives()
     }
 
     // write configs employed (traceback)
-    logstream logSampleConfig("output-samples-config.txt");
+    logstream logSampleConfig("negatives-output-config.txt");
     logSampleConfig << "negativeIDs:   " << negativesID << std::endl
                     << "nNegatives:    " << nNegatives << std::endl
                     << "perSessionNeg: " << perSessionNegatives << std::endl
