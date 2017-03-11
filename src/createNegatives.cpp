@@ -110,11 +110,11 @@ int create_negatives(){
     for (size_t p = 0; p < nPatches; p++)
     {    
         double minAll, maxAll;
-        findMinMaxOverall(fvNegativeSamples[p], &minAll, &maxAll);
+        findNormParamsOverall(MIN_MAX, fvNegativeSamples[p], &minAll, &maxAll);
         std::cout << "Patch Number: " << p << " Min: " << minAll << " Max: " << maxAll << std::endl;
 
         for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamples[p][neg] = normalizeMinMaxAllFeatures(fvNegativeSamples[p][neg], minAll, maxAll);
+            fvNegativeSamples[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAll, maxAll);
     }
 
     // ofstream outputFile;
@@ -180,9 +180,9 @@ int create_probes(std::string positives, std::string negatives){
 
     for (size_t p = 0; p < nPatches; p++){
         for (size_t pos = 0; pos < nPositives; pos++)
-            fvPositiveSamples[p][pos] = normalizeMinMaxAllFeatures(fvPositiveSamples[p][pos], hogHardcodedFoundMin, hogHardcodedFoundMax);
+            fvPositiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, fvPositiveSamples[p][pos], hogHardcodedFoundMin, hogHardcodedFoundMax);
         for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamples[p][neg] = normalizeMinMaxAllFeatures(fvNegativeSamples[p][neg], hogHardcodedFoundMin, hogHardcodedFoundMax);
+            fvNegativeSamples[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], hogHardcodedFoundMin, hogHardcodedFoundMax);
     }
 
     for (size_t p = 0; p < nPatches; p++)
