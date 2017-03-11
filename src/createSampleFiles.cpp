@@ -56,7 +56,7 @@ int create_negatives()
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
     cv::Size blockSize = cv::Size(2, 2);
     cv::Size blockStride = cv::Size(2, 2);
-    cv::Size cellSize = cv::Size(3, 3);
+    cv::Size cellSize = cv::Size(2, 2);
     int nBins = 3;
 
     // Negatives to employ
@@ -224,6 +224,7 @@ int create_negatives()
                     << "all Neg IDs:   " << negativeSamplesID << std::endl;
     
     logger << "DONE!" << std::endl;
+    return 0;
 }
 
 int create_probes(std::string positives, std::string negatives){
