@@ -43,7 +43,7 @@ EnsembleESVM::EnsembleESVM(std::vector<cv::Mat> positiveROIs, std::string negati
     {        
         std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeAllFeatures<MinMax>(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
+            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
@@ -94,7 +94,7 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
     std::cout << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
     std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts);
     for (size_t p = 0; p < nPatches; p++)
-        probeSampleFeats[p] = normalizeAllFeatures<MinMax>(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
+        probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
 
     // testing, score fusion, normalization
     cout << "Testing probe samples against enrolled targets..." << std::endl;
@@ -111,9 +111,9 @@ std::vector<double> EnsembleESVM::predict(const cv::Mat roi) // this should be a
         // average score fusion and normalization post-fusion
         classificationScores[pos] /= (double)nPatches;  
         #if ESVM_SCORE_NORMALIZATION_MODE == 1
-        classificationScores[pos] = MinMax::normalize(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
         #elif ESVM_SCORE_NORMALIZATION_MODE == 2
-        classificationScores[pos] = ZScore::normalize(classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
+        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
         #endif
     }
 
