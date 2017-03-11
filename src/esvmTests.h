@@ -11,6 +11,7 @@
 */
 // Possible sequence information
 enum PORTAL_TYPE { ENTER, LEAVE };
+const int PORTAL_TYPE_QUANTITY = 2;
 const int PORTAL_QUANTITY = 2;
 const int SESSION_QUANTITY = 4;
 const int SESSION_SIMULTANEOUS_INDIVIDUALS = 5;

@@ -2,6 +2,7 @@
 #include "generic.h"
 #include "esvmOptions.h"
 #include "esvmTests.h"
+#include "createSampleFiles.h"
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -212,6 +213,7 @@ int main(int argc, char* argv[])
         logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN' completed." << std::endl;
         #endif/*TEST_ESVM_SAMAN*/
 
+        #if TEST_ESVM_WORKING_PROCEDURE
         err = test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
         if (err)
         {
@@ -219,7 +221,20 @@ int main(int argc, char* argv[])
                    << std::to_string(err) << ")." << std::endl;
             return err;
         }
-        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure' completed." << std::endl;        
+        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure' completed." << std::endl;
+        #endif/*TEST_ESVM_WORKING_PROCEDURE*/
+
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES
+        logger << "Starting process 'create_negatives'." << std::endl;
+        err = create_negatives();
+        if (err)
+        {
+            logger << "Process 'create_negatives' failed ("
+                   << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Process 'create_negatives' completed." << std::endl;
+        #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
     }
     catch(std::exception& ex)
     {

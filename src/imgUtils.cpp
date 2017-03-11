@@ -108,12 +108,7 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
                                   std::string windowName, cv::ImreadModes readMode)
 {
     cv::Mat img = imReadAndDisplay(imagePath, windowName, readMode);
-    if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
-        cv::cvtColor(img, img, CV_BGR2GRAY);
-    cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);
-    if (useHistogramEqualization)
-        cv::equalizeHist(img, img);
-    return imSplitPatches(img, patchCounts);
+    return imPreprocess(img, imSize, patchCounts, useHistogramEqualization, windowName, readMode);
 }
 
 std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,

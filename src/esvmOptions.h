@@ -112,7 +112,14 @@
         1: run with LIBSVM formatted sample files
         2: run with binary formatted sample files
 */
-#define TEST_ESVM_WORKING_PROCEDURE 2
+#define TEST_ESVM_WORKING_PROCEDURE 0
+
+/* ------------------------------------------------------------
+Process options - Enable/Disable a specific work execution
+------------------------------------------------------------ */
+
+// Generate sample files using various enabled parameters
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
 
 /* ------------------------------------------------------------
    Image paths

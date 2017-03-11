@@ -8,14 +8,15 @@
 #include "norm.h"
 #include <stdio.h>
 #include "opencv2/opencv.hpp"
-#include "mvector.hpp"      // Multi-Dimension vectors
+#include "mvector.hpp"
 #include "generic.h"
 #include "imgUtils.h"
 #include "feHOG.h"
 #include <iostream>
 #include <fstream>
+#include "esvmOptions.h"
 
-/* Tests */
+/* Processes */
 int create_negatives();
 int create_probes(std::string positives, std::string negatives);
 

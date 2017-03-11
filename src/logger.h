@@ -29,11 +29,26 @@ public:
 };
 
 template <class T>
-logstream& operator<< (logstream& st, T val)
+inline logstream& operator<< (logstream& log, T val)
 {
-    st.coss << val;
+    log.coss << val;
     std::cout << val;
-    return st;
+    return log;
+}
+
+template <class T>
+inline logstream& operator<< (logstream& log, const std::vector<T>& v)
+{
+    std::ostringstream oss;
+    oss << "[";
+    for (typename std::vector<T>::const_iterator it = v.begin(); it != v.end()-1; ++it)
+        oss << *it << " ";
+    oss << *v.end() << "]";
+
+    string s = oss.str();
+    log.coss << s;
+    std::cout << s;
+    return log;
 }
 
 std::string featuresToVectorString(FeatureVector features);

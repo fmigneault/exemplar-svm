@@ -60,7 +60,10 @@ int test_outputOptions()
            << tab << tab << "TEST_WRITE_DATA_FILES:            " << TEST_WRITE_DATA_FILES << std::endl
            << tab << tab << "TEST_READ_DATA_FILES:             " << TEST_READ_DATA_FILES << std::endl
            << tab << tab << "TEST_ESVM_TITAN:                  " << TEST_ESVM_TITAN << std::endl
-           << tab << tab << "TEST_ESVM_SAMAN:                  " << TEST_ESVM_SAMAN << std::endl;
+           << tab << tab << "TEST_ESVM_SAMAN:                  " << TEST_ESVM_SAMAN << std::endl
+           << tab << tab << "TEST_ESVM_WORKING_PROCEDURE:      " << TEST_ESVM_WORKING_PROCEDURE << std::endl
+           << tab << "PROCESSES:" << std::endl
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:  " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl;
 
     return 0;
 }
@@ -3334,6 +3337,8 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
     logger << "Loading negative samples from files..." << std::endl;
+    FileFormat sampleFileFormat = BINARY;
+    std::string sampleFileExt = sampleFileFormat == BINARY ? ".bin" : ".data";
     for (size_t p = 0; p < nPatches; p++)
         FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
                                           sampleFileExt, negativeSamples[p], sampleFileFormat);
