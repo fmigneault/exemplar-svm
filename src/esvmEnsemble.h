@@ -1,10 +1,10 @@
-#ifndef ENSEMBLE_ESVM_LIBSVM_H
-#define ENSEMBLE_ESVM_LIBSVM_H
+#ifndef ESVM_ENSEMBLE_H
+#define ESVM_ENSEMBLE_H
 
 #include "esvm.h"
 #include "esvmTypes.h"
 #include "svm.h"
-#include "mvector.hpp"      // Multi-Dimension vectors
+#include "mvector.hpp"
 #include "feHOG.h"
 #include "esvmOptions.h"
 
@@ -45,6 +45,9 @@ private:
 
     double scoreHardcodedFoundMin;
     double scoreHardcodedFoundMax;
+
+    double scoresHardCodedFoundMean;
+    double scoresHardCodedFoundStdDev;
 };
 
-#endif/*ENSEMBLE_ESVM_LIBSVM_H*/
+#endif/*ESVM_ENSEMBLE_H*/

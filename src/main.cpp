@@ -226,6 +226,7 @@ int main(int argc, char* argv[])
         logger << "Unhandled exception occurred: [" << ex.what() << "]" << std::endl;
     }
 
-    logger << "All tests completed. " << currentTimeStamp() << std::endl;
+    if (!err)
+        logger << "All tests completed. " << currentTimeStamp() << std::endl;
     return 0;
 }
