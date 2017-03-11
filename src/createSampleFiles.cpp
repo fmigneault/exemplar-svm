@@ -139,6 +139,8 @@ int create_negatives()
 
     } } } } // end ChokePoint loops
 
+    cv::destroyAllWindows();
+
     size_t nNegatives = matNegativeSamples.size();
     size_t dimsNegatives[2] = { nPatches, nNegatives };              // [patch][negative]
     fvNegativeSamples = xstd::mvector<2, FeatureVector>(dimsNegatives);
@@ -150,7 +152,7 @@ int create_negatives()
 
     // find + apply normalization values
     double minAllROI = DBL_MAX, maxAllROI = -DBL_MAX;
-    xstd::mvector<2, FeatureVector> fvNegativeSamplesPatchNorm(dimsNegatives);
+    xstd::mvector<2, FeatureVector> fvNegativeSamplesNormPatch(dimsNegatives);
     std::vector<double> fvMinPatch(nPatches), fvMaxPatch(nPatches);
     for (size_t p = 0; p < nPatches; p++)
     {    
@@ -159,7 +161,7 @@ int create_negatives()
         logger << "Patch Number: " << p << " Min: " << minAllPatch << " Max: " << maxAllPatch << std::endl;
 
         for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamplesPatchNorm[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllPatch, maxAllPatch);
+            fvNegativeSamplesNormPatch[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllPatch, maxAllPatch);
         fvMinPatch[p] = minAllPatch;
         fvMaxPatch[p] = maxAllPatch;
         if (minAllROI > minAllPatch)
@@ -167,10 +169,10 @@ int create_negatives()
         if (maxAllROI < maxAllPatch)
             maxAllROI = maxAllPatch;
     }
-    xstd::mvector<2, FeatureVector> fvNegativeSamplesFullNorm(dimsNegatives);
+    xstd::mvector<2, FeatureVector> fvNegativeSamplesNormROI(dimsNegatives);
     for (size_t p = 0; p < nPatches; p++)
         for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamplesFullNorm[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllROI, maxAllROI);
+            fvNegativeSamplesNormROI[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllROI, maxAllROI);
     
     // write resulting sample files
     ESVM FileWriter;
@@ -181,14 +183,14 @@ int create_negatives()
         if (writeBinaryFormat) {
             fmt = BINARY;
             FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.bin", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.bin", fvNegativeSamplesPatchNorm[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.bin", fvNegativeSamplesFullNorm[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
         if (writeBinaryFormat) {
             fmt = LIBSVM;
             FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.data", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.data", fvNegativeSamplesPatchNorm[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.data", fvNegativeSamplesFullNorm[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.data", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
     }
 
