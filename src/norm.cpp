@@ -2,119 +2,204 @@
 #include "generic.h"
 #include <algorithm>
 #include <float.h>
+#include <map>
 
-double normalizeMinMax(double value, double min, double max)
+double normalize(NormType norm, double value, double param1, double param2, bool clipValue)
 {
-    ASSERT_LOG(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
-    return (value - min) / (max - min);
+    if (norm == MIN_MAX)
+        return normalizeMinMax(value, param1, param2, clipValue);
+    else if (norm == Z_SCORE)
+        return normalizeZScore(value, param1, param2, clipValue);
+    throw std::runtime_error("Undefined normalization method");
 }
 
-void findMinMax(FeatureVector vector, double* min, double* max, int* posMin, int* posMax)
+double normalizeMinMax(double value, double min, double max, bool clipValue)
+{
+    ASSERT_THROW(max > min, "max must be greater than min (max: " + std::to_string(max) + ", min: " + std::to_string(min) + ")");
+    double normValue = (value - min) / (max - min);
+    return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
+}
+
+double normalizeZScore(double value, double mean, double stddev, bool clipValue)
+{
+    ASSERT_THROW(stddev != 0, "stddev must be different than zero");
+    double sigmaFactor = 3.0;
+    double normValue = ((value - mean) / stddev) / (2.0 * sigmaFactor * stddev) + 0.5;
+    return clipValue ? std::min(std::max(normValue, 0.0), 1.0) : normValue;
+}
+
+FeatureVector normalizeAllFeatures(NormType norm, FeatureVector featureVector, double param1, double param2, bool clipFeatures)
+{
+    int nFeatures = featureVector.size();
+    for (size_t f = 0; f < nFeatures; f++)
+        featureVector[f] = normalize(norm, featureVector[f], param1, param2, clipFeatures);
+
+    return featureVector;
+}
+
+FeatureVector normalizeAllFeatures(NormType norm, FeatureVector featureVector, bool clipFeatures)
+{
+    double param1, param2;
+    findNormParamsClassScores(norm, featureVector, &param1, &param2);
+    return normalizeAllFeatures(norm, featureVector, param1, param2, clipFeatures);
+}
+
+FeatureVector normalizePerFeature(NormType norm, FeatureVector featureVector, FeatureVector featuresParam1, FeatureVector featuresParam2,
+                                  bool clipFeatures)
+{
+    // check number of features
+    size_t nFeatures = featureVector.size();
+    ASSERT_THROW(featuresParam1.size() == nFeatures, "param1 features dimension doesn't match feature vector to normalize");
+    ASSERT_THROW(featuresParam2.size() == nFeatures, "param2 features dimension doesn't match feature vector to normalize");
+
+    // normalize values    
+    for (size_t f = 0; f < nFeatures; f++)
+        featureVector[f] = normalize(norm, featureVector[f], featuresParam1[f], featuresParam2[f], clipFeatures);
+
+    return featureVector;
+}
+
+std::vector<double> normalizeClassScores(NormType norm, std::vector<double> scores, double param1, double param2, bool clipScores)
+{
+    return normalizeAllFeatures(norm, scores, param1, param2, clipScores);
+}
+
+std::vector<double> normalizeClassScores(NormType norm, std::vector<double> scores, bool clipScores)
+{
+    return normalizeAllFeatures(norm, scores, clipScores);
+}
+
+void findNormParamsAcrossFeatures(NormType norm, FeatureVector featureVector, double* min, double* max, int* posMin, int* posMax)
 {
     // check values/references
-    ASSERT_LOG(min != nullptr, "min reference not specified");
-    ASSERT_LOG(max != nullptr, "max reference not specified");
+    ASSERT_THROW(min != nullptr, "min reference not specified");
+    ASSERT_THROW(max != nullptr, "max reference not specified");
 
-    int nFeatures = vector.size();
-    ASSERT_LOG(nFeatures > 0, "vector cannot be empty");
+    int nFeatures = featureVector.size();
+    ASSERT_THROW(nFeatures > 0, "vector cannot be empty");
 
     // initialization
-    *min = vector[0], *max = vector[0];
+    *min = featureVector[0], *max = featureVector[0];
     if (posMin != nullptr)
         *posMin = 0;
     if (posMax != nullptr)
         *posMax = 0;
 
     // update min/max
-    for (int f = 1; f < vector.size(); f++)
+    for (size_t f = 1; f < featureVector.size(); f++)
     {
-        if (vector[f] < *min)
+        if (featureVector[f] < *min)
         {
-            *min = vector[f];
+            *min = featureVector[f];
             if (posMax != nullptr)
                 *posMin = f;
         }
-        else if (vector[f] > *max)
+        else if (featureVector[f] > *max)
         {
-            *max = vector[f];
+            *max = featureVector[f];
             if (posMax != nullptr)
                 *posMax = f;
         }
     }
 }
 
-void findMinMaxOverall(std::vector<FeatureVector> featureVectors, double* min, double* max)
-{    
-    double minFound, maxFound;
-    int nSamples = featureVectors.size();
-    for (size_t s = 0; s < nSamples; s++)
-    {
-        findMinMax(featureVectors[s], &minFound, &maxFound);
-        if (s == 0 || minFound < *min) *min = minFound;
-        if (s == 0 || maxFound > *max) *max = maxFound;
-    }
-}
-
-void findMinMaxFeatures(std::vector<FeatureVector> featureVectors, FeatureVector* minFeatures, FeatureVector* maxFeatures)
+void findNormParamsOverall(NormType norm, std::vector<FeatureVector> featureVectors, double *param1, double *param2)
 {
-    ASSERT_LOG(minFeatures != nullptr, "feature vector for min features not specified");
-    ASSERT_LOG(maxFeatures != nullptr, "feature vector for max features not specified");
+    double foundParam1, foundParam2;
+    size_t nSamples = featureVectors.size();
+    ASSERT_THROW(nSamples > 0, "vector must contain at least one feature vector");
 
-    // initialize with first vector
-    int nFeatures = featureVectors[0].size();
-    FeatureVector min = featureVectors[0];
-    FeatureVector max = featureVectors[0];
-
-    // find min/max values
-    /// ############################################# #pragma omp parallel for
-    for (int v = 1; v < featureVectors.size(); v++)
+    if (norm == MIN_MAX)
     {
-        for (int f = 0; f < nFeatures; f++)
+
+        for (size_t s = 0; s < nSamples; s++)
         {
-            if (featureVectors[v][f] < min[f])
-                min[f] = featureVectors[v][f];
-            if (featureVectors[v][f] > max[f])
-                max[f] = featureVectors[v][f];
+            findNormParamsAcrossFeatures(norm, featureVectors[s], &foundParam1, &foundParam2);
+            if (s == 0 || foundParam1 < *param1) *param1 = foundParam1; // min
+            if (s == 0 || foundParam2 > *param2) *param2 = foundParam2; // max
         }
+        return;
     }
+    else if (norm == Z_SCORE)
+    {        
+        
+        size_t nFeatures = featureVectors[0].size();
+        size_t total = nFeatures * nSamples;
 
-    // update values
-    *minFeatures = min;
-    *maxFeatures = max;
+        for (size_t s = 0; s < nSamples; s++)
+            for (size_t f = 0; f < nFeatures; f++)
+                foundParam1 += featureVectors[s][f];
+        foundParam1 /= (double)total;                           // mean
+
+        for (size_t s = 0; s < nSamples; s++)
+            for (size_t f = 0; f < nFeatures; f++)
+                foundParam2 += (featureVectors[s][f] - foundParam1) * (featureVectors[s][f] - foundParam1);
+        foundParam2 = std::sqrt(foundParam2 / (double)total);   // stddev
+
+        *param1 = foundParam1;
+        *param2 = foundParam2;
+        return;
+    }
+    
+    throw std::runtime_error("Undefined normalization method");
 }
 
-FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector, double min, double max)
+void findNormParamsPerFeature(NormType norm, std::vector<FeatureVector> featureVectors, FeatureVector *featuresParam1, FeatureVector *featuresParam2)
+{
+    ASSERT_THROW(featuresParam1 != nullptr, "param1 feature vector for corresponding features not specified");
+    ASSERT_THROW(featuresParam2 != nullptr, "param2 feature vector for corresponding features not specified");
+    size_t nSamples = featureVectors.size();
+    ASSERT_THROW(nSamples > 0, "vector must contain at least one feature vector");
+    size_t nFeatures = featureVectors[0].size();
+    ASSERT_THROW(nFeatures > 0, "feature vectors must contain at least one feature");
+
+    if (norm == MIN_MAX)
+    {
+        // initialize with first vector        
+        FeatureVector min = featureVectors[0];
+        FeatureVector max = featureVectors[0];
+
+        // find min/max values
+        for (size_t v = 1; v < nSamples; v++)
+        {
+            for (size_t f = 0; f < nFeatures; f++)
+            {
+                if (featureVectors[v][f] < min[f])
+                    min[f] = featureVectors[v][f];
+                if (featureVectors[v][f] > max[f])
+                    max[f] = featureVectors[v][f];
+            }
+        }
+
+        // update values
+        *featuresParam1 = min;
+        *featuresParam2 = max;
+        return;
+    }
+    else if (norm == Z_SCORE)
+    {
+        FeatureVector mean(nFeatures), stddev(nSamples);
+        for (size_t f = 0; f < nFeatures; f++)
+        {
+            for (size_t v = 0; v < nSamples; v++)
+                mean[f] += featureVectors[v][f];
+            mean[f] /= (double)nSamples;
+
+            for (size_t v = 0; v < nSamples; v++)
+                stddev[f] += (featureVectors[v][f] - mean[f]) * (featureVectors[v][f] - mean[f]);
+            stddev[f] = std::sqrt(stddev[f] / (double)nSamples);
+        }
+
+        // update values
+        *featuresParam1 = mean;
+        *featuresParam2 = stddev;
+        return;
+    }
+    
+    throw std::runtime_error("Undefined normalization method");
+}
+
+void findNormParamsClassScores(NormType norm, std::vector<double> scores, double *param1, double *param2)
 {    
-    int nFeatures = featureVector.size();
-    for (int f = 0; f < nFeatures; f++)
-        featureVector[f] = normalizeMinMax(featureVector[f], min, max);
-    return featureVector;
-}
-
-FeatureVector normalizeMinMaxAllFeatures(FeatureVector featureVector)
-{
-    double min, max;
-    findMinMax(featureVector, &min, &max);
-    return normalizeMinMaxAllFeatures(featureVector, min, max);
-}
-
-FeatureVector normalizeMinMaxPerFeatures(FeatureVector featureVector, FeatureVector minFeatures, FeatureVector maxFeatures)
-{
-    // check number of features
-    int nFeatures = featureVector.size();
-    ASSERT_LOG(minFeatures.size() == nFeatures, "min features dimension doesn't match feature vector to normalize");
-    ASSERT_LOG(maxFeatures.size() == nFeatures, "max features dimension doesn't match feature vector to normalize");
-
-    // normalize values    
-    for (int f = 0; f < nFeatures; f++)
-        featureVector[f] = normalizeMinMax(featureVector[f], minFeatures[f], maxFeatures[f]);
-
-    return featureVector;
-}
-
-std::vector<double> normalizeMinMaxClassScores(std::vector<double> scores)
-{
-    double minScore, maxScore;
-    findMinMax(scores, &minScore, &maxScore);
-    return normalizeMinMaxAllFeatures(scores, minScore, maxScore);
+    findNormParamsAcrossFeatures(norm, scores, param1, param2);
 }

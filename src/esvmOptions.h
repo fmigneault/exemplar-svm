@@ -22,6 +22,13 @@
         4: (Wp = 1, Wn = Np/Nn)     ratio of sample counts normalized for positives (Np/Nn = [N/Nn]/[N/Np])
 */
 #define ESVM_WEIGHTS_MODE 2
+/*
+    ESVM_SCORE_NORMALIZATION_MODE:
+        0: no normalization
+        1: normalization min-max
+        2: normalization z-score
+*/
+#define ESVM_SCORE_NORMALIZATION_MODE 2
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution

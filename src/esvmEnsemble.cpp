@@ -43,7 +43,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     {        
         std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
+            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
@@ -78,6 +78,9 @@ void esvmEnsemble::setConstants()
     ///scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
     scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
 
+    scoresHardCodedFoundMean = -1.26193;
+    scoresHardCodedFoundStdDev = 0.247168;
+
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;
 }
@@ -101,7 +104,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
     std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts);
     for (size_t p = 0; p < nPatches; p++)
-        probeSampleFeats[p] = normalizeMinMaxAllFeatures(hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
+        probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
 
     // testing, score fusion, normalization
     cout << "Testing probe samples against enrolled targets..." << std::endl;
@@ -116,8 +119,12 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
             classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion
         }
         // average score fusion and normalization post-fusion
-        classificationScores[pos] /= (double)nPatches;  
-        classificationScores[pos] = normalizeMinMax(classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        classificationScores[pos] /= (double)nPatches;
+        #if ESVM_SCORE_NORMALIZATION_MODE == 1
+        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        #elif ESVM_SCORE_NORMALIZATION_MODE == 2
+        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
+        #endif
     }
 
     return classificationScores;
