@@ -43,6 +43,45 @@ std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image)
     return synth;
 }
 
+std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat image, int nScales, int translationSize, double minScale)
+{
+    double scaleJumps = (1 - minScale) / nScales;
+    std::vector<cv::Mat> synthImages;
+    synthImages.push_back(image);
+    int initSize = image.rows; 
+    cv::Size dummySize(0, 0);
+    std::cout << "scaleJumps: " << scaleJumps << " minScale: " << minScale << std::endl; 
+
+    for(double scale = 1; scale > minScale; scale -= scaleJumps){
+        cv::Mat resizedImage;
+        int newSize = (int)initSize*scale;
+        cv::Rect newRect(0, 0, newSize, newSize);
+        int totalPixelDifference = initSize - newSize;
+        int startingPoint = (totalPixelDifference % 2) / 2;
+        std::cout << "initSize: " << initSize << " newsize: " << newSize << std::endl; 
+        std::cout << "totalPixelDifference: " << totalPixelDifference << " translationSize: " << translationSize << std::endl; 
+        if (translationSize < totalPixelDifference) {
+            cv::Mat cropedImage;
+            for( int x = startingPoint; x < totalPixelDifference; x += translationSize){
+                for( int y = startingPoint; y < totalPixelDifference; y += translationSize){
+                    newRect.x = x;
+                    newRect.y = y;
+                    cv::Mat image_roi = image(newRect);
+                    image_roi.copyTo(cropedImage);
+                    synthImages.push_back(cropedImage);
+                    // std::stringstream ss;
+                    // ss << "cropedImage_" << scale << "_" << x << "_" << y <<  ".jpg";
+                    // cv::imwrite(ss.str(), image_roi);
+                }
+            }
+        }
+    }
+
+    return synthImages;
+}
+
+
+
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
 {
     if (patchCounts == cv::Size(0, 0) || patchCounts == cv::Size(1, 1))
