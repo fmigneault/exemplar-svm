@@ -183,14 +183,14 @@ int create_negatives()
         if (writeBinaryFormat) {
             fmt = BINARY;
             FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.bin", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
         if (writeLibsvmFormat) {
             fmt = LIBSVM;
             FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.data", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-patchNorm.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-fullNorm.data", fvNegativeSamplesNormROI[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.data", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
     }
 
