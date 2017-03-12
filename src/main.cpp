@@ -153,6 +153,33 @@ int main(int argc, char* argv[])
         logger << "Test 'test_ESVM_WriteSampleFile_timing' completed." << std::endl;
         #endif/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
 
+        #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER
+        err = test_ESVM_SaveLoadModelFile_libsvm();
+        if (err)
+        {
+            logger << "Test 'test_ESVM_SaveLoadModelFile_libsvm' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_ESVM_SaveLoadModelFile_libsvm' completed." << std::endl;
+        err = test_ESVM_SaveLoadModelFile_binary();
+        if (err)
+        {
+            logger << "Test 'test_ESVM_SaveLoadModelFile_binary' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_ESVM_SaveLoadModelFile_binary' completed." << std::endl;
+        #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
+
+        #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE
+        err = test_ESVM_SaveLoadModelFile_compare();
+        if (err)
+        {
+            logger << "Test 'test_ESVM_SaveLoadModelFile_compare' failed (" << std::to_string(err) << ")." << std::endl;
+            return err;
+        }
+        logger << "Test 'test_ESVM_SaveLoadModelFile_compare' completed." << std::endl;
+        #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE*/
+
         #if TEST_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
         // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
         cv::Size patchCounts = cv::Size(1, 1);
