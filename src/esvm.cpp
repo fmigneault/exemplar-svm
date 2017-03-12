@@ -301,7 +301,25 @@ void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureV
 */
 void ESVM::writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
-    
+    std::ofstream samplesFile(filePath);
+    ASSERT_THROW(samplesFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
+
+    size_t nSamples = sampleFeatureVectors.size();
+    ASSERT_THROW(nSamples > 1, "Number of samples must be greater than zero");
+    ASSERT_THROW(nSamples == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
+
+    size_t nFeatures = sampleFeatureVectors[0].size();
+    ASSERT_THROW(nFeatures > 0, "Number of sample features must be greater than zero");
+
+    for (size_t s = 0; s < nSamples; ++s)
+    {
+        ASSERT_THROW(targetOutputs[s] == ESVM_POSITIVE_CLASS || targetOutputs[s] == ESVM_NEGATIVE_CLASS, 
+                     "Target output value must correspond to either positive or negative class");
+        samplesFile << targetOutputs[s];
+        for (size_t f = 0; f < nFeatures; ++f)
+            samplesFile << " " << (f + 1) << ":" << sampleFeatureVectors[s][f];
+        samplesFile << std::endl;
+    }
 }
 
 /*
