@@ -7,6 +7,8 @@
 #include <fstream>
 #include <algorithm>
 
+#include "opencv2/core.hpp"
+
 /* --------------------
 Search/sort operations
 ---------------------*/
@@ -37,10 +39,30 @@ private:
 /* --------------------
 Compare
 ---------------------*/
+
 inline bool doubleAlmostEquals(double x1, double x2)
 {
     static double eps = std::numeric_limits<double>::epsilon();
     return std::abs(x1 - x2) < std::abs(std::min(x1, x2)) * eps;
+}
+
+/* --------------------
+Timing
+---------------------*/
+
+inline double getTimeNow()
+{
+    return (double)cv::getTickCount();
+}
+
+inline double getDeltaTime(double tickNow, double tickPrev, bool milliseconds = true)
+{
+    return (tickNow - tickPrev) / cv::getTickFrequency() * (milliseconds ? 1000 : 1);
+}
+
+inline double getDeltaTime(int64 tickNow, int64 tickPrev, bool milliseconds = true)
+{
+    return getDeltaTime((double)tickNow, (double)tickPrev, milliseconds);
 }
 
 /* --------------------
@@ -75,6 +97,16 @@ Asserts
     std::string str = "Assertion failed: " + oss.str(); \
     log << str << std::endl; \
     throw std::runtime_error(str); } \
+} while(0)
+
+// Assert with message printing and logging (non failing)
+#define ASSERT_WARN(cond, msg) do \
+{ if (!(cond)) { \
+    logstream log(LOGGER_FILE); \
+    std::ostringstream oss; \
+    oss << msg; \
+    std::string str = "Warning: " + oss.str(); \
+    log << str << std::endl; } \
 } while(0)
 
 #endif/*GENERIC_H*/

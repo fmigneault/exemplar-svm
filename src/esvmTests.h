@@ -2,7 +2,8 @@
 #define ESVM_TESTS_H
 
 #include "opencv2/opencv.hpp"
-#include "mvector.hpp"      // Multi-Dimension vectors
+#include "mvector.hpp"
+#include "esvmTypes.h"
 
 /* ChokePoint Dataset:
       P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, 3 cameras = 48 video dirs (with Ground Truths, one by one individuals pass)
@@ -22,6 +23,11 @@ std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int sess
 std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
 bool checkPathEndSlash(std::string path);
 
+/* Utilities */
+void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
+bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
+bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
+
 /* Tests */
 int test_outputOptions();
 int test_imagePaths();
@@ -30,16 +36,17 @@ int test_imagePreprocessing();
 int test_multiLevelVectors();
 int test_normalizationFunctions();
 int test_performanceEvaluationFunctions();
-int test_runBasicExemplarSvmFunctionalities();
-int test_runBasicExemplarSvmClassification();
-int test_runBasicExemplarSvmReadSampleFile_libsvm();
-int test_runBasicExemplarSvmReadSampleFile_binary();
-int test_runBasicExemplarSvmReadSampleFile_compare();
-int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures);
+int test_ESVM_BasicFunctionalities();
+int test_ESVM_BasicClassification();
+int test_ESVM_ReadSampleFile_libsvm();
+int test_ESVM_ReadSampleFile_binary();
+int test_ESVM_ReadSampleFile_compare();
+int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures);
+int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures);
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(int nPatches);
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches);
 int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
 int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();

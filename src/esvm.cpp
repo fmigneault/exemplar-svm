@@ -126,35 +126,44 @@ void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVe
     std::ifstream samplesFile(filePath, std::ios::in | std::ios::binary);
     ASSERT_THROW(samplesFile.is_open(), "Failed to open the specified samples data binary file: '" + filePath + "'");
     
-    // check for header
-    std::string headerStr = "ESVM bin samples";
-    const char *headerChar = headerStr.c_str();    
-    int headerLength = headerStr.size();    
-    char *headerCheck = new char[headerLength + 1]; // +1 for the terminating '\0'
-    samplesFile.read(headerCheck, headerLength);
-    headerCheck[headerLength] = '\0';               // avoids comparing different strings because '\0' is not found
-    ASSERT_THROW(std::string(headerChar) == std::string(headerCheck), "Expected binary samples data file header was not found");
-    
-    // check for samples and feature counts
-    int nSamples = 0;
-    int nFeatures = 0;
-    samplesFile.read(reinterpret_cast<char*>(&nSamples), sizeof(nSamples));
-    samplesFile.read(reinterpret_cast<char*>(&nFeatures), sizeof(nFeatures));
-    ASSERT_THROW(nSamples > 0, "Read number of samples should be greater than zero");
-    ASSERT_THROW(nFeatures > 0, "Read number of features should be greater than zero");
-
-    // retrieve sample features and target outputs
-    sampleFeatureVectors = std::vector<FeatureVector>(nSamples);
-    targetOutputs = std::vector<int>(nSamples);
-    samplesFile.read(reinterpret_cast<char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
-    for (int s = 0; s < nSamples; s++)
+    try
     {
-        sampleFeatureVectors[s] = FeatureVector(nFeatures);        
-        samplesFile.read(reinterpret_cast<char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));
-        ASSERT_THROW(samplesFile.good(), "Invalid file stream status when reading samples");
+        // check for header
+        std::string headerStr = ESVM_BINARY_HEADER;
+        const char *headerChar = headerStr.c_str();    
+        int headerLength = headerStr.size();    
+        char *headerCheck = new char[headerLength + 1]; // +1 for the terminating '\0'
+        samplesFile.read(headerCheck, headerLength);
+        headerCheck[headerLength] = '\0';               // avoids comparing different strings because '\0' is not found
+        ASSERT_THROW(std::string(headerChar) == std::string(headerCheck), "Expected binary samples data file header was not found");
+    
+        // check for samples and feature counts
+        int nSamples = 0;   // warning: format 'int' required, not 'size_t' for matching binary dimension
+        int nFeatures = 0;  // warning: format 'int' required, not 'size_t' for matching binary dimension
+        samplesFile.read(reinterpret_cast<char*>(&nSamples), sizeof(nSamples));
+        samplesFile.read(reinterpret_cast<char*>(&nFeatures), sizeof(nFeatures));
+        ASSERT_THROW(nSamples > 0, "Read number of samples should be greater than zero");
+        ASSERT_THROW(nFeatures > 0, "Read number of features should be greater than zero");
+
+        // retrieve sample features and target outputs
+        sampleFeatureVectors = std::vector<FeatureVector>(nSamples);
+        targetOutputs = std::vector<int>(nSamples);
+        samplesFile.read(reinterpret_cast<char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
+        for (int s = 0; s < nSamples; s++)
+        {
+            sampleFeatureVectors[s] = FeatureVector(nFeatures);        
+            samplesFile.read(reinterpret_cast<char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));
+            ASSERT_THROW(samplesFile.good(), "Invalid file stream status when reading samples");
+        }
+        samplesFile.close();
     }
-        
-    samplesFile.close();
+    catch (std::exception& ex)
+    {
+        // avoid locked file from assert failure
+        if (samplesFile.is_open())
+            samplesFile.close();
+        throw ex;   // re-throw
+    }
 }
 
 /*
@@ -162,76 +171,86 @@ void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVe
 */
 void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs)
 {
-    std::ifstream trainingFile(filePath);
-    ASSERT_THROW(trainingFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
+    std::ifstream samplesFile(filePath);
+    ASSERT_THROW(samplesFile, "Could not open specified ESVM samples data file: '" + filePath + "'");
 
-    std::vector<FeatureVector> samples;
-    std::vector<int> targets;
-    int nFeatures = 0;
-    static std::string delimiter = ":";
-    static int offDelim = delimiter.length();
-
-    // loop each line
-    while (trainingFile)
+    try
     {
-        std::string line;
-        if (!getline(trainingFile, line)) break;
+        std::vector<FeatureVector> samples;
+        std::vector<int> targets;
+        int nFeatures = 0;
+        static std::string delimiter = ":";
+        static int offDelim = delimiter.length();
 
-        bool firstPart = true;
-        std::istringstream ssline(line);
-        std::string spart;
-        int prev = 0;
-        int index = 0;
-        double value = 0;
-        FeatureVector features;
-
-        // loop each part delimited by a space
-        while (ssline)
+        // loop each line
+        while (samplesFile)
         {
-            if (!getline(ssline, spart, ' ')) break;
-            if (firstPart)
-            {
-                // Reading label
-                int target = 0;
-                std::istringstream(spart) >> target;
-                ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS,
-                             "Invalid class label specified for ESVM training from file");
-                targets.push_back(target);
-                firstPart = false;
-            }
-            else
-            {
-                // Reading features
-                size_t offset = spart.find(delimiter);
-                ASSERT_THROW(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
-                std::istringstream(spart.substr(0, offset)) >> index;
-                std::istringstream(spart.erase(0, offset + offDelim)) >> value;
+            std::string line;
+            if (!getline(samplesFile, line)) break;
 
-                // end reading index:value if termination index found (-1), otherwise check if still valid index
-                if (index == -1) break;
-                ASSERT_THROW(index - prev > 0, "Feature indexes must be in ascending order");
+            bool firstPart = true;
+            std::istringstream ssline(line);
+            std::string spart;
+            int prev = 0;
+            int index = 0;
+            double value = 0;
+            FeatureVector features;
 
-                // Add omitted sparse features (zero value features)
-                while (index - prev > 1)
+            // loop each part delimited by a space
+            while (ssline)
+            {
+                if (!getline(ssline, spart, ' ')) break;
+                if (firstPart)
                 {
-                    features.push_back(0);
+                    // Reading label
+                    ASSERT_THROW(spart.find(delimiter) == std::string::npos, "Could not find class label before sample of specified file");
+                    int target = 0;
+                    std::istringstream(spart) >> target;
+                    ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS, "Invalid class label specified in file for ESVM");
+                    targets.push_back(target);
+                    firstPart = false;
+                }
+                else
+                {
+                    // Reading features
+                    size_t offset = spart.find(delimiter);
+                    ASSERT_THROW(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
+                    std::istringstream(spart.substr(0, offset)) >> index;
+                    std::istringstream(spart.erase(0, offset + offDelim)) >> value;
+
+                    // end reading index:value if termination index found (-1), otherwise check if still valid index
+                    if (index == -1) break;
+                    ASSERT_THROW(index - prev > 0, "Feature indexes must be in ascending order");
+
+                    // Add omitted sparse features (zero value features)
+                    while (index - prev > 1)
+                    {
+                        features.push_back(0);
+                        prev++;
+                    }
+                    features.push_back(value);
                     prev++;
                 }
-                features.push_back(value);
-                prev++;
             }
+
+            if (nFeatures == 0)
+                nFeatures = features.size();
+            else
+                ASSERT_THROW(nFeatures == features.size(), "Loaded feature vectors must have a consistent dimension");
+            samples.push_back(features);
         }
+        ASSERT_THROW(samplesFile.eof(), "Reading ESVM samples file finished without reaching EOF");
 
-        if (nFeatures == 0)
-            nFeatures = features.size();
-        else
-            ASSERT_THROW(nFeatures == features.size(), "Loaded feature vectors must have a consistent dimension");
-        samples.push_back(features);
+        sampleFeatureVectors = samples;
+        targetOutputs = targets;
     }
-    ASSERT_THROW(trainingFile.eof(), "Reading ESVM training file finished without reaching EOF");
-
-    sampleFeatureVectors = samples;
-    targetOutputs = targets;
+    catch (std::exception& ex)
+    {
+        // avoid locked file from assert failure
+        if (samplesFile.is_open())
+            samplesFile.close();
+        throw ex;   // re-throw
+    }
 }
 
 /*
@@ -240,12 +259,13 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
 void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
                                std::vector<int>& targetOutputs, FileFormat format)
 {
-    ASSERT_THROW(sampleFeatureVectors.size() > 0, "Number of samples must be greater than zero");
-    ASSERT_THROW(sampleFeatureVectors.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
+    size_t nSamples = sampleFeatureVectors.size();
+    ASSERT_THROW(nSamples > 0, "Number of samples must be greater than zero");
+    ASSERT_THROW(nSamples == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
+    size_t nFeatures = sampleFeatureVectors[0].size();
+    ASSERT_THROW(nFeatures > 0, "Number of features in samples must be greater than zero");
 
-    int nSamples = sampleFeatureVectors.size();
-    int nFeatures = sampleFeatureVectors[0].size();
-    for (int s = 0; s < nSamples; s++)
+    for (size_t s = 0; s < nSamples; ++s)
         ASSERT_THROW(sampleFeatureVectors[s].size() == nFeatures, "Inconsistent number of features in samples");
 
     if (format == BINARY)
@@ -266,7 +286,7 @@ void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureV
 
         TYPE        QUANTITY                VALUE
         ========================================
-        (char)   |  20                     | 'ESVM bin sample data'
+        (char)   |  20                     | ESVM_BINARY_HEADER
         (int)    |  1                      | nSamples
         (int)    |  1                      | nFeatures
         (int)    |  nSamples               | Targets
@@ -278,11 +298,11 @@ void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureV
     ASSERT_THROW(samplesFile.is_open(), "Failed to open the specified samples data binary file: '" + filePath + "'");
     
     // get sample and feature counts (already checked valid dimensions from calling function)
-    int nSamples = sampleFeatureVectors.size();
-    int nFeatures = sampleFeatureVectors[0].size();
+    int nSamples = sampleFeatureVectors.size();     // warning: format 'int' required, not 'size_t' for matching binary dimension
+    int nFeatures = sampleFeatureVectors[0].size(); // warning: format 'int' required, not 'size_t' for matching binary dimension
 
     // write header and counts for later reading
-    std::string headerStr = "ESVM bin samples";
+    std::string headerStr = ESVM_BINARY_HEADER;
     const char *headerChar = headerStr.c_str();
     samplesFile.write(headerChar, headerStr.size());
     samplesFile.write(reinterpret_cast<const char*>(&nSamples), sizeof(nSamples));
@@ -304,12 +324,9 @@ void ESVM::writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureV
     std::ofstream samplesFile(filePath);
     ASSERT_THROW(samplesFile, "Could not open specified ESVM sample data file: '" + filePath + "'");
 
+    // get sample and feature counts (already checked valid dimensions from calling function)
     size_t nSamples = sampleFeatureVectors.size();
-    ASSERT_THROW(nSamples > 1, "Number of samples must be greater than zero");
-    ASSERT_THROW(nSamples == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
-
     size_t nFeatures = sampleFeatureVectors[0].size();
-    ASSERT_THROW(nFeatures > 0, "Number of sample features must be greater than zero");
 
     for (size_t s = 0; s < nSamples; ++s)
     {

@@ -33,37 +33,82 @@ bool checkPathEndSlash(std::string path)
     return end == '/' || end == '\\';
 }
 
-int test_outputOptions()
+void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures)
 {
+    std::srand(0);
+    samples = std::vector<FeatureVector>(nSamples);
+    targetOutputs = std::vector<int>(nSamples, ESVM_NEGATIVE_CLASS);
+    for (size_t s = 0; s < nSamples; ++s)
+    {
+        samples[s] = FeatureVector(nFeatures);
+        for (size_t f = 0; f < nFeatures; ++f)
+            samples[s][f] = ((double)std::rand() / (double)RAND_MAX);
+    }
+}
+
+bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures)
+{    
+    std::ofstream sampleFile(filePath);
+    if (!sampleFile) return false;
+    std::srand(0);
+    for (size_t s = 0; s < nSamples; ++s)
+    {
+        sampleFile << std::to_string(ESVM_NEGATIVE_CLASS);
+        for (size_t f = 0; f < nFeatures; ++f)
+            sampleFile << " " << f + 1 << ":" << ((double)std::rand() / (double)RAND_MAX);
+        sampleFile << " -1:0" << std::endl; // can be omitted or not (parser should handle both cases)
+    }
+    if (sampleFile.is_open()) sampleFile.close();
+    return true;
+}
+
+bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures)
+{
+    std::vector<FeatureVector> samples;
+    std::vector<int> outputs;
+    generateDummySamples(samples, outputs, nSamples, nFeatures);
+    ESVM::writeSampleDataFile(filePath, samples, outputs);
+    return bfs::is_regular_file(filePath);
+}
+
+int test_outputOptions()
+{    
     logstream logger(LOGGER_FILE);
-    std::string tab = "   ";
+    std::string tab = "   "; 
     logger << "Options:" << std::endl
            << tab << "ESVM:" << std::endl
-           << tab << tab << "ESVM_USE_HOG:                     " << ESVM_USE_HOG << std::endl
-           << tab << tab << "ESVM_USE_LBP:                     " << ESVM_USE_LBP << std::endl
-           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:     " << ESVM_USE_PREDICT_PROBABILITY << std::endl
-           << tab << tab << "ESVM_POSITIVE_CLASS:              " << ESVM_POSITIVE_CLASS << std::endl
-           << tab << tab << "ESVM_NEGATIVE_CLASS:              " << ESVM_NEGATIVE_CLASS << std::endl
-           << tab << tab << "ESVM_WEIGHTS_MODE:                " << ESVM_WEIGHTS_MODE << std::endl
+           << tab << tab << "ESVM_USE_HOG:                               " << ESVM_USE_HOG << std::endl
+           << tab << tab << "ESVM_USE_LBP:                               " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:               " << ESVM_USE_PREDICT_PROBABILITY << std::endl
+           << tab << tab << "ESVM_POSITIVE_CLASS:                        " << ESVM_POSITIVE_CLASS << std::endl
+           << tab << tab << "ESVM_NEGATIVE_CLASS:                        " << ESVM_NEGATIVE_CLASS << std::endl
+           << tab << tab << "ESVM_WEIGHTS_MODE:                          " << ESVM_WEIGHTS_MODE << std::endl
+           << tab << tab << "ESVM_SCORE_NORMALIZATION_MODE:              " << ESVM_SCORE_NORMALIZATION_MODE << std::endl
            << tab << "TEST:" << std::endl
-           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:   " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
-           << tab << tab << "TEST_USE_SYNTHETIC_GENERATION:    " << TEST_USE_SYNTHETIC_GENERATION << std::endl
-           << tab << tab << "TEST_DUPLICATE_COUNT:             " << TEST_DUPLICATE_COUNT << std::endl
-           << tab << tab << "TEST_FEATURES_NORMALIZATION_MODE: " << TEST_FEATURES_NORMALIZATION_MODE << std::endl
-           << tab << tab << "TEST_IMAGE_PATHS:                 " << TEST_IMAGE_PATHS << std::endl
-           << tab << tab << "TEST_IMAGE_PATCH_EXTRACTION:      " << TEST_IMAGE_PATCH_EXTRACTION << std::endl
-           << tab << tab << "TEST_IMAGE_PREPROCESSING:         " << TEST_IMAGE_PREPROCESSING << std::endl
-           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:         " << TEST_MULTI_LEVEL_VECTORS << std::endl
-           << tab << tab << "TEST_NORMALIZATION:               " << TEST_NORMALIZATION << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:    " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:      " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
-           << tab << tab << "TEST_WRITE_DATA_FILES:            " << TEST_WRITE_DATA_FILES << std::endl
-           << tab << tab << "TEST_READ_DATA_FILES:             " << TEST_READ_DATA_FILES << std::endl
-           << tab << tab << "TEST_ESVM_TITAN:                  " << TEST_ESVM_TITAN << std::endl
-           << tab << tab << "TEST_ESVM_SAMAN:                  " << TEST_ESVM_SAMAN << std::endl
-           << tab << tab << "TEST_ESVM_WORKING_PROCEDURE:      " << TEST_ESVM_WORKING_PROCEDURE << std::endl
+           << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:             " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
+           << tab << tab << "TEST_USE_SYNTHETIC_GENERATION:              " << TEST_USE_SYNTHETIC_GENERATION << std::endl
+           << tab << tab << "TEST_DUPLICATE_COUNT:                       " << TEST_DUPLICATE_COUNT << std::endl
+           << tab << tab << "TEST_USE_OTHER_POSITIVES_AS_NEGATIVES:      " << TEST_USE_OTHER_POSITIVES_AS_NEGATIVES << std::endl
+           << tab << tab << "TEST_FEATURES_NORMALIZATION_MODE:           " << TEST_FEATURES_NORMALIZATION_MODE << std::endl
+           << tab << tab << "TEST_IMAGE_PATHS:                           " << TEST_IMAGE_PATHS << std::endl
+           << tab << tab << "TEST_IMAGE_PATCH_EXTRACTION:                " << TEST_IMAGE_PATCH_EXTRACTION << std::endl
+           << tab << tab << "TEST_IMAGE_PREPROCESSING:                   " << TEST_IMAGE_PREPROCESSING << std::endl
+           << tab << tab << "TEST_MULTI_LEVEL_VECTORS:                   " << TEST_MULTI_LEVEL_VECTORS << std::endl
+           << tab << tab << "TEST_NORMALIZATION:                         " << TEST_NORMALIZATION << std::endl
+           << tab << tab << "TEST_PERF_EVAL_FUNCTIONS:                   " << TEST_PERF_EVAL_FUNCTIONS << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:              " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:                " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
+           << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_PARSER:         " << TEST_ESVM_READ_SAMPLES_FILE_PARSER << std::endl
+           << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_TIMING:         " << TEST_ESVM_READ_SAMPLES_FILE_TIMING << std::endl
+           << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE: " << TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE << std::endl 
+           << tab << tab << "TEST_ESVM_WRITE_SAMPLES_FILE_TIMING:        " << TEST_ESVM_WRITE_SAMPLES_FILE_TIMING << std::endl
+           << tab << tab << "TEST_READ_DATA_FILES:                       " << TEST_READ_DATA_FILES << std::endl
+           << tab << tab << "TEST_WRITE_DATA_FILES:                      " << TEST_WRITE_DATA_FILES << std::endl
+           << tab << tab << "TEST_ESVM_TITAN:                            " << TEST_ESVM_TITAN << std::endl
+           << tab << tab << "TEST_ESVM_SAMAN:                            " << TEST_ESVM_SAMAN << std::endl
+           << tab << tab << "TEST_ESVM_WORKING_PROCEDURE:                " << TEST_ESVM_WORKING_PROCEDURE << std::endl
            << tab << "PROCESSES:" << std::endl
-           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:  " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl;
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:            " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl;
 
     return 0;
 }
@@ -203,7 +248,7 @@ int test_imagePreprocessing()
     int* patchSize = new int[2]{ patchSide, patchSide };
     double* patchData = new double[patchSide*patchSide];
     double* hogParams = new double[5]{ 3, 2, 2, 0, 0.2 };
-    int nFeatures = hogPatches[0].size();
+    size_t nFeatures = hogPatches[0].size();
     double *features = new double[nFeatures];
     for (size_t p = 0; p < nPatches; p++)
     {
@@ -431,13 +476,13 @@ int test_multiLevelVectors()
     }
 
     // Pre-initialized 2D-vector of FV using single size
-    int singleSize = 5;
+    size_t singleSize = 5;
     xstd::mvector<2, FeatureVector> mvv_singleSize(singleSize);
     ASSERT_LOG(mvv_singleSize.size() == singleSize, "Multi-level vector assigned with single size should have same dimension on each level");
-    for (int L1 = 0; L1 < singleSize; L1++)
+    for (size_t L1 = 0; L1 < singleSize; L1++)
     {
         ASSERT_LOG(mvv_singleSize[L1].size() == singleSize, "Multi-level vector assigned with single size should have same dimension on each level");
-        for (int L2 = 0; L2 < singleSize; L2++)
+        for (size_t L2 = 0; L2 < singleSize; L2++)
             ASSERT_LOG(mvv_singleSize[L1][L2].size() == 0, "FeatureVector as lowest level object of multi-level vector should not be initialized");
     }
 
@@ -445,7 +490,7 @@ int test_multiLevelVectors()
     size_t dims[2] = { 3, 2 };
     xstd::mvector<2, FeatureVector> mvv_index(dims);
     ASSERT_LOG(mvv_index.size() == dims[0], "Multi-level vector should be initialized with specified 1st level dimension");
-    for (int L1 = 0; L1 < dims[0]; L1++)
+    for (size_t L1 = 0; L1 < dims[0]; L1++)
         ASSERT_LOG(mvv_index[L1].size() == dims[1], "Each multi-level vector on 2nd level should be initialized with specified dimension");
     mvv_index[0][0] = v1;
     mvv_index[0][1] = v2;
@@ -453,11 +498,11 @@ int test_multiLevelVectors()
     mvv_index[1][1] = v4;
     mvv_index[2][0] = v5;
     mvv_index[2][1] = v6;
-    for (int L1 = 0; L1 < dims[0]; L1++)
-        for (int L2 = 0; L2 < dims[1]; L2++)
+    for (size_t L1 = 0; L1 < dims[0]; L1++)
+        for (size_t L2 = 0; L2 < dims[1]; L2++)
         {
             ASSERT_LOG(mvv_index[L1][L2].size() == vdim, "Lowest level feature vector should have original dimension");
-            for (int f = 0; f < vdim; f++)
+            for (size_t f = 0; f < vdim; f++)
             {
                 int fval = (L1 * dims[1] + L2) * vdim + f + 1;
                 ASSERT_LOG(mvv_index[L1][L2][f] == fval, "Multi-level vector assigned by index should have correspoding feature value");
@@ -466,10 +511,10 @@ int test_multiLevelVectors()
 
     // Not initialized 2D-vector of FV, added by push_back of sub multi-level vectors
     xstd::mvector<2, FeatureVector> mvv_push;
-    for (int L1 = 0; L1 < dims[0]; L1++)    
+    for (size_t L1 = 0; L1 < dims[0]; L1++)
         mvv_push.push_back(xstd::mvector<1, FeatureVector>());
     ASSERT_LOG(mvv_push.size() == dims[0], "Multi-level vector should be initialized with number of pushed vectors");
-    for (int L1 = 0; L1 < dims[0]; L1++)
+    for (size_t L1 = 0; L1 < dims[0]; L1++)
         ASSERT_LOG(mvv_push[L1].size() == 0, "Second level vector should still be empty");
     mvv_push[0].push_back(v1);
     mvv_push[0].push_back(v2);
@@ -477,13 +522,13 @@ int test_multiLevelVectors()
     mvv_push[1].push_back(v4);
     mvv_push[2].push_back(v5);
     mvv_push[2].push_back(v6);
-    for (int L1 = 0; L1 < dims[0]; L1++)
+    for (size_t L1 = 0; L1 < dims[0]; L1++)
     {
         ASSERT_LOG(mvv_push[L1].size() == dims[1], "Each multi-level vector on 2nd level should be initialized with number of pushed vectors");
-        for (int L2 = 0; L2 < dims[1]; L2++)
+        for (size_t L2 = 0; L2 < dims[1]; L2++)
         {
             ASSERT_LOG(mvv_push[L1][L2].size() == vdim, "Lowest level feature vector should have original dimension");
-            for (int f = 0; f < vdim; f++)
+            for (size_t f = 0; f < vdim; f++)
             {
                 int fval = (L1 * dims[1] + L2) * vdim + f + 1;
                 ASSERT_LOG(mvv_push[L1][L2][f] == fval, "Multi-level vector assigned with push back should have correspoding feature value");
@@ -579,11 +624,8 @@ int test_normalizationFunctions()
         ASSERT_LOG(scores[f] == v1_norm01[f], "Score should be normalized with min/max of all scores");
 
     FeatureVector v2_normPerFeat = normalizePerFeature(MIN_MAX, v2, v2_min, v2_max);
-    for (int f = 0; f < v2_normPerFeat.size(); f++)
-    {
-        cout << v2_normPerFeat[f] << " " << v2_norm[f] << std::endl;
-        ASSERT_LOG(v2_normPerFeat[f] == v2_norm[f], "Feature should be normalized with corresponding min/max features");
-    }
+    for (int f = 0; f < v2_normPerFeat.size(); f++)    
+        ASSERT_LOG(v2_normPerFeat[f] == v2_norm[f], "Feature should be normalized with corresponding min/max features");    
 
     double s1pos = normalizeClassScoreToSimilarity(+1);
     double s1neg = normalizeClassScoreToSimilarity(-1);
@@ -692,7 +734,7 @@ int test_performanceEvaluationFunctions()
 }
 
 #if 0 // DISABLE - USING OBSOLETE MATLAB PROCEDURE
-int test_runBasicExemplarSvmFunctionalities(void)
+int test_ESVM_BasicFunctionalities(void)
 {
     // ------------------------------------------------------------------------------------------------------------------------
     // window to display loaded images and stream for console+file output
@@ -829,7 +871,7 @@ int test_runBasicExemplarSvmFunctionalities(void)
 }
 #endif 
 
-int test_runBasicExemplarSvmClassification(void)
+int test_ESVM_BasicClassification(void)
 {
     // ------------------------------------------------------------------------------------------------------------------------
     // stream for console+file output
@@ -889,7 +931,7 @@ int test_runBasicExemplarSvmClassification(void)
 }
 
 // Tests LIBSVM format sample file reading functionality of ESVM (index and value parsing)
-int test_runBasicExemplarSvmReadSampleFile_libsvm()
+int test_ESVM_ReadSampleFile_libsvm()
 {
     logstream logger(LOGGER_FILE);
     logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
@@ -922,14 +964,14 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     validSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:12.345 4:6.7890 -1:0" << std::endl;                             // sparse
     validSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:99.111 2:88.222 3:77.333 -1:11111 5:50.777 -1:0" << std::endl;  // -1->5
     validSampleFile3 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:11.222 2:33.444 3:55.666 -1:0" << std::endl;                    // == size
-    validSampleFile4 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:90.111 2:80.222 3:70.333 4:60.444 5:50.555" << std::endl;;      // missing '-1:'
-    validSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.888 3:30.777 4:40.666 5:50.000" << std::endl;;      // missing '-1:'
+    validSampleFile4 << std::to_string(ESVM_POSITIVE_CLASS) << " 1:90.111 2:80.222 3:70.333 4:60.444 5:50.555" << std::endl;;      // no '-1:?' ok
+    validSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.888 3:30.777 4:40.666 5:50.000" << std::endl;;      // no '-1:?' ok
     wrongSampleFile1 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 5:30.555 4:40.333 3:50.777 -1:0" << std::endl;  // 5->4->3
     wrongSampleFile2 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 5:40.333 5:50.777 -1:0" << std::endl;  // 3->5->5    
     wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 4:40.333 5:50.777 -1:0" << std::endl;  // != size
     wrongSampleFile3 << std::to_string(ESVM_NEGATIVE_CLASS) << " 1:10.999 2:20.111 3:30.555 -1:0" << std::endl;                    // != size
     wrongSampleFile4 << std::to_string(ESVM_NEGATIVE_CLASS) << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;   // missing ':'
-    wrongSampleFile5 << " 10.999 20.111 30.555 40.666 50.777 60.888 70.999" << std::endl;                       // missing target output class
+    wrongSampleFile5 << "1:10.999 2:20.111 3:30.555 4:40.666 5:50.777 6:60.888 7:70.999" << std::endl;              // missing target output class
 
     // close test sample files
     if (validSampleFile1.is_open()) validSampleFile1.close();
@@ -944,14 +986,13 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
 
     /* --------
        tests 
-    -------- */
-    ESVM esvm;
+    -------- */    
     std::vector<FeatureVector> samples;
     std::vector<int> targetOutputs;
     try
     {
         // test valid normal indexed samples (exception not expected)
-        esvm.readSampleDataFile(validSampleFileName1, samples, targetOutputs);        
+        ESVM::readSampleDataFile(validSampleFileName1, samples, targetOutputs);        
         ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
         ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
@@ -979,7 +1020,7 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     try
     {
         // test valid sparse indexed samples (exception not expected)
-        esvm.readSampleDataFile(validSampleFileName2, samples, targetOutputs);
+        ESVM::readSampleDataFile(validSampleFileName2, samples, targetOutputs);
         ASSERT_LOG(targetOutputs.size() == 1, "File reading should result in 1 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
         ASSERT_LOG(samples.size() == 1, "File reading should result in 1 loaded feature vector samples");
@@ -999,7 +1040,7 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     try
     {
         // test valid limited final index (-1) samples (exception not expected)
-        esvm.readSampleDataFile(validSampleFileName3, samples, targetOutputs);
+        ESVM::readSampleDataFile(validSampleFileName3, samples, targetOutputs);
         ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_NEGATIVE_CLASS, "First sample target output class should be negative class value");
         ASSERT_LOG(targetOutputs[1] == ESVM_POSITIVE_CLASS, "Second sample target output class should be positive class value");
@@ -1023,7 +1064,7 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     try
     {
         // test valid omitted final index (-1) samples (exception not expected)
-        esvm.readSampleDataFile(validSampleFileName4, samples, targetOutputs);
+        ESVM::readSampleDataFile(validSampleFileName4, samples, targetOutputs);
         ASSERT_LOG(targetOutputs.size() == 2, "File reading should result in 2 loaded target output class");
         ASSERT_LOG(targetOutputs[0] == ESVM_POSITIVE_CLASS, "First sample target output class should be positive class value");
         ASSERT_LOG(targetOutputs[1] == ESVM_NEGATIVE_CLASS, "Second sample target output class should be negative class value");
@@ -1051,40 +1092,45 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
     try
     {
         // test wrong non ascending index samples (exception expected)
-        esvm.readSampleDataFile(wrongSampleFileName1, samples, targetOutputs);
+        ESVM::readSampleDataFile(wrongSampleFileName1, samples, targetOutputs);
         logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
+        bfs::remove_all(testDir);
         return -5;
     }
     catch (...) {}
     try
     {
         // test wrong repeated index samples (exception expected)
-        esvm.readSampleDataFile(wrongSampleFileName2, samples, targetOutputs);
+        ESVM::readSampleDataFile(wrongSampleFileName2, samples, targetOutputs);
         logger << "Error: Repeating indexes should have raised an exception." << std::endl;
+        bfs::remove_all(testDir);
         return -6;
     }
     catch (...) {}
     try
     {
         // test wrong non matching size samples (exception expected)
-        esvm.readSampleDataFile(wrongSampleFileName3, samples, targetOutputs);
+        ESVM::readSampleDataFile(wrongSampleFileName3, samples, targetOutputs);
         logger << "Error: Non matching sample sizes should have raised an exception." << std::endl;
+        bfs::remove_all(testDir);
         return -7;
     }
     catch (...) {}
     try
     {
         // test wrong missing index:value separator (exception expected)
-        esvm.readSampleDataFile(wrongSampleFileName4, samples, targetOutputs);
+        ESVM::readSampleDataFile(wrongSampleFileName4, samples, targetOutputs);
         logger << "Error: Not found 'index:value' seperator should have raised an exception." << std::endl;
+        bfs::remove_all(testDir);
         return -8;
     }
     catch (...) {}
     try
     {
         // test wrong missing target output class (exception expected)
-        esvm.readSampleDataFile(wrongSampleFileName5, samples, targetOutputs);
+        ESVM::readSampleDataFile(wrongSampleFileName5, samples, targetOutputs);
         logger << "Error: Missing target output class value should have raised an exception." << std::endl;
+        bfs::remove_all(testDir);
         return -9;
     }
     catch (...) {}
@@ -1095,7 +1141,7 @@ int test_runBasicExemplarSvmReadSampleFile_libsvm()
 }
 
 // Tests binary sample file reading functionality of ESVM
-int test_runBasicExemplarSvmReadSampleFile_binary()
+int test_ESVM_ReadSampleFile_binary()
 {
     logstream logger(LOGGER_FILE);
     logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
@@ -1110,12 +1156,11 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     std::string wrongSampleFileName4 = testDir + "test_wrong-samples4.data";  // for testing invalid number of features
     std::string wrongSampleFileName5 = testDir + "test_wrong-samples5.data";  // for testing missing target output class value
 
-    // fill test sample files
-    ESVM esvm;
+    // fill test sample files    
     FeatureVector v1 = { 0.999, 1.888, 2.777, 3.666, 4.555 }, v2 = { 5.444, 6.333, 7.222, 8.111, 9.000 };
     std::vector<FeatureVector> validSamples = { v1, v2 };
     std::vector<int> validTargetOutputs = { ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
-    esvm.writeSampleDataFile(validSampleFileName1, validSamples, validTargetOutputs, BINARY);
+    ESVM::writeSampleDataFile(validSampleFileName1, validSamples, validTargetOutputs, BINARY);
 
     /*=====================
     TODO
@@ -1132,7 +1177,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     try
     {
         // test reading valid samples encoded in binary file
-        esvm.readSampleDataFile(validSampleFileName1, readSamples, readTargetOutputs, BINARY);
+        ESVM::readSampleDataFile(validSampleFileName1, readSamples, readTargetOutputs, BINARY);
         ASSERT_LOG(readSamples.size() == validSamples.size(), "Number of samples read from binary file should match original");
         ASSERT_LOG(readSamples[0].size() == validSamples[0].size(), "Number of features read from binary file should match original");
         ASSERT_LOG(readTargetOutputs.size() == validTargetOutputs.size(), "Number of target outputs read from binary file should match original");
@@ -1159,7 +1204,7 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
     try
     {
         // test wrong reading file format
-        esvm.readSampleDataFile(wrongSampleFileName5, readSamples, readTargetOutputs, LIBSVM);
+        ESVM::readSampleDataFile(wrongSampleFileName5, readSamples, readTargetOutputs, LIBSVM);
         logger << "Error: Reading binary formatted file as LIBSVM format should result in parsing failure." << std::endl;
         return -2;
     }
@@ -1170,11 +1215,10 @@ int test_runBasicExemplarSvmReadSampleFile_binary()
 }
 
 // Validation of identical sample features from LIBSVM / binary formatted files
-int test_runBasicExemplarSvmReadSampleFile_compare()
+int test_ESVM_ReadSampleFile_compare()
 {
     logstream logger(LOGGER_FILE);
-    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
-    ESVM esvmFileLoader;
+    std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };    
     size_t nPatches = 9;
     size_t nPositives = positivesID.size();
 
@@ -1188,8 +1232,8 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
         std::string negativeSamplesPatchFile = negativeSamplesDir + "negatives-hog-patch" + strPatch;
         std::string currentNegativePatch = " (negatives, patch " + strPatch + ")";
         logger << "Loading samples files (binary/LIBSVM) for comparison" << currentNegativePatch << "..." << std::endl;
-        esvmFileLoader.readSampleDataFile(negativeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
-        esvmFileLoader.readSampleDataFile(negativeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
+        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
 
         // compare negative patch samples and target outputs
         logger << "Comparing samples files (binary/LIBSVM) data" << currentNegativePatch << "..." << std::endl;
@@ -1216,8 +1260,8 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
             std::string probeSamplesPatchFile = testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + strPatch;
             std::string currentProbePatch = " (positive " + positivesID[pos] + ", probes, patch " + strPatch + ")";
             logger << "Loading samples files (binary/LIBSVM) for comparison" << currentProbePatch << "..." << std::endl;
-            esvmFileLoader.readSampleDataFile(probeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
-            esvmFileLoader.readSampleDataFile(probeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+            ESVM::readSampleDataFile(probeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
+            ESVM::readSampleDataFile(probeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
 
             // compare probe patch samples and target outputs
             logger << "Comparing samples files (binary/LIBSVM) data" << currentProbePatch << "..." << std::endl;
@@ -1245,38 +1289,81 @@ int test_runBasicExemplarSvmReadSampleFile_compare()
     return 0;
 }
 
-int test_runTimerExemplarSvmReadSampleFile(int nSamples, int nFeatures)
+int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
 {
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
-    ASSERT_LOG(nFeatures > 0, "Number of samples must be greater than zero");
+    ASSERT_LOG(nFeatures > 0, "Number of features must be greater than zero");
+
+    // generate test samples file
+    logstream logger(LOGGER_FILE);    
+    logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
+    std::string timingSampleFileName_libsvm = "test_timing-read-samples.data";
+    std::string timingSampleFileName_binary = "test_timing-read-samples.bin";
+    ASSERT_LOG(generateDummySampleFile_libsvm(timingSampleFileName_libsvm, nSamples, nFeatures), "Failed to generate dummy libsvm sample file");
+    ASSERT_LOG(generateDummySampleFile_libsvm(timingSampleFileName_binary, nSamples, nFeatures), "Failed to generate dummy binary sample file");
+    
+    try
+    {
+        // start reading to evaluate timing        
+        std::vector<FeatureVector> samples;
+        std::vector<int> targetOutputs;
+        double t0 = getTimeNow();
+        ESVM::readSampleDataFile(timingSampleFileName_libsvm, samples, targetOutputs, LIBSVM);
+        double dt = getDeltaTime(getTimeNow(), t0, false);
+        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " << dt << "s" << std::endl;
+        double t1 = getTimeNow();
+        ESVM::readSampleDataFile(timingSampleFileName_binary, samples, targetOutputs, BINARY);
+        dt = getDeltaTime(getTimeNow(), t1, false);
+        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " << dt << "s" << std::endl;
+        bfs::remove(timingSampleFileName_libsvm);
+        bfs::remove(timingSampleFileName_binary);
+    }
+    catch (std::exception& ex)
+    {
+        bfs::remove(timingSampleFileName_libsvm);
+        bfs::remove(timingSampleFileName_binary);
+        throw ex;   // re-throw
+    }
+    return 0;
+}
+
+int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
+{
+    ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
+    ASSERT_LOG(nFeatures > 0, "Number of features must be greater than zero");
 
     logstream logger(LOGGER_FILE);
+    std::string timingSampleFileName_libsvm = "test_timing-write-samples.data";
+    std::string timingSampleFileName_binary = "test_timing-write-samples.bin";
 
-    // Generate test samples file
-    logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
-    std::string timingSampleFileName = "test_timing-samples.data";
-    std::ofstream timingSampleFile(timingSampleFileName);    
-    std::srand(0);
-    for (int s = 0; s < nSamples; s++)
+    try
     {
-        timingSampleFile << std::to_string(ESVM_NEGATIVE_CLASS);
-        for (int f = 0; f < nFeatures; f++)
-            timingSampleFile << " " << f + 1 << ":" << ((double)std::rand() / (double)RAND_MAX);
-        timingSampleFile << " -1:0" << std::endl;
+        // generate dummy data        
+        std::vector<FeatureVector> samples;
+        std::vector<int> targetOutputs;
+        generateDummySamples(samples, targetOutputs, nSamples, nFeatures);
+        logger << "N SAMPLES: " << samples.size() << std::endl;
+        logger << "N OUTPUTS: " << targetOutputs.size() << std::endl;
+        logger << "N FEATS: " << samples[0].size() << std::endl;
+
+        // start writing to evaluate timing
+        double t0 = getTimeNow();
+        ESVM::writeSampleDataFile(timingSampleFileName_libsvm, samples, targetOutputs, LIBSVM);
+        double dt = getDeltaTime(getTimeNow(), t0, false);
+        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " << dt << "s" << std::endl;
+        double t1 = getTimeNow();
+        ESVM::writeSampleDataFile(timingSampleFileName_binary, samples, targetOutputs, BINARY);
+        dt = getDeltaTime(getTimeNow(), t1, false);
+        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " << dt << "s" << std::endl;
+        bfs::remove(timingSampleFileName_libsvm);
+        bfs::remove(timingSampleFileName_binary);
     }
-    if (timingSampleFile.is_open()) timingSampleFile.close();
-
-    // Start reading to evaluate timing
-    ESVM esvm;
-    std::vector<FeatureVector> samples;
-    std::vector<int> targetOutputs;
-    double t0 = (double)cv::getTickCount();
-    esvm.readSampleDataFile(timingSampleFileName, samples, targetOutputs);
-    double dt = ((double)cv::getTickCount() - t0) / cv::getTickFrequency();
-    logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features: " << dt << "s" << std::endl;
-
-    bfs::remove(timingSampleFileName);
-
+    catch (std::exception& ex)
+    {
+        bfs::remove(timingSampleFileName_libsvm);
+        bfs::remove(timingSampleFileName_binary);
+        throw ex;   // re-throw
+    }
     return 0;
 }
 
@@ -2525,7 +2612,7 @@ TEST DEFINITION
         Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
         Changing any configuration will require new data files to be generated by running "FullChokePoint" at least once.
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(int nPatches)
+int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches)
 {
     ASSERT_LOG(nPatches > 0, "Number of patches must be greater than zero");
 
@@ -2726,7 +2813,6 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     cv::destroyWindow(WINDOW_NAME);
 
     // load negatives from pre-generated files
-    ESVM tmpLoadESVM;                                                   // temporary ESVM only for file loading
     size_t dimsNegatives[2]{ nPatches, 0 };                             // dynamically fill patches from file loading
     xstd::mvector<2, FeatureVector> fvNegativeSamples(dimsNegatives);   // [patch][negative](FeatureVector)
     for (int p = 0; p < nPatches; p++)
@@ -2737,7 +2823,7 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
                << "   Using file: '" << negativeTrainFile << "'" << std::endl;
         std::vector<FeatureVector> fvNegativeSamplesPatch;
         std::vector<int> negativeGroundTruths;
-        tmpLoadESVM.readSampleDataFile(negativeTrainFile, fvNegativeSamplesPatch, negativeGroundTruths);
+        ESVM::readSampleDataFile(negativeTrainFile, fvNegativeSamplesPatch, negativeGroundTruths);
         fvNegativeSamples[p] = xstd::mvector<1, FeatureVector>(fvNegativeSamplesPatch);
     }
 
@@ -2747,25 +2833,25 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     logger << "Applying feature normalization (across features, across patches) for loaded positives and probes..." << std::endl;
     double hardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test
     double hardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test
-    int nProbesLoaded = fvProbeLoadedSamples[0].size();
+    size_t nProbesLoaded = fvProbeLoadedSamples[0].size();
     for (int p = 0; p < nPatches; p++)
     {
-        for (int pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; pos++)
             fvPositiveSamples[pos][p] = normalizeAllFeatures(MIN_MAX, fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
-        for (int prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t prb = 0; prb < nProbesLoaded; prb++)
             fvProbeLoadedSamples[p][prb] = normalizeAllFeatures(MIN_MAX, fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
     }
     #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
 
     // train and test ESVM
-    for (int pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; pos++)
     {        
         std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
         xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
         std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
-        for (int p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; p++)
         {
             // train with positive extracted features and negative loaded features
             std::string strPatch = std::to_string(p);
@@ -2797,15 +2883,15 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         #if TEST_READ_DATA_FILES & 0b10010000
 
         // accumulated sum of scores for score fusion
-        int nProbesLoaded = probePatchScoresLoaded[0].size();
+        size_t nProbesLoaded = probePatchScoresLoaded[0].size();
         probeFusionScoresLoaded = std::vector<double>(nProbesLoaded, 0.0);
-        for (int p = 0; p < nPatches; p++)
-            for (int prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t p = 0; p < nPatches; p++)
+            for (size_t prb = 0; prb < nProbesLoaded; prb++)
                 probeFusionScoresLoaded[prb] += probePatchScoresLoaded[p][prb];
 
         // average accumulated scores and execute post-fusion normalization
         // also find ground truths of feature vectors
-        for (int prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t prb = 0; prb < nProbesLoaded; prb++)
         {
             probeGroundTruthsLoaded.push_back(probesLoadedID[prb] == posID ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
             probeFusionScoresLoaded[prb] /= (double)nPatches;
@@ -2824,14 +2910,14 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         #if TEST_READ_DATA_FILES & 0b01100000 
 
         // accumulated sum of scores for score fusion
-        int nProbesPreGen = probePatchScoresPreGen[0].size();
+        size_t nProbesPreGen = probePatchScoresPreGen[0].size();
         probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
-        for (int p = 0; p < nPatches; p++)
-            for (int prb = 0; prb < nProbesPreGen; prb++)
+        for (size_t p = 0; p < nPatches; p++)
+            for (size_t prb = 0; prb < nProbesPreGen; prb++)
                 probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
         
         // average accumulated scores and execute post-fusion normalization
-        for (int prb = 0; prb < nProbesPreGen; prb++)
+        for (size_t prb = 0; prb < nProbesPreGen; prb++)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
         probeFusionScoresPreGen = normalizeClassScores(MIN_MAX, probeFusionScoresPreGen);
         
@@ -3313,8 +3399,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     xstd::mvector<2, double> zscoreClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
 
-    // Exemplar-SVM
-    ESVM FileLoaderESVM;
+    // Exemplar-SVM    
     xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM)    
 
     // prepare hog feature extractor    
@@ -3340,15 +3425,15 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedu
     FileFormat sampleFileFormat = BINARY;
     std::string sampleFileExt = sampleFileFormat == BINARY ? ".bin" : ".data";
     for (size_t p = 0; p < nPatches; p++)
-        FileLoaderESVM.readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
-                                          sampleFileExt, negativeSamples[p], sampleFileFormat);
+        ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
+                                 sampleFileExt, negativeSamples[p], sampleFileFormat);
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
-            FileLoaderESVM.readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + 
-                                              sampleFileExt, probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);
+            ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + 
+                                     sampleFileExt, probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);
 
     // // Add ROI to corresponding sample vectors according to individual IDs            
     // if (bfs::is_directory(dirPath))

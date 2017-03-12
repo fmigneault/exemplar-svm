@@ -175,22 +175,21 @@ int create_negatives()
             fvNegativeSamplesNormROI[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllROI, maxAllROI);
     
     // write resulting sample files
-    ESVM FileWriter;
     FileFormat fmt;
     std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
     for (size_t p = 0; p < nPatches; p++)
     {
         if (writeBinaryFormat) {
             fmt = BINARY;
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.bin", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.bin", fvNegativeSamples[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
         if (writeLibsvmFormat) {
             fmt = LIBSVM;
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.data", fvNegativeSamples[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            FileWriter.writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.data", fvNegativeSamplesNormROI[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.data", fvNegativeSamples[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
+            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.data", fvNegativeSamplesNormROI[p], negClass, fmt);
         }
     }
 
@@ -227,7 +226,10 @@ int create_negatives()
     return 0;
 }
 
-int create_probes(std::string positives, std::string negatives){
+int create_probes(std::string positives, std::string negatives)
+{
+    logstream logger("probes-output.txt");
+
     double hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     double hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     size_t nPatches = 9;
@@ -251,9 +253,9 @@ int create_probes(std::string positives, std::string negatives){
     std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
 
     // Add ROI to corresponding sample vectors according to individual IDs
-    cout << "Loading probe images for sequence " << positives << "...: " << std::endl;
+    logger << "Loading probe images for sequence " << positives << "...: " << std::endl;
     load_pgm_images_from_directory(positives, matPositiveSamples);
-    cout << "Loading probe images for sequence " << negatives << "...: " << std::endl;
+    logger << "Loading probe images for sequence " << negatives << "...: " << std::endl;
     load_pgm_images_from_directory(negatives, matNegativeSamples);
 
     size_t nPositives = matPositiveSamples.size();
@@ -285,17 +287,15 @@ int create_probes(std::string positives, std::string negatives){
     std::vector<int> targetOutputsNeg(nNegatives, -1);
     targetOutputs.insert(targetOutputs.end(), targetOutputsNeg.begin(), targetOutputsNeg.end());
 
-    cout << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
-
-    ESVM esvm;
+    logger << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     for (size_t p = 0; p < nPatches; p++)
-        esvm.writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
+        ESVM::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");
 
-    // cout << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
+    // logger << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
     // for (size_t p = 0; p < nPatches; p++)
     //     for (size_t neg = 0; neg < nNegatives; neg++){
     //         for (size_t i = 0; i < fvNegativeSamples[p][neg].size(); i++){
@@ -306,5 +306,6 @@ int create_probes(std::string positives, std::string negatives){
 
     // outputFile.close();
 
-    std::cout << "DONE!" << std::endl;
+    logger << "DONE!" << std::endl;
+    return 0;
 }

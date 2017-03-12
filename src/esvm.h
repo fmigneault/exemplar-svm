@@ -15,11 +15,11 @@ public:
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");   
-    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
-                            std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
-    void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
-    void writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
-                             std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
+    static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
+                                   std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
+    static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
+    static void writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                                    std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
     bool saveModelFile(std::string modelFilePath);
     double predict(FeatureVector probeSample);
     std::vector<double> predict(std::vector<FeatureVector> probeSamples);

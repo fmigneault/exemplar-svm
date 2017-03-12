@@ -71,9 +71,11 @@
 // Test functionality of samples file reading and parsing to feature vectors
 #define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
 // Evaluate timing performance for reading and parsing a samples file
-#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 1
 // Test functionality of samples file reading LIBSVM/binary format comparison
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
+// Evaluate timing performance for writing samples file
+#define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 1
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 
@@ -119,7 +121,7 @@ Process options - Enable/Disable a specific work execution
 ------------------------------------------------------------ */
 
 // Generate sample files using various enabled parameters
-#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 0
 
 /* ------------------------------------------------------------
    Image paths
