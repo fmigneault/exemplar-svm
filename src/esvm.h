@@ -18,6 +18,7 @@ public:
     ESVM(svm_model* trainedModel, std::string id = "");  
     ~ESVM();
     bool isModelTrained();
+    static bool checkModelParamers(svm_model* model);
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
                                    std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
@@ -31,8 +32,11 @@ public:
     std::string targetID;
 
 private:
+    static bool checkBinaryHeader(std::ifstream& binaryFileStream, std::string header);
+    static void checkModelParameters_assert(svm_model* model);
     void trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
     static std::vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
+    void loadModelFile_libsvm(std::string filePath);
     void loadModelFile_binary(std::string filePath);
     void saveModelFile_binary(std::string filePath);
     static void readSampleDataFile_binary(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
@@ -42,7 +46,7 @@ private:
     static FeatureVector getFeatureVector(svm_node* features);
     static svm_node* getFeatureNodes(FeatureVector features);
     static svm_node* getFeatureNodes(double* features, int featureCount);
-    svm_model* model = nullptr;    
+    svm_model* esvmModel = nullptr;    
 };
 
 #endif/*ESVM_LIBSVM_H*/

@@ -79,9 +79,9 @@
 // Evaluate timing performance for writing samples file
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 1
 // Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER 1
-// Test functionality of model file loading/saving from (LIBSVM/BINARY,pre-trained/from samples) format comparison
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER 0
+// Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
 /*   
     TEST_READ_DATA_FILES:
         (0)   0b00000000:   no test 

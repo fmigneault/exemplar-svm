@@ -36,7 +36,7 @@ svm_node buildNode(int index, double value)
 }
 
 // builds a dummy model with all valid parameters to test read/write procedures
-svm_model* buildDummyExemplarSvmModel()
+svm_model buildDummyExemplarSvmModel()
 {
     svm_model *model = new svm_model;
     try
@@ -56,6 +56,17 @@ svm_model* buildDummyExemplarSvmModel()
         model->SV[3] = new svm_node[4]{ buildNode(1, 0.25), buildNode(1, 0.75), buildNode(1, 0.00), buildNode(-1, 0) };
         model->SV[4] = new svm_node[4]{ buildNode(1, 0.15), buildNode(1, 0.75), buildNode(1, 0.15), buildNode(-1, 0) };
         model->free_sv = 1; // considered as 'pre-trained' model, not from samples training
+
+        #if ESVM_USE_PREDICT_PROBABILITY
+        model->probA = 1.2;
+        model->probB = 1.2;
+        #else
+        model->probA = nullptr;
+        model->probB = nullptr;
+        #endif/*ESVM_USE_PREDICT_PROBABILITY*/
+
+        if (!ESVM::checkModelParamers(model))
+            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");
     }
     catch (std::exception& ex)
     {
@@ -72,7 +83,7 @@ svm_model* buildDummyExemplarSvmModel()
         delete model;        
         throw ex;  // re-throw
     }
-    return model;
+    return *model;
 }
 
 bool checkPathEndSlash(std::string path)
@@ -115,7 +126,7 @@ bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_
     std::vector<FeatureVector> samples;
     std::vector<int> outputs;
     generateDummySamples(samples, outputs, nSamples, nFeatures);
-    ESVM::writeSampleDataFile(filePath, samples, outputs);
+    ESVM::writeSampleDataFile(filePath, samples, outputs, BINARY);
     return bfs::is_regular_file(filePath);
 }
 
@@ -497,7 +508,7 @@ int test_imagePreprocessing()
 
 int test_multiLevelVectors()
 {
-    int vdim = 6;
+    size_t vdim = 6;
     FeatureVector v1{  1,  2,  3,  4,  5,  6 };
     FeatureVector v2{  7,  8,  9, 10, 11, 12 };
     FeatureVector v3{ 13, 14, 15, 16, 17, 18 };
@@ -509,7 +520,7 @@ int test_multiLevelVectors()
     xstd::mvector<1, FeatureVector> mv_index(2);
     mv_index[0] = v1;
     mv_index[1] = v2;
-    for (int f = 0; f < vdim; f++)
+    for (size_t f = 0; f < vdim; f++)
     {
         ASSERT_LOG(mv_index[0][f] == f + 1, "Multi-level vector assigned by index should have correspoding feature value");
         ASSERT_LOG(mv_index[1][f] == f + 7, "Multi-level vector assigned by index should have correspoding feature value");
@@ -519,7 +530,7 @@ int test_multiLevelVectors()
     xstd::mvector<1, FeatureVector> mv_push;
     mv_push.push_back(v1);
     mv_push.push_back(v2);
-    for (int f = 0; f < vdim; f++)
+    for (size_t f = 0; f < vdim; f++)
     {
         ASSERT_LOG(mv_push[0][f] == f + 1, "Multi-level vector assigned by index should have correspoding feature value");
         ASSERT_LOG(mv_push[1][f] == f + 7, "Multi-level vector assigned by index should have correspoding feature value");
@@ -554,7 +565,7 @@ int test_multiLevelVectors()
             ASSERT_LOG(mvv_index[L1][L2].size() == vdim, "Lowest level feature vector should have original dimension");
             for (size_t f = 0; f < vdim; f++)
             {
-                int fval = (L1 * dims[1] + L2) * vdim + f + 1;
+                double fval = (double)((L1 * dims[1] + L2) * vdim + f) + 1.0;
                 ASSERT_LOG(mvv_index[L1][L2][f] == fval, "Multi-level vector assigned by index should have correspoding feature value");
             }
         }
@@ -580,7 +591,7 @@ int test_multiLevelVectors()
             ASSERT_LOG(mvv_push[L1][L2].size() == vdim, "Lowest level feature vector should have original dimension");
             for (size_t f = 0; f < vdim; f++)
             {
-                int fval = (L1 * dims[1] + L2) * vdim + f + 1;
+                double fval = (double)((L1 * dims[1] + L2) * vdim + f) + 1.0;
                 ASSERT_LOG(mvv_push[L1][L2][f] == fval, "Multi-level vector assigned with push back should have correspoding feature value");
             }
         }
@@ -658,23 +669,23 @@ int test_normalizationFunctions()
     ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
 
     FeatureVector normAll = normalizeAllFeatures(MIN_MAX, v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
-    for (int f = 0; f < normAll.size(); f++)
+    for (size_t f = 0; f < normAll.size(); f++)
         ASSERT_LOG(normAll[f] == v1_norm01[f], "Feature should be normalized with specified min/max values");
 
     FeatureVector normAllMore = normalizeAllFeatures(MIN_MAX, v1, -1, 29); // using max == 29 makes (max-min)=30, 1/2 norm values
-    for (int f = 0; f < normAllMore.size(); f++)
+    for (size_t f = 0; f < normAllMore.size(); f++)
         ASSERT_LOG(normAllMore[f] == v1_norm01[f] / 2.0, "Feature normalization should be enforced with specified min/max values");
 
     FeatureVector normAllAuto = normalizeAllFeatures(MIN_MAX, v1);         // min/max not specified, find them
-    for (int f = 0; f < normAllAuto.size(); f++)
+    for (size_t f = 0; f < normAllAuto.size(); f++)
         ASSERT_LOG(normAllAuto[f] == v1_norm01[f], "Feature should be normalized with min/max found within the specified vector");
     
     std::vector<double> scores = normalizeClassScores(MIN_MAX, v1);        // same as 'normalizeAllFeatures<MinMax>'
-    for (int f = 0; f < scores.size(); f++)
+    for (size_t f = 0; f < scores.size(); f++)
         ASSERT_LOG(scores[f] == v1_norm01[f], "Score should be normalized with min/max of all scores");
 
     FeatureVector v2_normPerFeat = normalizePerFeature(MIN_MAX, v2, v2_min, v2_max);
-    for (int f = 0; f < v2_normPerFeat.size(); f++)    
+    for (size_t f = 0; f < v2_normPerFeat.size(); f++)
         ASSERT_LOG(v2_normPerFeat[f] == v2_norm[f], "Feature should be normalized with corresponding min/max features");    
 
     double s1pos = normalizeClassScoreToSimilarity(+1);
@@ -984,7 +995,7 @@ int test_ESVM_BasicClassification(void)
 int test_ESVM_ReadSampleFile_libsvm()
 {
     logstream logger(LOGGER_FILE);
-    logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
+    logger << "Starting Exemplar-SVM LIBSVM sample file reading test..." << std::endl;
 
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-file/";
@@ -1194,7 +1205,7 @@ int test_ESVM_ReadSampleFile_libsvm()
 int test_ESVM_ReadSampleFile_binary()
 {
     logstream logger(LOGGER_FILE);
-    logger << "Starting basic Exemplar-SVM sample file reading test..." << std::endl;
+    logger << "Starting Exemplar-SVM BINARY sample file reading test..." << std::endl;
 
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-binary-file/";
@@ -1264,7 +1275,7 @@ int test_ESVM_ReadSampleFile_binary()
     return 0;
 }
 
-// Validation of identical sample features from LIBSVM/BINARY formatted files
+// Validation of identical sample features from BINARY/LIBSVM formatted files
 int test_ESVM_ReadSampleFile_compare()
 {
     logstream logger(LOGGER_FILE);
@@ -1274,33 +1285,33 @@ int test_ESVM_ReadSampleFile_compare()
 
     for (size_t p = 0; p < nPatches; p++)
     {
-        std::vector<FeatureVector> samplesLIBSVM, samplesBinary;
-        std::vector<int> targetOutputsLIBSVM, targetOutputsBinary;
+        std::vector<FeatureVector> samples_libsvm, samples_binary;
+        std::vector<int> targetOutputs_libsvm, targetOutputs_binary;
         std::string strPatch = std::to_string(p);
 
         // load negatives samples and target ouputs from BINARY/LIBSVM formatted files        
         std::string negativeSamplesPatchFile = negativeSamplesDir + "negatives-hog-patch" + strPatch;
         std::string currentNegativePatch = " (negatives, patch " + strPatch + ")";
-        logger << "Loading samples files (binary/LIBSVM) for comparison" << currentNegativePatch << "..." << std::endl;
-        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
-        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+        logger << "Loading samples files (BINARY/LIBSVM) for comparison" << currentNegativePatch << "..." << std::endl;
+        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".data", samples_libsvm, targetOutputs_libsvm, LIBSVM);
+        ESVM::readSampleDataFile(negativeSamplesPatchFile + ".bin",  samples_binary, targetOutputs_binary, BINARY);
 
         // compare negative patch samples and target outputs
-        logger << "Comparing samples files (binary/LIBSVM) data" << currentNegativePatch << "..." << std::endl;
-        size_t nNegatives = samplesLIBSVM.size();
-        size_t nNegativeFeatures = samplesLIBSVM[0].size();        
-        ASSERT_LOG(nNegatives == samplesBinary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentNegativePatch);
-        ASSERT_LOG(nNegatives == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentNegativePatch);
-        ASSERT_LOG(nNegatives == targetOutputsBinary.size(), "Inconsistent BINARY target outputs count" + currentNegativePatch);
+        logger << "Comparing samples files (BINARY/LIBSVM) data" << currentNegativePatch << "..." << std::endl;
+        size_t nNegatives = samples_libsvm.size();
+        size_t nNegativeFeatures = samples_libsvm[0].size();        
+        ASSERT_LOG(nNegatives == samples_binary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == targetOutputs_libsvm.size(), "Inconsistent LIBSVM target outputs count" + currentNegativePatch);
+        ASSERT_LOG(nNegatives == targetOutputs_binary.size(), "Inconsistent BINARY target outputs count" + currentNegativePatch);
         for (size_t neg = 0; neg < nNegatives; neg++)
         {            
             currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ")";
-            ASSERT_LOG(nNegativeFeatures == samplesBinary[neg].size(), "Inconsistent LIBSVM and BINARY features count" + currentNegativePatch);
-            ASSERT_LOG(targetOutputsLIBSVM[neg] == targetOutputsBinary[neg], "Target outputs should match" + currentNegativePatch);
+            ASSERT_LOG(nNegativeFeatures == samples_binary[neg].size(), "Inconsistent LIBSVM and BINARY features count" + currentNegativePatch);
+            ASSERT_LOG(targetOutputs_libsvm[neg] == targetOutputs_binary[neg], "Target outputs should match" + currentNegativePatch);
             for (size_t f = 0; f < nNegativeFeatures; f++)
             {
                 currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ", feature " + std::to_string(f) + ")";
-                ASSERT_LOG(samplesLIBSVM[neg][f] == samplesBinary[neg][f], "Sample features should match" + currentNegativePatch);
+                ASSERT_LOG(samples_libsvm[neg][f] == samples_binary[neg][f], "Sample features should match" + currentNegativePatch);
             }
         }
                 
@@ -1309,28 +1320,28 @@ int test_ESVM_ReadSampleFile_compare()
             // load probe samples and target ouputs from BINARY/LIBSVM formatted files
             std::string probeSamplesPatchFile = testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + strPatch;
             std::string currentProbePatch = " (positive " + positivesID[pos] + ", probes, patch " + strPatch + ")";
-            logger << "Loading samples files (binary/LIBSVM) for comparison" << currentProbePatch << "..." << std::endl;
-            ESVM::readSampleDataFile(probeSamplesPatchFile + ".data", samplesLIBSVM, targetOutputsLIBSVM, LIBSVM);
-            ESVM::readSampleDataFile(probeSamplesPatchFile + ".bin",  samplesBinary, targetOutputsBinary, BINARY);
+            logger << "Loading samples files (BINARY/LIBSVM) for comparison" << currentProbePatch << "..." << std::endl;
+            ESVM::readSampleDataFile(probeSamplesPatchFile + ".data", samples_libsvm, targetOutputs_libsvm, LIBSVM);
+            ESVM::readSampleDataFile(probeSamplesPatchFile + ".bin",  samples_binary, targetOutputs_binary, BINARY);
 
             // compare probe patch samples and target outputs
-            logger << "Comparing samples files (binary/LIBSVM) data" << currentProbePatch << "..." << std::endl;
-            size_t nProbes = samplesLIBSVM.size();
-            size_t nProbeFeatures = samplesLIBSVM[0].size();
+            logger << "Comparing samples files (BINARY/LIBSVM) data" << currentProbePatch << "..." << std::endl;
+            size_t nProbes = samples_libsvm.size();
+            size_t nProbeFeatures = samples_libsvm[0].size();
             ASSERT_LOG(nProbeFeatures == nNegativeFeatures, "Inconsistent negative and probe sample feature count" + currentProbePatch);
-            ASSERT_LOG(nProbes == samplesBinary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentProbePatch);
-            ASSERT_LOG(nProbes == targetOutputsLIBSVM.size(), "Inconsistent LIBSVM target outputs count" + currentProbePatch);
-            ASSERT_LOG(nProbes == targetOutputsBinary.size(), "Inconsistent BINARY target outputs count" + currentProbePatch);
+            ASSERT_LOG(nProbes == samples_binary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentProbePatch);
+            ASSERT_LOG(nProbes == targetOutputs_libsvm.size(), "Inconsistent LIBSVM target outputs count" + currentProbePatch);
+            ASSERT_LOG(nProbes == targetOutputs_binary.size(), "Inconsistent BINARY target outputs count" + currentProbePatch);
             for (size_t prb = 0; prb < nProbes; prb++)
             {
                 currentProbePatch = " (positive " + positivesID[pos] + ", probe " + std::to_string(prb) + ", patch " + strPatch + ")";
-                ASSERT_LOG(nProbeFeatures == samplesBinary[prb].size(), "Inconsistent LIBSVM and BINARY features count" + currentProbePatch);
-                ASSERT_LOG(targetOutputsLIBSVM[prb] == targetOutputsBinary[prb], "Target outputs should match" + currentProbePatch);
+                ASSERT_LOG(nProbeFeatures == samples_binary[prb].size(), "Inconsistent LIBSVM and BINARY features count" + currentProbePatch);
+                ASSERT_LOG(targetOutputs_libsvm[prb] == targetOutputs_binary[prb], "Target outputs should match" + currentProbePatch);
                 for (size_t f = 0; f < nProbeFeatures; f++)
                 {
                     currentProbePatch = "positive " + positivesID[pos] + ", (probe " + std::to_string(prb) +
                                         ", patch " + strPatch + ", feature " + std::to_string(f) + ")";
-                    ASSERT_LOG(samplesLIBSVM[prb][f] == samplesBinary[prb][f], "Sample features should match" + currentProbePatch);
+                    ASSERT_LOG(samples_libsvm[prb][f] == samples_binary[prb][f], "Sample features should match" + currentProbePatch);
                 }
             }
         }
@@ -1349,8 +1360,8 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
     logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
     std::string timingSampleFileName_libsvm = "test_timing-read-samples.data";
     std::string timingSampleFileName_binary = "test_timing-read-samples.bin";
-    ASSERT_LOG(generateDummySampleFile_libsvm(timingSampleFileName_libsvm, nSamples, nFeatures), "Failed to generate dummy libsvm sample file");
-    ASSERT_LOG(generateDummySampleFile_libsvm(timingSampleFileName_binary, nSamples, nFeatures), "Failed to generate dummy binary sample file");
+    ASSERT_LOG(generateDummySampleFile_libsvm(timingSampleFileName_libsvm, nSamples, nFeatures), "Failed to generate dummy LIBSVM sample file");
+    ASSERT_LOG(generateDummySampleFile_binary(timingSampleFileName_binary, nSamples, nFeatures), "Failed to generate dummy BINARY sample file");
     
     try
     {
@@ -1391,10 +1402,8 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
         // generate dummy data        
         std::vector<FeatureVector> samples;
         std::vector<int> targetOutputs;
+        logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
         generateDummySamples(samples, targetOutputs, nSamples, nFeatures);
-        logger << "N SAMPLES: " << samples.size() << std::endl;
-        logger << "N OUTPUTS: " << targetOutputs.size() << std::endl;
-        logger << "N FEATS: " << samples[0].size() << std::endl;
 
         // start writing to evaluate timing
         double t0 = getTimeNow();
@@ -1425,21 +1434,24 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     // create test model files inside test directory
     std::string testDir = "test_model-read-libsvm-file/";
     bfs::create_directory(testDir);
-    std::string validModelFileName = testDir + "test_valid-model1.model";
-    svm_model *validModel = buildDummyExemplarSvmModel();
+    std::string validModelFileName = testDir + "test_valid-model-libsvm.model";
+    svm_model validModel;
     FeatureVector validSample{ 0.55, 0.70, 0.22 };
 
-    // check for generated model files
+    // check for generated model files    
     try
     {
-    logger << "ATTEMPT!" << std::endl;
-    ASSERT_LOG(svm_save_model(validModelFileName.c_str(), validModel) == 0, "Failed to create dummy model file: '" + validModelFileName + "'");
-    logger << "AFTER!" << std::endl;
-    ASSERT_LOG(bfs::exists(validModelFileName), "Couldn't find dummy model file: '" + validModelFileName + "'");
-     }
+        logger << "Generating dummy test model file for functionality evaluation..." << std::endl;
+        validModel = buildDummyExemplarSvmModel();
+        ASSERT_LOG(svm_save_model(validModelFileName.c_str(), &validModel) == 0, "Failed to create dummy model file: '" + validModelFileName + "'");
+        ASSERT_LOG(bfs::is_regular_file(validModelFileName), "Couldn't find dummy model file: '" + validModelFileName + "'");
+    }
     catch (std::exception& ex)
     {
-        logger << "THE EXCEPT: " << ex.what() << std::endl;
+        logger << "Model pre-generation for following ESVM tests should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(testDir);
+        return -1;
     }
 
     // test file loading   
@@ -1456,7 +1468,7 @@ int test_ESVM_SaveLoadModelFile_libsvm()
         logger << "Valid LIBSVM formatted model file should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -1;
+        return -2;
     }
 
     bfs::remove_all(testDir);
@@ -1471,14 +1483,16 @@ int test_ESVM_SaveLoadModelFile_binary()
     // create test model files inside test directory
     std::string testDir = "test_model-read-binary-file/";
     bfs::create_directory(testDir);
-    std::string validModelFileName = testDir + "test_valid-model.model";
-    std::string wrongModelFileName = testDir + "test_wrong-model.model";
-    svm_model *validModel = buildDummyExemplarSvmModel();
+    std::string validModelFileName = testDir + "test_valid-model-binary.model";
+    std::string wrongModelFileName = testDir + "test_wrong-model-binary.model";
+    svm_model validModel;
     FeatureVector validSample({ 0.55, 0.70, 0.22 });
 
     try
     {
-        ESVM esvmValid(validModel, "TEST-VALID");
+        logger << "Generating dummy test model file for functionality evaluation..." << std::endl;
+        validModel = buildDummyExemplarSvmModel();
+        ESVM esvmValid(&validModel, "TEST-VALID");
         ASSERT_LOG(esvmValid.saveModelFile(validModelFileName, BINARY), 
                    "Valid BINARY pre-trained model file loading should not have returned a failure status");
     }
@@ -1581,8 +1595,7 @@ int test_ESVM_SaveLoadModelFile_compare()
         double score_binary = esvmLoad_binary.predict(probe);
         ASSERT_LOG(doubleAlmostEquals(scoreRef, score_binary, 0.000001),
                    "Loaded BINARY format model file should result in same score as reference model trained from samples (scoreRef: " +
-                   std::to_string(scoreRef) + ", score_libsvm: " + std::to_string(score_binary) + ")");
-        logger << "HERE" << std::endl;
+                   std::to_string(scoreRef) + ", score_libsvm: " + std::to_string(score_binary) + ")");        
         // re-load already trained model with swapped formats and compare results
         esvmLoad_libsvm.loadModelFile(validModelFileName_binary, BINARY);        
         double score_libsvm_swap = esvmLoad_libsvm.predict(probe);
@@ -2600,7 +2613,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     minNorm = minFeatures[d];
                     maxNorm = minFeatures[d];
                     #elif TEST_FEATURES_NORMALIZATION_MODE == 3 // Across features and across patches normalization
-                    int nFeatures = fvPositiveSamples[0][0][0][0].size();
+                    size_t nFeatures = fvPositiveSamples[0][0][0][0].size();
                     minNorm = FeatureVector(nFeatures, minFeatures[d]);
                     maxNorm = FeatureVector(nFeatures, maxFeatures[d]);
                     #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
@@ -2733,7 +2746,7 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     eval_PerformanceClassificationScores(descriptorScores, probeGroundTruth[pos]);
                 }
 
-                int nCombined = nDescriptors * nPatches;
+                size_t nCombined = nDescriptors * nPatches;
                 for (size_t prb = 0; prb < nProbes; prb++)
                 {
                     // average of score accumulation for fusion per descriptor
@@ -2923,7 +2936,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
             eval_PerformanceClassificationScores(patchFusionScores, probeGroundTruths);
         }
         
-        int nCombined = nDescriptors * nPatches;
+        size_t nCombined = nDescriptors * nPatches;
         for (size_t prb = 0; prb < nProbes; prb++)
         {
             descriptorFusionScores[prb] /= (double)nDescriptors;        // Average of accumulated patch-based scores

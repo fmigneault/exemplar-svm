@@ -25,7 +25,7 @@ std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
 
 /* Test utilities */
 svm_node buildNode(int index, double value);
-svm_model* buildDummyExemplarSvmModel();
+svm_model buildDummyExemplarSvmModel();
 bool checkPathEndSlash(std::string path);
 
 /* Utilities */
