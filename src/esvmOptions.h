@@ -31,6 +31,13 @@
         2: normalization z-score
 */
 #define ESVM_SCORE_NORMALIZATION_MODE 2
+/*
+    ESVM_PARSER_MODE:
+        0: stringstream
+        1: std strtol/strtod
+        2: simple parser (faster strtod)
+*/
+#define ESVM_READ_LIBSVM_PARSER_MODE 1
 
 /* ------------------------------------------------------------
    Test options - Enable/Disable a specific test execution

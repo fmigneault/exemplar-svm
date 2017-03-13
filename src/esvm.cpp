@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -438,7 +439,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
             int index = 0;
             double value = 0;
             FeatureVector features;
-
+            
             // loop each part delimited by a space
             while (ssline)
             {
@@ -447,8 +448,18 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                 {
                     // Reading label
                     ASSERT_THROW(spart.find(delimiter) == std::string::npos, "Could not find class label before sample of specified file");
+                    
+                    #if ESVM_READ_LIBSVM_PARSER_MODE == 0
                     int target = 0;
                     std::istringstream(spart) >> target;
+                    #elif ESVM_READ_LIBSVM_PARSER_MODE == 1
+                    int target = std::strtol(spart.c_str(), NULL, 10);
+                    #elif ESVM_READ_LIBSVM_PARSER_MODE == 2
+                    int target = parse(spart.c_str());
+                    #else
+                    throw std::runtime_error("Undefined parser mode");
+                    #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
+
                     ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS, "Invalid class label specified in file for ESVM");
                     targets.push_back(target);
                     firstPart = false;
@@ -458,8 +469,22 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     // Reading features
                     size_t offset = spart.find(delimiter);
                     ASSERT_THROW(offset != std::string::npos, "Failed to find feature 'index:value' delimiter");
+                    
+                    #if ESVM_READ_LIBSVM_PARSER_MODE == 0
                     std::istringstream(spart.substr(0, offset)) >> index;
                     std::istringstream(spart.erase(0, offset + offDelim)) >> value;
+                    #elif ESVM_READ_LIBSVM_PARSER_MODE == 1
+                    index = std::strtol(spart.substr(0, offset).c_str(), NULL, 10);
+                    value = std::strtod(spart.erase(0, offset + offDelim).c_str(), NULL);
+                    #elif ESVM_READ_LIBSVM_PARSER_MODE == 2
+                    index = parse(spart.substr(0, offset).c_str());
+                    value = parse(spart.erase(0, offset + offDelim).c_str());
+                    logstream logger(LOGGER_FILE);
+                    logger << "INDEX: " << std::setprecision(12) << index << std::endl;
+                    logger << "value: " << std::setprecision(12) << value << std::endl;
+                    #else
+                    throw std::runtime_error("Undefined parser mode");
+                    #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
 
                     // end reading index:value if termination index found (-1), otherwise check if still valid index
                     if (index == -1) break;

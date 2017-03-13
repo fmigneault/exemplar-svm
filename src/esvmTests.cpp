@@ -1354,7 +1354,7 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
 {
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
     ASSERT_LOG(nFeatures > 0, "Number of features must be greater than zero");
-
+    
     // generate test samples file
     logstream logger(LOGGER_FILE);    
     logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
@@ -1368,14 +1368,16 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
         // start reading to evaluate timing        
         std::vector<FeatureVector> samples;
         std::vector<int> targetOutputs;
-        double t0 = getTimeNow();
+        TP t0 = getTimeNowPrecise();
         ESVM::readSampleDataFile(timingSampleFileName_libsvm, samples, targetOutputs, LIBSVM);
-        double dt = getDeltaTime(getTimeNow(), t0, false);
-        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " << dt << "s" << std::endl;
-        double t1 = getTimeNow();
+        double dt = getDeltaTimePrecise(t0, MILLISECONDS);
+        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " 
+               << std::setprecision(12) << dt << "ms" << std::endl;
+        TP t1 = getTimeNowPrecise();
         ESVM::readSampleDataFile(timingSampleFileName_binary, samples, targetOutputs, BINARY);
-        dt = getDeltaTime(getTimeNow(), t1, false);
-        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " << dt << "s" << std::endl;
+        dt = getDeltaTimePrecise(t1, MILLISECONDS);
+        logger << "Elapsed time to read file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " 
+               << std::setprecision(12) << dt << "ms" << std::endl;
         bfs::remove(timingSampleFileName_libsvm);
         bfs::remove(timingSampleFileName_binary);
     }
@@ -1406,14 +1408,16 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
         generateDummySamples(samples, targetOutputs, nSamples, nFeatures);
 
         // start writing to evaluate timing
-        double t0 = getTimeNow();
+        TP t0 = getTimeNowPrecise();
         ESVM::writeSampleDataFile(timingSampleFileName_libsvm, samples, targetOutputs, LIBSVM);
-        double dt = getDeltaTime(getTimeNow(), t0, false);
-        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " << dt << "s" << std::endl;
-        double t1 = getTimeNow();
+        double dt = getDeltaTimePrecise(t0, MILLISECONDS);
+        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (LIBSVM): " 
+               << std::setprecision(12) << dt << "ms" << std::endl;
+        TP t1 = getTimeNowPrecise();
         ESVM::writeSampleDataFile(timingSampleFileName_binary, samples, targetOutputs, BINARY);
-        dt = getDeltaTime(getTimeNow(), t1, false);
-        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " << dt << "s" << std::endl;
+        dt = getDeltaTimePrecise(t1, MILLISECONDS);
+        logger << "Elapsed time to write file with " << nSamples << " samples of " << nFeatures << " features (BINARY): " 
+               << std::setprecision(12) << dt << "ms" << std::endl;
         bfs::remove(timingSampleFileName_libsvm);
         bfs::remove(timingSampleFileName_binary);
     }
