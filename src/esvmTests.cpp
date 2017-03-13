@@ -73,14 +73,14 @@ svm_model buildDummyExemplarSvmModel()
         logstream logger(LOGGER_FILE);
         logger << "Error occured when building the dummy ESVM model for testing" << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
-        delete[]model->rho;
-        delete[]model->sv_coef;
-        delete[]model->label;
-        delete[]model->nSV;
+        delete[] model->rho;
+        delete[] model->sv_coef;
+        delete[] model->label;
+        delete[] model->nSV;
         for (int sv = model->l; sv > 0; sv--)
-            delete[]model->SV[sv];
-        delete[]model->SV;
-        delete model;        
+            delete[] model->SV[sv];
+        delete[] model->SV;
+        delete model; 
         throw ex;  // re-throw
     }
     return *model;

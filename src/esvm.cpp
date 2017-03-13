@@ -618,7 +618,7 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
 
     logstream logger(LOGGER_FILE);
 
-    svm_problem prob;    
+    svm_problem prob;
     prob.l = samples.size();    // number of training data        
     
     // convert and assign training vectors and corresponding target values for classification 
@@ -693,6 +693,11 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
         throw ex;
     }
 
+    // free problem    
+    delete[] prob.y;
+    for (int s = 0; s < prob.l; ++s)
+        delete[] prob.x[s];
+    
     /// ################################################ DEBUG
     logger << "ESVM trained with parameters:" << std::endl
            << "   targetID:    " << targetID << std::endl

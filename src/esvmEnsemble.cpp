@@ -29,12 +29,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     size_t dimsPositives[2]{ nPatches, nPositives };
     xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
 
-    // negative samples    
-    size_t dimsNegatives[2]{ nPatches, 0 };                             // number of negatives unknown (loaded from file)
-    xstd::mvector<2, FeatureVector> negativeSamples(dimsNegatives);
-
-    // Exemplar-SVM
-    ESVM FileLoaderESVM;
+    // Exemplar-SVM   
     EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)    
 
     // load positive target still images, extract features and normalize
@@ -47,16 +42,20 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
-    std::cout << "Loading negative samples from files..." << std::endl;
+    std::cout << "Loading negative samples from files..." << std::endl;    
     for (size_t p = 0; p < nPatches; p++)
-        FileLoaderESVM.readSampleDataFile(negativesDir + "negatives-hog-patch" + std::to_string(p) +
-                                          sampleFileExt, negativeSamples[p], sampleFileFormat);
-    // training
-    std::cout << "Training ESVM with positives and negatives..." << std::endl;
-    for (size_t p = 0; p < nPatches; p++)
+    {
+        /* note: 
+                we re-assign the negative samples per patch individually and sequentially as loading them all 
+                simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
+        */
+        std::vector<FeatureVector> negativePatchSamples;
+        ESVM::readSampleDataFile(negativesDir + "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/
+                                 sampleFileExt, negativePatchSamples, sampleFileFormat);
+        std::cout << "Training ESVM with positives and negatives..." << std::endl;
         for (size_t pos = 0; pos < nPositives; pos++)
-            EoESVM[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
-
+            EoESVM[p][pos] = ESVM({ positiveSamples[p][pos] }, negativePatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+    }
 }
 
 void esvmEnsemble::setConstants()
@@ -69,14 +68,23 @@ void esvmEnsemble::setConstants()
     nBins = 3;
     hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
 
-    hogHardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test with SAMAN pre-generated files
-    hogHardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
+    ///hogHardcodedFoundMin = 0;
+    ///hogHardcodedFoundMax = 0.675058;
 
-    ///scoreHardcodedFoundMin = -1.578030;     // Min found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-    ///scoreHardcodedFoundMax = -0.478968;     // Max found using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
+    // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
+    // feature extraction is executed using the same pre-process as on-line execution
+    hogHardcodedFoundMin = 0;
+    hogHardcodedFoundMax = 0.682703;
+
+    // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
+    ///scoreHardcodedFoundMin = -1.578030;
+    ///scoreHardcodedFoundMax = -0.478968;
+    
+    // found min/max using FAST-DT live test 
     scoreHardcodedFoundMin = 0.085;         // Testing
-    ///scoreHardcodedFoundMin = -0.638025;     // Min found using FAST-DT live test 
-    scoreHardcodedFoundMax =  0.513050;     // Max found using FAST-DT live test 
+    ///scoreHardcodedFoundMin = -0.638025;
+    scoreHardcodedFoundMax =  0.513050;
 
     scoresHardCodedFoundMean = -1.26193;
     scoresHardCodedFoundStdDev = 0.247168;
