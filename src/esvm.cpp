@@ -83,8 +83,54 @@ ESVM::ESVM(svm_model* trainedModel, std::string id)
 
 ESVM::~ESVM()
 {
-    if (isModelTrained())
-        svm_free_and_destroy_model(&esvmModel);
+    freeModel(&esvmModel);    
+}
+
+/*
+    Free model allocated memory    
+*/
+void ESVM::freeModel(svm_model** model)
+{
+    /// TODO 
+    /// need to properly handle cases according to 'malloc'/'free' or 'new[]'/'delete[]'
+    /// refer to 'svm_free_and_destroy_model' for data to free
+    
+    /*
+    logstream logger(LOGGER_FILE);
+    logger << "DELETE" << std::endl;
+    if (model != nullptr && *model != nullptr && (*model)->free_sv)
+    {
+        logger << "DELETE INSIDE" << std::endl;
+        svm_model* pModel = *model;
+        
+        logger << "DELETE SV[]" << std::endl;
+        if (pModel->SV != nullptr)
+            for (int sv = 0; sv < pModel->l; ++sv)
+                delete[] pModel->SV[sv];
+        logger << "DELETE SV" << std::endl;
+        delete[] pModel->SV;
+        logger << "DELETE sv_coef[]" << std::endl;
+        if (pModel->sv_coef != nullptr)
+            for (int c = 0; c < pModel->nr_class - 1; ++c)
+                delete[] pModel->sv_coef[c];
+        logger << "DELETE sv_coef" << std::endl;
+        delete[] pModel->sv_coef;
+        logger << "DELETE rho" << std::endl;
+        delete[] pModel->rho;
+        logger << "DELETE label" << std::endl;
+        delete[] pModel->label;
+        logger << "DELETE probA" << std::endl;
+        delete[] pModel->probA;
+        logger << "DELETE probB" << std::endl;
+        delete[] pModel->probB;
+        logger << "DELETE sv_indices" << std::endl;
+        delete[] pModel->sv_indices;
+        logger << "DELETE nSV" << std::endl;
+        delete[] pModel->nSV;
+        logger << "NULLPTR" << std::endl;
+        *model = nullptr;
+    }
+    */
 }
 
 /*
@@ -167,7 +213,7 @@ bool ESVM::checkBinaryHeader(std::ifstream& binaryFileStream, std::string header
 bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::string id)
 {
     if (!isModelTrained())
-        svm_free_and_destroy_model(&esvmModel);
+        freeModel(&esvmModel);
     
     targetID = (id == "") ? bfs::path(modelFilePath).stem().string() : id;
 
@@ -261,7 +307,7 @@ void ESVM::loadModelFile_binary(std::string filePath)
     {
         if (modelFile.is_open())
             modelFile.close();
-        svm_free_and_destroy_model(&model);
+        freeModel(&model);
         throw ex;
     }    
 }

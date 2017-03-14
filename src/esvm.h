@@ -8,6 +8,18 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+/*
+    indicates how the model memory has to be released according to the way it was allocated
+    to ensure properly handling cases according to 'malloc'/'free' or 'new[]'/'delete[]'
+*/
+enum ModelFreeType
+{
+    TRAIN_MODEL_LIBSVM = 0,     // model obtained from 'trainModel'/'readSampleDataFile_libsvm' -> 'svm_train'  (matches libsvm's value)
+    LOAD_MODEL_LIBSVM = 1,      // model obtained from 'loadModelFile_libsvm' -> 'svm_load_model'               (matches libsvm's value)
+    TRAIN_MODEL_BINARY = 2,     // model obtained from 'trainModel'/'readSampleDataFile_binary' -> 'svm_train'
+    LOAD_MODEL_BINARY = 3       // model obtained from 'loadModelFile_binary' -> directly set parameters
+};
+
 class ESVM
 {
 public:
@@ -32,8 +44,9 @@ public:
     std::string targetID;
 
 private:
+    static void freeModel(svm_model** model);
     static bool checkBinaryHeader(std::ifstream& binaryFileStream, std::string header);
-    static void checkModelParameters_assert(svm_model* model);
+    static void checkModelParameters_assert(svm_model* model);    
     void trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
     static std::vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
     void loadModelFile_libsvm(std::string filePath);
@@ -45,8 +58,8 @@ private:
     static void writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
     static FeatureVector getFeatureVector(svm_node* features);
     static svm_node* getFeatureNodes(FeatureVector features);
-    static svm_node* getFeatureNodes(double* features, int featureCount);
-    svm_model* esvmModel = nullptr;    
+    static svm_node* getFeatureNodes(double* features, int featureCount);    
+    svm_model* esvmModel = nullptr;
 };
 
 #endif/*ESVM_LIBSVM_H*/
