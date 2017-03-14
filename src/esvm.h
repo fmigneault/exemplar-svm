@@ -8,6 +8,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include <memory>
+
 class ESVM
 {
 public:
@@ -16,7 +18,7 @@ public:
     ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");  
-    ~ESVM();
+    /*~ESVM();*/
     bool isModelTrained();
     static bool checkModelParamers(svm_model* model);
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
@@ -32,7 +34,6 @@ public:
     std::string targetID;
 
 private:
-    static void freeModel(svm_model** model);
     static bool checkBinaryHeader(std::ifstream& binaryFileStream, std::string header);
     static void checkModelParameters_assert(svm_model* model);    
     void trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
@@ -46,8 +47,9 @@ private:
     static void writeSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, std::vector<int>& targetOutputs);
     static FeatureVector getFeatureVector(svm_node* features);
     static svm_node* getFeatureNodes(FeatureVector features);
-    static svm_node* getFeatureNodes(double* features, int featureCount);    
-    svm_model* esvmModel = nullptr;
+    static svm_node* getFeatureNodes(double* features, int featureCount);
+    void resetModel(svm_model* model = nullptr);
+    std::shared_ptr<svm_model> esvmModel = nullptr;
 };
 
 #endif/*ESVM_LIBSVM_H*/

@@ -77,78 +77,25 @@ ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
 ESVM::ESVM(svm_model* trainedModel, std::string id)
 {
     checkModelParameters_assert(trainedModel);
-    esvmModel = trainedModel;
+    resetModel(trainedModel);
     targetID = id;
 }
 
-ESVM::~ESVM()
+/*ESVM::~ESVM()
 {
-    ///if (isModelTrained())
-    ///    freeModel(&esvmModel);
-}
-
-/*
-    Free model allocated memory    
-*/
-void ESVM::freeModel(svm_model** model)
-{
-    return;
-    /// TODO 
-    /// need to properly handle cases according to 'malloc'/'free' or 'new[]'/'delete[]'
-    /// refer to 'svm_free_and_destroy_model' for data to free
-    
     logstream logger(LOGGER_FILE);
-    logger << "DELETE" << std::endl;
-    if (model != nullptr && *model != nullptr)
-    {
-        logger << "DELETE INSIDE" << std::endl;        
-        svm_model* pModel = *model;
-        logger << "TYPE: " << std::endl;
-        logger << pModel->free_sv << std::endl;
-        logger << "PARAM: " << &pModel->param << std::endl;
-        logger << "PARAM.weight_label: " << pModel->param.weight_label << std::endl;
-        logger << "PARAM.weight: " << pModel->param.weight << std::endl;
-        if (pModel->free_sv == TRAIN_MODEL_LIBSVM || pModel->free_sv == TRAIN_MODEL_BINARY)
-            svm_destroy_param(&(pModel->param));   
-        logger << "AFTER DESTROY PARAM- CONTENTS?" << std::endl;
-        if (pModel->free_sv == TRAIN_MODEL_LIBSVM || pModel->free_sv == TRAIN_MODEL_BINARY || pModel->free_sv == LOAD_MODEL_LIBSVM)
-        {
-            svm_free_model_content(pModel);
-            logger << "DONE CONTENT" << std::endl;
-            delete pModel;
-        }
-        
-        if (pModel->free_sv == LOAD_MODEL_BINARY)
-        {
-            logger << "DELETE SV[]" << std::endl;
-            if (pModel->SV != nullptr)
-                for (int sv = 0; sv < pModel->l; ++sv)
-                    delete[] pModel->SV[sv];
-            logger << "DELETE SV" << std::endl;
-            delete[] pModel->SV;
-            logger << "DELETE sv_coef[]" << std::endl;
-            if (pModel->sv_coef != nullptr)
-                for (int c = 0; c < pModel->nr_class - 1; ++c)
-                    delete[] pModel->sv_coef[c];
-            logger << "DELETE sv_coef" << std::endl;
-            delete[] pModel->sv_coef;
-            logger << "DELETE rho" << std::endl;
-            delete[] pModel->rho;
-            logger << "DELETE label" << std::endl;
-            delete[] pModel->label;
-            logger << "DELETE probA" << std::endl;
-            delete[] pModel->probA;
-            logger << "DELETE probB" << std::endl;
-            delete[] pModel->probB;
-            logger << "DELETE sv_indices" << std::endl;
-            delete[] pModel->sv_indices;
-            logger << "DELETE nSV" << std::endl;
-            delete[] pModel->nSV;
-            logger << "NULLPTR" << std::endl;
-            delete pModel;
-            *model = nullptr;
-        }
-    }
+    logger << "BEFORE FREE MODEL REF: " << isModelTrained() << std::endl;
+    if (isModelTrained())
+        svm_free_model_content(model.p);
+    logger << "AFTER CONTENT FREE - DELETE MODEL" << std::endl;
+    delete model;
+}*/
+
+void ESVM::resetModel(svm_model* model)
+{
+    ///if (esvmModel)
+    ///    svm_free_model_content(esvmModel.get());
+    esvmModel.reset(model);
 }
 
 /*
@@ -186,7 +133,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     ASSERT_THROW(model->probB == nullptr, "Reference of probability estimate parameter 'probB' not null for ESVM not using probability prediction");
     #endif/*ESVM_USE_PREDICT_PROBABILITY*/
 
-    if (model->free_sv == TRAIN_MODEL_BINARY || model->free_sv == TRAIN_MODEL_LIBSVM)        // trained from samples
+    if (model->free_sv == 0)        // trained from samples
     {
         ASSERT_THROW(model->param.C > 0, "ESVM model cost must be greater than zero");
         int nWeights = model->param.nr_weight;
@@ -199,7 +146,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
             ASSERT_THROW(model->param.weight_label[1] == model->label[1], "ESVM model weight label [1] must match label [1]");
         }
     }
-    else if (model->free_sv == LOAD_MODEL_BINARY || model->free_sv == LOAD_MODEL_LIBSVM)   // loaded from pre-trained file
+    else if (model->free_sv == 1)   // loaded from pre-trained file
     {
         ASSERT_THROW(model->rho != nullptr, "ESVM model constant for decision function must be specified");
         ASSERT_THROW(model->sv_coef != nullptr, "ESVM model coefficients container for decision functions must be specified");
@@ -215,14 +162,15 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     Verifies if the specified header can be found at the start of a binary file
 */
 bool ESVM::checkBinaryHeader(std::ifstream& binaryFileStream, std::string header)
-{    
+{
     if (!binaryFileStream.is_open()) return false;
-    const char *headerChar = header.c_str();
     int headerLength = header.size();
     char *headerCheck = new char[headerLength + 1];     // +1 for the terminating '\0'
     binaryFileStream.read(headerCheck, headerLength);
     headerCheck[headerLength] = '\0';                   // avoids comparing different strings because '\0' is not found
-    return (std::string(headerChar) == std::string(headerCheck));
+    bool isFound = (header == std::string(headerCheck));
+    delete headerCheck;
+    return isFound;
 }
 
 /*
@@ -230,13 +178,10 @@ bool ESVM::checkBinaryHeader(std::ifstream& binaryFileStream, std::string header
 */
 bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::string id)
 {
-    if (!isModelTrained())
-        freeModel(&esvmModel);
-    
-    targetID = (id == "") ? bfs::path(modelFilePath).stem().string() : id;
+    targetID = (id == "") ? modelFilePath : id;
 
     if (format == LIBSVM)
-        loadModelFile_libsvm(modelFilePath);
+        resetModel(svm_load_model(modelFilePath.c_str()));
     else if (format == BINARY)
         loadModelFile_binary(modelFilePath);
     else
@@ -258,9 +203,8 @@ void ESVM::loadModelFile_libsvm(std::string filePath)
         modelFile.close();
     if (!isBinary)
     {
-        esvmModel = svm_load_model(filePath.c_str());
-        ASSERT_THROW(esvmModel == nullptr || esvmModel->free_sv == LOAD_MODEL_LIBSVM,
-                     "Model loaded from LIBSVM file should either be uninitialized or set as loaded from 'svm_load'");
+        resetModel(svm_load_model(filePath.c_str()));
+        ASSERT_THROW(esvmModel == nullptr, "Model loaded from LIBSVM file should either be uninitialized or set as loaded from 'svm_load'");
     }
 }
 
@@ -279,15 +223,16 @@ void ESVM::loadModelFile_binary(std::string filePath)
     {
         // check for header
         ASSERT_THROW(checkBinaryHeader(modelFile, ESVM_BINARY_HEADER_MODEL), "Expected BINARY file header was not found");
-        
+
         // set assumed parameters and prepare containers
-        model = new svm_model;
-        svm_parameter param;
+        resetModel(new svm_model);
+        svm_parameter param;        
         param.svm_type = C_SVC;
         param.kernel_type = LINEAR;
         model->param = param;
-        model->nr_class = 2;
-        model->sv_coef = new double*[model->nr_class - 1];
+        model->nr_class = 2;        
+        model->rho = new double[1];                 // 1 decision function parameter
+        model->sv_coef = new double*[1];            // 1 x N sv coefficients for 1 decision function
         model->label = new int[model->nr_class];
         model->nSV = new int[model->nr_class];
 
@@ -321,15 +266,16 @@ void ESVM::loadModelFile_binary(std::string filePath)
             ASSERT_THROW(modelFile.good(), "Invalid file stream status when reading model");
         }
 
-        model->free_sv = LOAD_MODEL_BINARY; // flag model obtained from pre-trained BINARY file instead of trained from samples or LIBSVM
+        model->free_sv = 1;     // flag model obtained from pre-trained file instead of trained from samples
         modelFile.close();
-        esvmModel = model;
+        resetModel(model);
     }
     catch (std::exception& ex)
     {
         if (modelFile.is_open())
             modelFile.close();
-        freeModel(&model);
+        if (model)
+            svm_free_model_content(model);
         throw ex;
     }    
 }
@@ -342,7 +288,7 @@ bool ESVM::saveModelFile(std::string modelFilePath, FileFormat format)
     ASSERT_THROW(isModelTrained(), "Cannot save an untrained model");
 
     if (format == LIBSVM)
-        return svm_save_model(modelFilePath.c_str(), esvmModel) == 0;   // 0 if success, -1 otherwise
+        return svm_save_model(modelFilePath.c_str(), esvmModel.get()) == 0;     // 0 if success, -1 otherwise
     else if (format == BINARY)
     {        
         saveModelFile_binary(modelFilePath);
@@ -448,6 +394,7 @@ void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVe
         samplesFile.read(headerCheck, headerLength);
         headerCheck[headerLength] = '\0';               // avoids comparing different strings because '\0' is not found
         ASSERT_THROW(std::string(headerChar) == std::string(headerCheck), "Expected BINARY samples data file header was not found");
+        delete headerCheck;
     
         // check for samples and feature counts
         int nSamples = 0;   // warning: format 'int' required, not 'size_t' for matching binary dimension
@@ -753,14 +700,13 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     logger << "ESVM training..." << std::endl;
     try
     {
-        esvmModel = svm_train(&prob, &param);
+        resetModel(svm_train(&prob, &param));
     }
     catch (std::exception& ex)
     {
         logger << "Exception occurred during ESVM training: " << ex.what() << std::endl;
         throw ex;
     }
-    ASSERT_THROW(esvmModel->free_sv == TRAIN_MODEL_LIBSVM, "Model should be marked as trained from LIBSVM samples using 'svm_train'");
 
     // free problem    
     delete[] prob.y;
@@ -881,7 +827,7 @@ double ESVM::predict(FeatureVector probeSample)
     // and that we have only 2 classes, we have only one decision value (positive vs. negative)
     int nClass = esvmModel->nr_class;
     double* decisionValues = new double[nClass*(nClass - 1) / 2];
-    svm_predict_values(esvmModel, getFeatureNodes(probeSample), decisionValues);
+    svm_predict_values(esvmModel.get(), getFeatureNodes(probeSample), decisionValues);
     return decisionValues[0];
 }
 

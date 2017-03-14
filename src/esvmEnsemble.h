@@ -20,7 +20,7 @@ public:
     std::vector<double> predict(const cv::Mat roi);
     inline size_t getPositiveCount() { return enrolledPositiveIDs.size(); }
     inline size_t getPatchCount() { return patchCounts.area(); }
-    inline std::string getPositiveID(int positiveIndex);
+    inline std::string getPositiveID(int positiveIndex);    
 
 private:
     void setConstants();    
