@@ -8,6 +8,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include <memory>
+
 class ESVM
 {
 public:
@@ -16,7 +18,7 @@ public:
     ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");  
-    ~ESVM();
+    /*~ESVM();*/
     bool isModelTrained();
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
                                    std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
@@ -42,7 +44,8 @@ private:
     static FeatureVector getFeatureVector(svm_node* features);
     static svm_node* getFeatureNodes(FeatureVector features);
     static svm_node* getFeatureNodes(double* features, int featureCount);
-    svm_model* model = nullptr;    
+    void resetModel(svm_model* model = nullptr);
+    std::shared_ptr<svm_model> esvmModel = nullptr;
 };
 
 #endif/*ESVM_LIBSVM_H*/
