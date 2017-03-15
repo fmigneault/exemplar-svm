@@ -30,6 +30,9 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
 
 int create_negatives()
 {
+    int err = NO_ERROR;
+    #if PROC_ESVM_GENERATE_SAMPLE_FILES
+
     logstream logger("negatives-output.txt");
     
     // outputs
@@ -221,9 +224,13 @@ int create_negatives()
                     << "BINARY fmt?:   " << writeBinaryFormat << std::endl
                     << "LIBSVM fmt?:   " << writeLibsvmFormat << std::endl
                     << "all Neg IDs:   " << negativeSamplesID << std::endl;
-    
-    logger << "DONE!" << std::endl;
-    return 0;
+
+    #else/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
+    err = SKIPPED;
+    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
+
+    displayTestStatus(__func__, err);
+    return err;
 }
 
 int create_probes(std::string positives, std::string negatives)

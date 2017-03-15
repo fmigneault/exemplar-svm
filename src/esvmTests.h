@@ -23,18 +23,26 @@ const int INDIVIDUAL_QUANTITY = 30;
 std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id = 0);
 std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
 
+/* Types */
+enum TestStatus     // errors should be defined as negative values (-#) to ensure 'RETURN_ERROR' functionality
+{
+    NO_ERROR    = 0,
+    SKIPPED     = 1,
+    OBSOLETE    = 2
+};
+
 /* Test utilities */
 svm_node buildNode(int index, double value);
 svm_model buildDummyExemplarSvmModel();
 bool checkPathEndSlash(std::string path);
-
-/* Utilities */
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
+void displayTestStatus(std::string testName, int error = NO_ERROR);
+void displayHeader();
+void displayOptions();
 
 /* Tests */
-int test_outputOptions();
 int test_imagePaths();
 int test_imagePatchExtraction();
 int test_imagePreprocessing();
@@ -51,14 +59,19 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures);
 int test_ESVM_SaveLoadModelFile_libsvm();
 int test_ESVM_SaveLoadModelFile_binary();
 int test_ESVM_SaveLoadModelFile_compare();
+int test_ESVM_ModelMemoryDealloc();
+int test_ESVM_ModelMemoryReset();
+
+/* Procedures */
+int proc_ReadDataFiles();
 int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
 int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches);
 int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
-int test_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorkingProcedure();
+int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);

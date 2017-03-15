@@ -75,22 +75,35 @@
 #define TEST_PERF_EVAL_FUNCTIONS 1
 // Test MATLAB code procedure (obsolete)
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
+// Test classification results with simple XOR data
+#define TEST_ESVM_BASIC_CLASSIFICATION 0
 // Test alternative MATLAB procedure (obsolete)
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-// Test functionality of LIBSVM/BINARY samples file reading and parsing to feature vectors
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
 // Evaluate timing performance for reading and parsing LIBSVM/BINARY samples file
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 1
+// Test functionality of BINARY/LIBSVM samples file reading and parsing to feature vectors
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 1
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM 1
 // Test functionality of samples file reading LIBSVM/BINARY format comparison
-#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
+#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 1
 // Evaluate timing performance for writing samples file
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 1
 // Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER 0
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY 1
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 1
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1
+// Test memory deallocation of various model parameters on reset or destructor calls
+#define TEST_ESVM_MODEL_MEMORY_DEALLOC 1
+// Test expected functionalities of model with reset/changed parameters
+#define TEST_ESVM_MODEL_MEMORY_RESET 1
+
+/* -------------------------------------------------------------------
+    Process options - Enable/Disable a specific procedure execution
+------------------------------------------------------------------- */
+
 /*   
-    TEST_READ_DATA_FILES:
+    PROC_READ_DATA_FILES:
         (0)   0b00000000:   no test 
         (1)   0b00000001:   images + extract features (whole-image) 
         (2)   0b00000010:   images + extract features (patch-based)
@@ -107,31 +120,28 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define TEST_READ_DATA_FILES 0b00000000
+#define PROC_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
-#define TEST_WRITE_DATA_FILES 1
+#define PROC_WRITE_DATA_FILES 1
+
 // Test training and testing using TITAN reference images against ChokePoint negatives
-#define TEST_ESVM_TITAN 0
+#define PROC_ESVM_TITAN 0
 /*
-    TEST_ESVM_SAMAN:
+    PROC_ESVM_SAMAN:
         0: not run
         1: run with PCA feature vectors
         2: run with raw feature vectors
         3: run with raw feature vectors obtained from pre-transposed images
         4: run with raw feature vectors obtained from 'FullChokePoint' test (pre-feature norm overall, post-fusion norm)
 */
-#define TEST_ESVM_SAMAN 0
+#define PROC_ESVM_SAMAN 0
 /*
-    TEST_ESVM_WORKING_PROCEDURE:
+    PROC_ESVM_WORKING_SIMPLIFIED:
         0: not run
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define TEST_ESVM_WORKING_PROCEDURE 0
-
-/* ------------------------------------------------------------
-Process options - Enable/Disable a specific work execution
------------------------------------------------------------- */
+#define PROC_ESVM_WORKING_SIMPLIFIED 0
 
 // Generate sample files using various enabled parameters
 #define PROC_ESVM_GENERATE_SAMPLE_FILES 0
