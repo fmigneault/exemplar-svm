@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
             unit tests
         --------------- */
 
-        RETURN_ERROR(test_imagePaths());
+        RETURN_ERROR(test_paths());
         RETURN_ERROR(test_imagePatchExtraction());
         RETURN_ERROR(test_imagePreprocessing());
         RETURN_ERROR(test_multiLevelVectors());

@@ -52,7 +52,7 @@ int create_negatives()
     double scaleFactor = 1.01;
     int nmsThreshold = 2;
     cv::Size minSize(20, 20), maxSize = imageSize;
-    std::string faceCascadeFilePath = "C:/Libraries/opencv/opencv_3_2_0/sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
+    std::string faceCascadeFilePath = sourcesOpenCV + "sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
     assert(bfs::is_regular_file(faceCascadeFilePath));
 
     // feature extraction HOG parameters

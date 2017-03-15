@@ -190,10 +190,10 @@ void displayOptions()
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl;
 }
 
-int test_imagePaths()
+int test_paths()
 {
     int err = NO_ERROR;
-    #if TEST_IMAGE_PATHS
+    #if TEST_PATHS
 
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
@@ -204,6 +204,9 @@ int test_imagePaths()
     ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(negativeSamplesDir), "Negative samples directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(testingSamplesDir), "Testing probe samples directory doesn't end with slash character");
+    // OpenCV
+    ASSERT_LOG(bfs::is_directory(sourcesOpenCV), "Cannot find OpenCV's root sources directory");
+    ASSERT_LOG(checkPathEndSlash(sourcesOpenCV), "OpenCV's root sources directory doesn't end with slash character");
     // ChokePoint
     ASSERT_LOG(bfs::is_directory(rootChokePointPath), "Cannot find ChokePoint root directory");
     ASSERT_LOG(bfs::is_directory(roiChokePointCroppedFacePath), "Cannot find ChokePoint cropped faces root directory");
@@ -234,9 +237,9 @@ int test_imagePaths()
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VAllImgsStillPath), "COX-S2V all image stills root directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VEyeLocaltionPath), "COX-S2V eye location root directory doesn't end with slash character");
     
-    #else/*TEST_IMAGE_PATCH_EXTRACTION*/
+    #else/*TEST_PATHS*/
     err = SKIPPED;
-    #endif/*TEST_IMAGE_PATCH_EXTRACTION*/
+    #endif/*TEST_PATHS*/
 
     displayTestStatus(__func__, err);
     return err;

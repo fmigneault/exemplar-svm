@@ -43,7 +43,7 @@ void displayHeader();
 void displayOptions();
 
 /* Tests */
-int test_imagePaths();
+int test_paths();
 int test_imagePatchExtraction();
 int test_imagePreprocessing();
 int test_multiLevelVectors();

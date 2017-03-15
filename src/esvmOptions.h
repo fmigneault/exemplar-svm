@@ -136,12 +136,12 @@
 */
 #define PROC_ESVM_SAMAN 0
 /*
-    PROC_ESVM_WORKING_SIMPLIFIED:
+    PROC_ESVM_SIMPLIFIED_WORKING:
         0: not run
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define PROC_ESVM_WORKING_SIMPLIFIED 0
+#define PROC_ESVM_SIMPLIFIED_WORKING 0
 
 // Generate sample files using various enabled parameters
 #define PROC_ESVM_GENERATE_SAMPLE_FILES 0
@@ -155,6 +155,8 @@ const std::string roiVideoImagesPath = "../img/roi/";                           
 const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
 const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
 const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
+// OpenCV
+const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
 // ChokePoint
 const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
 const std::string roiChokePointCroppedFacePath = rootChokePointPath + "Cropped face images/";   // Path of extracted 96x96 ROI from all videos 
