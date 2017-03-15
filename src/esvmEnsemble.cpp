@@ -12,6 +12,7 @@
 */
 esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs)
 { 
+    logstream logger(LOGGER_FILE);
     setConstants();
     size_t nPositives = positiveROIs.size();
     size_t nPatches = getPatchCount();
@@ -33,7 +34,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)    
 
     // load positive target still images, extract features and normalize
-    std::cout << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
+    logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
         std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts);
@@ -42,7 +43,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     }
 
     // training
-    std::cout << "Training ESVM with positives and negatives..." << std::endl;
+    logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
     {
         /* note: 
@@ -53,7 +54,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
         ESVM::readSampleDataFile(negativesDir + "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/
                                  sampleFileExt, negativePatchSamples, sampleFileFormat);
-        std::cout << "Training ESVM with positives and negatives..." << std::endl;
+        logger << "Training ESVM with positives and negatives..." << std::endl;
         for (size_t pos = 0; pos < nPositives; pos++)
             EoESVM[p][pos] = ESVM({ positiveSamples[p][pos] }, negativePatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
     }
@@ -105,25 +106,26 @@ std::string esvmEnsemble::getPositiveID(int positiveIndex)
 */
 std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a feat vector
 {
+    logstream logger(LOGGER_FILE);
     size_t nPositives = getPositiveCount();
     size_t nPatches = getPatchCount();
 
     // load probe still images, extract features and normalize
-    std::cout << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
+    logger << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
     std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts);
     for (size_t p = 0; p < nPatches; p++)
         probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
 
     // testing, score fusion, normalization
-    cout << "Testing probe samples against enrolled targets..." << std::endl;
+    logger << "Testing probe samples against enrolled targets..." << std::endl;
     xstd::mvector<1, double> classificationScores(nPositives, 0.0);
     size_t dimsProbes[2]{ nPatches, nPositives }; 
     xstd::mvector<2, double> scores(dimsProbes, 0.0);
     for (size_t pos = 0; pos < nPositives; pos++) 
     {
         for (size_t p = 0; p < nPatches; p++)
-        {                
+        {
             scores[p][pos] = EoESVM[p][pos].predict(probeSampleFeats[p]);
             classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion
         }
@@ -135,6 +137,5 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
         classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
         #endif
     }
-
     return classificationScores;
 }
