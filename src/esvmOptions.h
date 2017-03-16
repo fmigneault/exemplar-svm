@@ -79,17 +79,16 @@
 #define TEST_ESVM_BASIC_CLASSIFICATION 0
 // Test alternative MATLAB procedure (obsolete)
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-// Evaluate timing performance for reading and parsing LIBSVM/BINARY samples file
-#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 1
+// Evaluate timing performance for writing/reading and parsing LIBSVM/BINARY samples file
+#define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
+#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
 // Test functionality of BINARY/LIBSVM samples file reading and parsing to feature vectors
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 1
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM 1
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 0
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM 0
 // Test functionality of samples file reading LIBSVM/BINARY format comparison
-#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 1
-// Evaluate timing performance for writing samples file
-#define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 1
+#define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
 // Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY 1
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY 0
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 1
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1

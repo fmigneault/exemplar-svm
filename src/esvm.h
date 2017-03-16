@@ -21,7 +21,7 @@ public:
     ESVM(svm_model* trainedModel, std::string id = "");
     bool isModelTrained();
     void logModelParameters(bool displaySV = false);
-    static bool checkModelParamers(svm_model* model);    
+    static bool checkModelParameters(svm_model* model);
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, 
                                    std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
     static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);

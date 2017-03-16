@@ -27,14 +27,6 @@ std::string buildChokePointIndividualID(int id, bool withPrefixID)
     return (withPrefixID ? "ID" : "") + std::string(id > 9 ? 2 : 3, '0').append(std::to_string(id));
 }
 
-svm_node buildNode(int index, double value)
-{
-    svm_node node;
-    node.index = index;
-    node.value = value;
-    return node;
-}
-
 // builds a dummy model with all valid parameters to test read/write procedures
 svm_model buildDummyExemplarSvmModel()
 {
@@ -53,23 +45,31 @@ svm_model buildDummyExemplarSvmModel()
         model->label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
         model->nSV = new int[model->nr_class]{ 1, model->l - 1 };
         model->SV = new svm_node*[model->l];
-        model->SV[0] = new svm_node[4]{ buildNode(1, 0.50), buildNode(1, 0.75), buildNode(1, 0.25), buildNode(-1, 0) };
-        model->SV[1] = new svm_node[4]{ buildNode(1, 0.20), buildNode(1, 0.75), buildNode(1, 0.10), buildNode(-1, 0) };
-        model->SV[2] = new svm_node[4]{ buildNode(1, 0.30), buildNode(1, 0.75), buildNode(1, 0.05), buildNode(-1, 0) };
-        model->SV[3] = new svm_node[4]{ buildNode(1, 0.25), buildNode(1, 0.75), buildNode(1, 0.00), buildNode(-1, 0) };
-        model->SV[4] = new svm_node[4]{ buildNode(1, 0.15), buildNode(1, 0.75), buildNode(1, 0.15), buildNode(-1, 0) };
-        model->free_sv = 1; // considered as 'pre-trained' model, not from samples training
+        for (int sv = 0; sv < model->l; ++sv)
+        {
+            int nFeatures = 4;
+            model->SV[sv] = new svm_node[nFeatures];
+            for (int f = 0; f < nFeatures; ++f)            
+                model->SV[sv][f].index = (f == (nFeatures - 1)) ? -1 : f;            
+        }
+        model->SV[0][0].value = 0.50;   model->SV[0][1].value = 0.75;   model->SV[0][2].value = 0.25;
+        model->SV[1][0].value = 0.20;   model->SV[1][1].value = 0.75;   model->SV[1][2].value = 0.10;
+        model->SV[2][0].value = 0.30;   model->SV[2][1].value = 0.75;   model->SV[2][2].value = 0.05;
+        model->SV[3][0].value = 0.25;   model->SV[3][1].value = 0.75;   model->SV[3][2].value = 0.00;
+        model->SV[4][0].value = 0.15;   model->SV[4][1].value = 0.75;   model->SV[4][2].value = 0.15;
 
         #if ESVM_USE_PREDICT_PROBABILITY
-        model->probA = 1.2;
-        model->probB = 1.2;
+        model->param.probability = 1;
+        model->probA = new double[1]{ 1.2 };
+        model->probB = new double[1]{ 0.8 };
         #else
+        model->param.probability = 0;
         model->probA = nullptr;
         model->probB = nullptr;
         #endif/*ESVM_USE_PREDICT_PROBABILITY*/
 
-        if (!ESVM::checkModelParamers(model))
-            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");
+        /*if (!ESVM::checkModelParamers(model))
+            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");*/
     }
     catch (std::exception& ex)
     {
@@ -82,7 +82,7 @@ svm_model buildDummyExemplarSvmModel()
         delete[] model->sv_coef;
         delete[] model->label;
         delete[] model->nSV;
-        for (int sv = model->l; sv > 0; sv--)
+        for (int sv = 0; sv < model->l; ++sv)
             delete[] model->SV[sv];
         delete[] model->SV;
         delete model; 
@@ -139,7 +139,7 @@ int passThroughDisplayTestStatus(std::string testName, int error)
 {
     logstream logger(LOGGER_FILE);
     if      (error == SKIPPED)  logger << "Test '" << testName << "' skipped." << std::endl;
-    else if (error == OBSOLETE) logger << "Test '" << testName << "' skipped as considered obsolete." << std::endl;
+    else if (error == OBSOLETE) logger << "Test '" << testName << "' obsolete." << std::endl;
     else if (error == NO_ERROR) logger << "Test '" << testName << "' completed." << std::endl;    
     else                        logger << "Test '" << testName << "' failed (" << std::to_string(error) << ")." << std::endl;
     return error;
@@ -1541,9 +1541,20 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     // check for generated model files    
     try
     {
-        logger << "Generating dummy test model file for functionality evaluation..." << std::endl;
+        logger << "Generating dummy test model file (LIBSVM) for functionality evaluation..." << std::endl;
         validModel = buildDummyExemplarSvmModel();
+
+        logger << "SAVE MODEL!!!!" << std::endl;        ///TODO REMOVE
+        logger << "MODEL nSV: " << validModel.l << std::endl;        ///TODO REMOVE
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 4; j++)
+                logger << "(" << i << "," << j << ") = " << validModel.SV[i][j].index << ":" << validModel.SV[i][j].value << std::endl;        ///TODO REMOVE
+
         ASSERT_LOG(svm_save_model(validModelFileName.c_str(), &validModel) == 0, "Failed to create dummy model file: '" + validModelFileName + "'");
+
+        logger << "SAVED MODEL!!!!" << std::endl;        ///TODO REMOVE
+
+
         ASSERT_LOG(bfs::is_regular_file(validModelFileName), "Couldn't find dummy model file: '" + validModelFileName + "'");
     }
     catch (std::exception& ex)
@@ -1558,9 +1569,18 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     try
     {
         ESVM esvm;
+
+        logger << "LOAD MODEL!!!!" << std::endl;        ///TODO REMOVE
+
         esvm.loadModelFile(validModelFileName, LIBSVM, "TEST");
+
+        logger << "LOADED MODEL!!!!" << std::endl;        ///TODO REMOVE
+
         ASSERT_LOG(esvm.isModelTrained(), "Model should be trained after loading LIBSVM formatted model file");
         ASSERT_LOG(esvm.targetID == "TEST", "Target ID should have been properly set from model file loading function");
+
+        logger << "PREDICT MODEL!!!!" << std::endl;        ///TODO REMOVE
+
         esvm.predict(validSample);  // call test to ensure file loading provided a working model
     }
     catch (std::exception& ex)
@@ -1595,7 +1615,7 @@ int test_ESVM_SaveLoadModelFile_binary()
 
     try
     {
-        logger << "Generating dummy test model file for functionality evaluation..." << std::endl;
+        logger << "Generating dummy test model file (BINARY) for functionality evaluation..." << std::endl;
         validModel = buildDummyExemplarSvmModel();
         ESVM esvmValid(&validModel, "TEST-VALID");
         ASSERT_LOG(esvmValid.saveModelFile(validModelFileName, BINARY), 
@@ -1744,7 +1764,7 @@ int test_ESVM_ModelFromStructSVM()
         // verify valid model setting
         logger << "Generating dummy 'svm_model' for setting functionality evaluation..." << std::endl;
         svm_model validModel = buildDummyExemplarSvmModel();
-        ASSERT_LOG(ESVM::checkModelParamers(&validModel), "Valid SVM model paramters check should haved returned 'true' status");
+        ASSERT_LOG(ESVM::checkModelParameters(&validModel), "Valid SVM model paramters check should haved returned 'true' status");
 
         logger << "Testing ESVM model setting operation with dummy 'svm_model'..." << std::endl;
         ESVM esvm(&validModel, "TEST");
@@ -1763,7 +1783,7 @@ int test_ESVM_ModelFromStructSVM()
     try
     {
         // verify invalid model paramters
-        ASSERT_LOG(ESVM::checkModelParamers(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
+        ASSERT_LOG(ESVM::checkModelParameters(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
 
         logger << "Generating dummy 'svm_model' with invalid parameters..." << std::endl;        
         invalidModels = new svm_model[nSVM];
@@ -1796,7 +1816,7 @@ int test_ESVM_ModelFromStructSVM()
         invalidModels[14].SV = nullptr;
 
         for (size_t svm = 0; svm < nSVM; ++svm)
-            ASSERT_LOG(ESVM::checkModelParamers(&invalidModels[svm]), "Invalid SVM model paramters (svm=" + 
+            ASSERT_LOG(ESVM::checkModelParameters(&invalidModels[svm]), "Invalid SVM model paramters (svm=" +
                        std::to_string(svm) + ") check should haved returned 'false' status");        
     }
     catch (std::exception& ex)

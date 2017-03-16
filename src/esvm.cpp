@@ -124,8 +124,8 @@ void ESVM::logModelParameters(svm_model *model, std::string id, bool displaySV)
            << "   probability:  " << model->param.probability << std::endl;
     if (model->param.probability)
     {
-        logger << "   probA:        " << model->probA[0] << " | dummy check: " << model->probA[1] << std::endl
-               << "   probB:        " << model->probB[0] << " | dummy check: " << model->probB[1] << std::endl;
+        logger << "   probA:        " << (model->probA == nullptr ? "'null'" : std::to_string(model->probA[0])) << std::endl
+               << "   probB:        " << (model->probB == nullptr ? "'null'" : std::to_string(model->probB[0])) << std::endl;
     }
     logger << "   W mode:       " << ESVM_WEIGHTS_MODE << std::endl
            << "   nr W:         " << model->param.nr_weight << std::endl
@@ -153,7 +153,7 @@ void ESVM::logModelParameters(svm_model *model, std::string id, bool displaySV)
 /*
     Verifies that the specified 'svm_model' parameters are adequately set to be employed by the ESVM class
 */
-bool ESVM::checkModelParamers(svm_model* model) 
+bool ESVM::checkModelParameters(svm_model* model) 
 { 
     try { checkModelParameters_assert(model); }
     catch (...) { return false; }
@@ -178,9 +178,11 @@ void ESVM::checkModelParameters_assert(svm_model* model)
                  "ESVM model labels must be set to expected distinct positive and negative class values");
 
     #if ESVM_USE_PREDICT_PROBABILITY
+    ASSERT_THROW(model->param.probability == 1, "Probability option disabled when it should be set to '1'");
     ASSERT_THROW(model->probA != nullptr, "Reference of probability estimate parameter 'probA' not specified for ESVM using probability prediction");
     ASSERT_THROW(model->probB != nullptr, "Reference of probability estimate parameter 'probB' not specified for ESVM using probability prediction");
     #else
+    ASSERT_THROW(model->param.probability == 0, "Probability option enabled when it should be set to '0'");
     ASSERT_THROW(model->probA == nullptr, "Reference of probability estimate parameter 'probA' not null for ESVM not using probability prediction");
     ASSERT_THROW(model->probB == nullptr, "Reference of probability estimate parameter 'probB' not null for ESVM not using probability prediction");
     #endif/*ESVM_USE_PREDICT_PROBABILITY*/
@@ -319,8 +321,11 @@ void ESVM::loadModelFile_binary(std::string filePath)
             ASSERT_THROW(modelFile.good(), "Invalid file stream status when reading model");
         }
 
+        model->param.probability = ESVM_USE_PREDICT_PROBABILITY;
+
         model->free_sv = 1;     // flag model obtained from pre-trained file instead of trained from samples
         modelFile.close();
+        checkModelParameters_assert(model);
         resetModel(model);
     }
     catch (std::exception& ex)
@@ -768,6 +773,10 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
 
 bool ESVM::isModelTrained()
 {
+
+    logModelParameters(true);   /// TODO REMOVE
+
+
     /// TODO - check multiple parameters or not?
     return (esvmModel != nullptr);  /// && model->SV != nullptr && model->sv_coef != nullptr && model->
 }
