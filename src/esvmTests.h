@@ -38,7 +38,7 @@ bool checkPathEndSlash(std::string path);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
-void displayTestStatus(std::string testName, int error = NO_ERROR);
+int passThroughDisplayTestStatus(std::string testName, int error = NO_ERROR);
 void displayHeader();
 void displayOptions();
 
@@ -59,16 +59,17 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures);
 int test_ESVM_SaveLoadModelFile_libsvm();
 int test_ESVM_SaveLoadModelFile_binary();
 int test_ESVM_SaveLoadModelFile_compare();
+int test_ESVM_ModelFromStructSVM();
 int test_ESVM_ModelMemoryDealloc();
 int test_ESVM_ModelMemoryReset();
 
 /* Procedures */
 int proc_ReadDataFiles();
-int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
-int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches);
-int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
+int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
+int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches);
+int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
 int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking();

@@ -204,7 +204,8 @@ void ESVM::checkModelParameters_assert(svm_model* model)
         ASSERT_THROW(model->sv_coef != nullptr, "ESVM model coefficients container for decision functions must be specified");
         ASSERT_THROW(model->sv_coef[0] != nullptr, "ESVM model specific coefficients for unique decision function must be specified");
         ASSERT_THROW(model->SV != nullptr, "ESVM model support vector container must be specified");
-        ASSERT_THROW(model->SV[0] != nullptr, "ESVM model specific support vectors must be specified");
+        for (int sv = 0; sv < model->l; ++sv)
+            ASSERT_THROW(model->SV[sv] != nullptr, "ESVM model specific support vectors must be specified");
     }
     else
         throw std::runtime_error("Unsupported model 'free_sv' mode");

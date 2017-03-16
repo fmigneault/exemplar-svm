@@ -26,7 +26,6 @@ int main(int argc, char* argv[])
         RETURN_ERROR(test_performanceEvaluationFunctions());
         RETURN_ERROR(test_ESVM_BasicFunctionalities());
         RETURN_ERROR(test_ESVM_BasicClassification());
-        RETURN_ERROR(test_runSingleSamplePerPersonStillToVideo(cv::Size(4, 4)));
         RETURN_ERROR(test_ESVM_ReadSampleFile_binary());
         RETURN_ERROR(test_ESVM_ReadSampleFile_libsvm());
         RETURN_ERROR(test_ESVM_ReadSampleFile_timing(2000, 500));
@@ -43,6 +42,7 @@ int main(int argc, char* argv[])
         ---------------- */
 
         RETURN_ERROR(proc_ReadDataFiles());
+        RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo(cv::Size(4, 4)));
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size(48, 48), cv::Size(3, 3), true));
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN());
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking());

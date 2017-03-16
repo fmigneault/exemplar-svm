@@ -45,6 +45,9 @@ svm_model buildDummyExemplarSvmModel()
         model->param.svm_type = C_SVC;
         model->nr_class = 2;
         model->l = 5;
+        model->param.nr_weight = model->nr_class;
+        model->param.weight = new double[model->nr_class]{ model->l - 1.0, 1.0 };
+        model->param.weight_label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
         model->rho = new double[1]{ 2.5 };
         model->sv_coef = new double*[model->nr_class - 1]{ new double[model->l]{ 3.5, -0.1, -0.2, -0.1, -0.2} };
         model->label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
@@ -73,6 +76,8 @@ svm_model buildDummyExemplarSvmModel()
         logstream logger(LOGGER_FILE);
         logger << "Error occured when building the dummy ESVM model for testing" << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
+        delete[] model->param.weight;
+        delete[] model->param.weight_label;
         delete[] model->rho;
         delete[] model->sv_coef;
         delete[] model->label;
@@ -130,13 +135,14 @@ bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_
     return bfs::is_regular_file(filePath);
 }
 
-void displayTestStatus(std::string testName, int error)
+int passThroughDisplayTestStatus(std::string testName, int error)
 {
     logstream logger(LOGGER_FILE);
     if      (error == SKIPPED)  logger << "Test '" << testName << "' skipped." << std::endl;
     else if (error == OBSOLETE) logger << "Test '" << testName << "' skipped as considered obsolete." << std::endl;
     else if (error == NO_ERROR) logger << "Test '" << testName << "' completed." << std::endl;    
     else                        logger << "Test '" << testName << "' failed (" << std::to_string(error) << ")." << std::endl;
+    return error;
 }
 
 void displayHeader()
@@ -165,7 +171,7 @@ void displayOptions()
            << tab << tab << "TEST_DUPLICATE_COUNT:                          " << TEST_DUPLICATE_COUNT << std::endl
            << tab << tab << "TEST_USE_OTHER_POSITIVES_AS_NEGATIVES:         " << TEST_USE_OTHER_POSITIVES_AS_NEGATIVES << std::endl
            << tab << tab << "TEST_FEATURES_NORMALIZATION_MODE:              " << TEST_FEATURES_NORMALIZATION_MODE << std::endl
-           << tab << tab << "TEST_IMAGE_PATHS:                              " << TEST_IMAGE_PATHS << std::endl
+           << tab << tab << "TEST_PATHS:                                    " << TEST_PATHS << std::endl
            << tab << tab << "TEST_IMAGE_PATCH_EXTRACTION:                   " << TEST_IMAGE_PATCH_EXTRACTION << std::endl
            << tab << tab << "TEST_IMAGE_PREPROCESSING:                      " << TEST_IMAGE_PREPROCESSING << std::endl
            << tab << tab << "TEST_MULTI_LEVEL_VECTORS:                      " << TEST_MULTI_LEVEL_VECTORS << std::endl
@@ -192,7 +198,6 @@ void displayOptions()
 
 int test_paths()
 {
-    int err = NO_ERROR;
     #if TEST_PATHS
 
     // Local
@@ -238,16 +243,13 @@ int test_paths()
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VEyeLocaltionPath), "COX-S2V eye location root directory doesn't end with slash character");
     
     #else/*TEST_PATHS*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_PATHS*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_imagePatchExtraction(void)
 {
-    int err = NO_ERROR;    
     #if TEST_IMAGE_PATCH_EXTRACTION
 
     logstream logger(LOGGER_FILE);
@@ -259,7 +261,7 @@ int test_imagePatchExtraction(void)
     if (testPatches.size() != 6)
     {
         logger << "Invalid number of patches extracted (count: " << testPatches.size() << ", expected: 6)" << std::endl;
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
     // check patch dimensions
     for (int p = 0; p < 6; p++)
@@ -267,7 +269,7 @@ int test_imagePatchExtraction(void)
         if (testPatches[p].size() != cv::Size(2, 2))
         {
             logger << "Invalid image size for patch " << p << " (size: " << testPatches[p].size() << ", expected: (2,2))" << std::endl;
-            return -2;
+            return passThroughDisplayTestStatus(__func__, -2);
         }
     }    
 
@@ -275,45 +277,42 @@ int test_imagePatchExtraction(void)
     if (!cv::countNonZero(testPatches[0] != cv::Mat(2, 2, CV_32S, { 1,2,7,8 })))
     {
         logger << "Invalid data for patch 0" << std::endl << testPatches[0] << std::endl;
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -3);
     }
     if (!cv::countNonZero(testPatches[1] != cv::Mat(2, 2, CV_32S, { 3,4,9,10 })))
     {
         logger << "Invalid data for patch 1" << std::endl << testPatches[1] << std::endl;
-        return -4;
+        return passThroughDisplayTestStatus(__func__, -4);
     }
     if (!cv::countNonZero(testPatches[2] != cv::Mat(2, 2, CV_32S, { 5,6,11,12 })))
     {
         logger << "Invalid data for patch 2" << std::endl << testPatches[2] << std::endl;
-        return -5;
+        return passThroughDisplayTestStatus(__func__, -5);
     }
     if (!cv::countNonZero(testPatches[3] != cv::Mat(2, 2, CV_32S, { 13,14,19,20 })))
     {
         logger << "Invalid data for patch 3" << std::endl << testPatches[3] << std::endl;
-        return -6;
+        return passThroughDisplayTestStatus(__func__, -6);
     }
     if (!cv::countNonZero(testPatches[4] != cv::Mat(2, 2, CV_32S, { 15,16,21,22 })))
     {
         logger << "Invalid data for patch 4" << std::endl << testPatches[4] << std::endl;
-        return -7;
+        return passThroughDisplayTestStatus(__func__, -7);
     }
     if (!cv::countNonZero(testPatches[5] != cv::Mat(2, 2, CV_32S, { 17,18,23,24 })))
     {
         logger << "Invalid data for patch 5" << std::endl << testPatches[5] << std::endl;
-        return -8;
+        return passThroughDisplayTestStatus(__func__, -8);
     }
 
     #else/*TEST_IMAGE_PATCH_EXTRACTION*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_IMAGE_PATCH_EXTRACTION*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_imagePreprocessing()
 {
-    int err = NO_ERROR;
     #if TEST_IMAGE_PREPROCESSING
 
     logstream logger(LOGGER_FILE);
@@ -543,16 +542,13 @@ int test_imagePreprocessing()
     }
 
     #else/*TEST_IMAGE_PREPROCESSING*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_IMAGE_PREPROCESSING*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_multiLevelVectors()
-{    
-    int err = NO_ERROR;
+{
     #if TEST_MULTI_LEVEL_VECTORS
 
     size_t vdim = 6;
@@ -650,16 +646,13 @@ int test_multiLevelVectors()
     ASSERT_LOG(mvv_push[2].size() == dims[1], "Other lower level index then vector that got another push shouldn't be affected in size");
 
     #else/*TEST_MULTI_LEVEL_VECTORS*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_MULTI_LEVEL_VECTORS*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_normalizationFunctions()
 {
-    int err = NO_ERROR;
     #if TEST_NORMALIZATION
 
     // testing values
@@ -759,60 +752,57 @@ int test_normalizationFunctions()
     try { 
         normalize(MIN_MAX, 1.0, 1.0, -1.0);
         throw std::runtime_error("Minimum value greater than maximum value should have raised an exception");
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     } catch (...) {}    // expceted exception
     try { 
         normalize(Z_SCORE, 1.0, 1.0, 0.0);
         throw std::runtime_error("Zero value standard deviation should have raised an exception");
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, v1, nullptr, &dummyValue);
         throw std::runtime_error("Null reference for minimum value should have raised an exception");
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -3);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, v1, &dummyValue, nullptr);
         throw std::runtime_error("Null reference for maximum value should have raised an exception");
-        return -4;
+        return passThroughDisplayTestStatus(__func__, -4);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, vEmpty, &dummyValue, &dummyValue);
         throw std::runtime_error("Empty feature vector should have raised an exception");
-        return -5;
+        return passThroughDisplayTestStatus(__func__, -5);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsPerFeature(MIN_MAX, v, nullptr, &vEmpty);
         throw std::runtime_error("Null reference for minimum features should have raised an exception");
-        return -6;
+        return passThroughDisplayTestStatus(__func__, -6);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsPerFeature(MIN_MAX, v, &vEmpty, nullptr);
         throw std::runtime_error("Null reference for maximum features should have raised an exception");
-        return -7;
+        return passThroughDisplayTestStatus(__func__, -7);
     } catch (...) {}    // expceted exception
     try { 
         normalizePerFeature(MIN_MAX, v1, vEmpty, v1);
         throw std::runtime_error("Inconsistent size for minimum features should have raised an exception");
-        return -8;
+        return passThroughDisplayTestStatus(__func__, -8);
     } catch (...) {}    // expceted exception
     try { 
         normalizePerFeature(MIN_MAX, v1, v1, vEmpty);
         throw std::runtime_error("Inconsistent size for maximum features should have raised an exception");
-        return -9;
+        return passThroughDisplayTestStatus(__func__, -9);
     } catch (...) {}    // expceted exception
 
     #else/*TEST_NORMALIZATION*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_NORMALIZATION*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_performanceEvaluationFunctions()
-{        
-    int err = NO_ERROR;
+{
     #if TEST_PERF_EVAL_FUNCTIONS
 
     // test basic confusion matrix operations
@@ -855,16 +845,13 @@ int test_performanceEvaluationFunctions()
     eval_PerformanceClassificationSummary(targets, scores, groundTruths);
     
     #else/*TEST_PERF_EVAL_FUNCTIONS*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_PERF_EVAL_FUNCTIONS*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_BasicFunctionalities(void)
 {
-    int err = OBSOLETE;                 // DISABLE - USING OBSOLETE MATLAB PROCEDURE
     #if TEST_ESVM_BASIC_FUNCTIONALITY
 
     // ------------------------------------------------------------------------------------------------------------------------
@@ -987,30 +974,26 @@ int test_ESVM_BasicFunctionalities(void)
         logger << "Running Exemplar-SVM testing..." << std::endl;
         esvm_test_individual(1, scores, models, mwProbeSamples);
         logger << "Success" << std::endl;
-        return 0;
     }
     catch (const mwException& e)
     {
         logger << e.what() << std::endl;
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
     catch (...)
     {
         logger << "Unexpected error thrown" << std::endl;
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -3);
     }
 
     #else/*TEST_ESVM_BASIC_FUNCTIONALITY*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, OBSOLETE);   // DISABLE - USING OBSOLETE MATLAB PROCEDURE
     #endif/*TEST_ESVM_BASIC_FUNCTIONALITY*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_BasicClassification(void)
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_BASIC_CLASSIFICATION
 
     // ------------------------------------------------------------------------------------------------------------------------
@@ -1068,17 +1051,14 @@ int test_ESVM_BasicClassification(void)
     }
 
     #else/*TEST_ESVM_BASIC_CLASSIFICATION*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_BASIC_CLASSIFICATION*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Tests LIBSVM format sample file reading functionality of ESVM (index and value parsing)
 int test_ESVM_ReadSampleFile_libsvm()
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM
 
     logstream logger(LOGGER_FILE);
@@ -1163,7 +1143,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         logger << "Error: Valid normal indexed samples and file reading should not have generated an exception." << std::endl 
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
     try
     {
@@ -1183,7 +1163,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         logger << "Error: Valid sparse indexes samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
     try
     {
@@ -1207,7 +1187,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -3);
     }
     try
     {
@@ -1235,7 +1215,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -4;
+        return passThroughDisplayTestStatus(__func__, -4);
     }
     try
     {
@@ -1243,7 +1223,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         ESVM::readSampleDataFile(wrongSampleFileName1, samples, targetOutputs);
         logger << "Error: Indexes not specified in ascending order should have raised an exception." << std::endl;
         bfs::remove_all(testDir);
-        return -5;
+        return passThroughDisplayTestStatus(__func__, -5);
     }
     catch (...) {}
     try
@@ -1252,7 +1232,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         ESVM::readSampleDataFile(wrongSampleFileName2, samples, targetOutputs);
         logger << "Error: Repeating indexes should have raised an exception." << std::endl;
         bfs::remove_all(testDir);
-        return -6;
+        return passThroughDisplayTestStatus(__func__, -6);
     }
     catch (...) {}
     try
@@ -1261,7 +1241,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         ESVM::readSampleDataFile(wrongSampleFileName3, samples, targetOutputs);
         logger << "Error: Non matching sample sizes should have raised an exception." << std::endl;
         bfs::remove_all(testDir);
-        return -7;
+        return passThroughDisplayTestStatus(__func__, -7);
     }
     catch (...) {}
     try
@@ -1270,7 +1250,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         ESVM::readSampleDataFile(wrongSampleFileName4, samples, targetOutputs);
         logger << "Error: Not found 'index:value' seperator should have raised an exception." << std::endl;
         bfs::remove_all(testDir);
-        return -8;
+        return passThroughDisplayTestStatus(__func__, -8);
     }
     catch (...) {}
     try
@@ -1279,7 +1259,7 @@ int test_ESVM_ReadSampleFile_libsvm()
         ESVM::readSampleDataFile(wrongSampleFileName5, samples, targetOutputs);
         logger << "Error: Missing target output class value should have raised an exception." << std::endl;
         bfs::remove_all(testDir);
-        return -9;
+        return passThroughDisplayTestStatus(__func__, -9);
     }
     catch (...) {}
 
@@ -1287,17 +1267,14 @@ int test_ESVM_ReadSampleFile_libsvm()
     bfs::remove_all(testDir);
 
     #else/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Tests BINARY sample file reading functionality of ESVM
 int test_ESVM_ReadSampleFile_binary()
-{
-    int err = NO_ERROR;    
+{  
     #if TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY
 
     logstream logger(LOGGER_FILE);
@@ -1356,31 +1333,28 @@ int test_ESVM_ReadSampleFile_binary()
         logger << "Error: Valid BINARY samples file reading should not have generated an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
     try
     {
         // test wrong reading file format
         ESVM::readSampleDataFile(wrongSampleFileName5, readSamples, readTargetOutputs, LIBSVM);
         logger << "Error: Reading BINARY formatted file as LIBSVM format should result in parsing failure." << std::endl;
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
     catch (...) {}
 
     bfs::remove_all(testDir);
 
     #else/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Validation of identical sample features from BINARY/LIBSVM formatted files
 int test_ESVM_ReadSampleFile_compare()
-{
-    int err = NO_ERROR;    
+{    
     #if TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE
 
     logstream logger(LOGGER_FILE);
@@ -1454,16 +1428,13 @@ int test_ESVM_ReadSampleFile_compare()
     }
 
     #else/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
-{    
-    int err = NO_ERROR;    
+{ 
     #if TEST_ESVM_READ_SAMPLES_FILE_TIMING
 
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
@@ -1503,16 +1474,13 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
     }
 
     #else/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_WRITE_SAMPLES_FILE_TIMING
 
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
@@ -1552,17 +1520,14 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
     }
 
     #else/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Test functionality of BINARY model file saving/loading and parsing of parameters allowing valid use afterwards
 int test_ESVM_SaveLoadModelFile_libsvm()
-{
-    int err = NO_ERROR;
+{    
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM
 
     // create test model files inside test directory
@@ -1586,7 +1551,7 @@ int test_ESVM_SaveLoadModelFile_libsvm()
         logger << "Model pre-generation for following ESVM tests should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
 
     // test file loading   
@@ -1603,23 +1568,20 @@ int test_ESVM_SaveLoadModelFile_libsvm()
         logger << "Valid LIBSVM formatted model file should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
 
     bfs::remove_all(testDir);
     
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Test functionality of LIBSVM model file saving/loading and parsing of parameters allowing valid use afterwards
 int test_ESVM_SaveLoadModelFile_binary()
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY
 
     // create test model files inside test directory
@@ -1644,7 +1606,7 @@ int test_ESVM_SaveLoadModelFile_binary()
         logger << "Valid BINARY pre-trained model file loading should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
 
     // ensure that trying to save the model from not initialized (not trained) ESVM fails
@@ -1660,7 +1622,7 @@ int test_ESVM_SaveLoadModelFile_binary()
         logger << "Invalid BINARY model file saving from untrained ESVM should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
 
     ESVM esvmLoaded;
@@ -1669,7 +1631,7 @@ int test_ESVM_SaveLoadModelFile_binary()
         esvmLoaded.loadModelFile(validModelFileName, LIBSVM);
         logger << "Trying to load a BINARY model file in LIBSVM format should have raised an exception" << std::endl;
         bfs::remove_all(testDir);
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -3);
     }
     catch (...) {}  // expected exception
 
@@ -1689,23 +1651,20 @@ int test_ESVM_SaveLoadModelFile_binary()
         logger << "Valid BINARY formatted model file should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        return -4;
+        return passThroughDisplayTestStatus(__func__, -4);
     }
 
     bfs::remove_all(testDir);
 
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 // Test functionality of model file saving/loading from (LIBSVM/binary,pre-trained/from samples) format comparison
 int test_ESVM_SaveLoadModelFile_compare()
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE
 
     // create test model files inside test directory and create testing data
@@ -1764,98 +1723,229 @@ int test_ESVM_SaveLoadModelFile_compare()
         logger << "Valid test procedures should not have raised an exception." << std::endl
                << "Exception: " << std::endl << ex.what() << std::endl;
         bfs::remove_all(testDir);
-        err = -1;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
 
     bfs::remove_all(testDir);
     
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE*/
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+}
 
-    displayTestStatus(__func__, err);
-    return err;
+int test_ESVM_ModelFromStructSVM()
+{
+    #if TEST_ESVM_MODEL_STRUCT_SVM
+    
+    logstream logger(LOGGER_FILE);
+    try
+    {
+        // verify valid model setting
+        logger << "Generating dummy 'svm_model' for setting functionality evaluation..." << std::endl;
+        svm_model validModel = buildDummyExemplarSvmModel();
+        ASSERT_LOG(ESVM::checkModelParamers(&validModel), "Valid SVM model paramters check should haved returned 'true' status");
+
+        logger << "Testing ESVM model setting operation with dummy 'svm_model'..." << std::endl;
+        ESVM esvm(&validModel, "TEST");
+
+    }
+    catch (std::exception& ex)
+    {
+
+        logger << "Valid test procedures should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return passThroughDisplayTestStatus(__func__, -1);
+    }    
+
+    svm_model* invalidModels;
+    size_t nSVM = 15;
+    try
+    {
+        // verify invalid model paramters
+        ASSERT_LOG(ESVM::checkModelParamers(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
+
+        logger << "Generating dummy 'svm_model' with invalid parameters..." << std::endl;        
+        invalidModels = new svm_model[nSVM];
+        for (size_t svm = 0; svm < nSVM; ++svm)
+            invalidModels[svm] = buildDummyExemplarSvmModel();
+        invalidModels[0].param.kernel_type = RBF;           // not 'LINEAR'
+        invalidModels[1].param.svm_type = ONE_CLASS;        // not 'C_SVC'
+        invalidModels[2].param.C = -1;                      // C <= 0
+        invalidModels[2].label[1] = 2;                      // negative class label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
+        invalidModels[3].nr_class = 3;                      // not 2 class
+        invalidModels[4].l = 1;                             // at least 2 samples (1 positive + 1 negative minimum)
+        invalidModels[5].nSV[0] = 0;                        // no positive samples
+        invalidModels[6].param.nr_weight = 1;               // not 0 or 2
+        invalidModels[7].param.weight_label[1] = 2;         // negative class weight label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
+        invalidModels[8].param.weight[1] = -1;              // negative class weight not > 0
+        delete[] invalidModels[9].rho;
+        invalidModels[9].rho = nullptr;                     // missing rho
+        invalidModels[10].probA = new double[2]{ 1, 1 };    // probability estimates not matching
+        invalidModels[10].probB = nullptr;
+        delete[] invalidModels[11].sv_coef[0];              // missing SV coefficient for decision function
+        invalidModels[11].sv_coef[0] = nullptr;
+        delete[] invalidModels[12].sv_coef[0];              // missing SV coefficient container (only 1D for ESVM containing 2 classes)
+        delete[] invalidModels[12].sv_coef;
+        invalidModels[12].sv_coef = nullptr;
+        delete[] invalidModels[13].SV[2];                   // missing any of the SV features (not zero chosen to ensure validation of whole set)
+        invalidModels[13].SV[2] = nullptr;
+        for (int sv = 0; sv < invalidModels[14].l; ++sv)    // missing the SV container
+            delete[] invalidModels[14].SV[sv];               
+        delete[] invalidModels[14].SV;
+        invalidModels[14].SV = nullptr;
+
+        for (size_t svm = 0; svm < nSVM; ++svm)
+            ASSERT_LOG(ESVM::checkModelParamers(&invalidModels[svm]), "Invalid SVM model paramters (svm=" + 
+                       std::to_string(svm) + ") check should haved returned 'false' status");        
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid test preparation of test classes should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        for (size_t svm = 0; svm < nSVM; ++svm)
+        {
+            svm_destroy_param(&invalidModels[svm].param);
+            svm_free_model_content(&invalidModels[svm]);
+        }
+        return passThroughDisplayTestStatus(__func__, -2);
+    }
+
+    // verify invalid model paramters not initialized
+    for (size_t svm = 0; svm < nSVM; ++svm)
+    {
+        ESVM esvm;
+        try 
+        {   
+            esvm = ESVM(&invalidModels[svm], "INVALID " + std::to_string(svm));            
+            logger << "Invalid paramters specified in SVM model to train should have raised an exception." << std::endl;
+            return passThroughDisplayTestStatus(__func__, -3);
+        }
+        catch (...) {} // expected exception
+        ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization and training");
+    }
+
+    #else/*TEST_ESVM_MODEL_STRUCT_SVM*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*TEST_ESVM_MODEL_STRUCT_SVM*/
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_ModelMemoryDealloc()
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_MODEL_MEMORY_DEALLOC
 
+    logstream logger(LOGGER_FILE);
+    
+    try
+    {
+        // test deallocated memory when destructor is called
+        svm_model model = buildDummyExemplarSvmModel();
+        ESVM esvm(&model, "TEST-DESTRUCTOR");
+        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
+        esvm.~ESVM();
+    }
+    catch (std::exception& ex)
+    {
+        
+        logger << "Valid test procedure destroying the model should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        return passThroughDisplayTestStatus(__func__, -1);
+    }
+
+    std::string modelFileName = "test_model-reset.model";
+    try
+    {
+        // test deallocated memory when reset of model is called
+        svm_model model = buildDummyExemplarSvmModel();
+        int nSV = model.l;
+        svm_node **refSV = new svm_node*[nSV];      // reference to check SV deallocation since we won't be able to access them via the model
+        for (int sv = 0; sv < nSV; ++sv)
+            refSV[sv] = model.SV[sv];
+
+        ESVM esvm(&model, "TEST-RESET");
+        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
+        esvm.saveModelFile(modelFileName, LIBSVM);  // save to file then reload to induce a 'reset' (replace old model by loaded one)
+        esvm.loadModelFile(modelFileName, LIBSVM);
+        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly reset to evaluate following functionality");
+        ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.nSV = nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.param.weight == nullptr, "Model 'weight' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.param.weight_label == nullptr, "Model 'weight_label' should have been deallocated and its reference be set to 'null'");
+        for (int sv = 0; sv < nSV; ++sv)
+            ASSERT_LOG(refSV[sv] == nullptr, "Model 'SV' should have been deallocated and all their references be set to 'null'");
+        ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
+    }
+    catch (std::exception& ex)
+    {
+
+        logger << "Valid test procedure resetting the model should not have raised an exception." << std::endl
+               << "Exception: " << std::endl << ex.what() << std::endl;
+        bfs::remove_all(modelFileName);
+        return passThroughDisplayTestStatus(__func__, -1);
+    }
+
+    bfs::remove_all(modelFileName);
 
     #else/*TEST_ESVM_MODEL_MEMORY_DEALLOC*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_MODEL_MEMORY_DEALLOC*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int test_ESVM_ModelMemoryReset()
 {
-    int err = NO_ERROR;
     #if TEST_ESVM_MODEL_MEMORY_RESET
-    
+    return passThroughDisplayTestStatus(__func__, SKIPPED); ////////////////////// NOT IMPLEMENTED
 
 
     #else/*TEST_ESVM_MODEL_MEMORY_RESET*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_MODEL_MEMORY_RESET*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int proc_ReadDataFiles()
 {
+    #if PROC_READ_DATA_FILES
+
+    int err = NO_ERROR;
+
     #if PROC_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
     cv::Size patchCounts = cv::Size(1, 1);
     cv::Size imageSize = cv::Size(64, 64);
+
     #elif PROC_READ_DATA_FILES & 0b00000010 // (2) Run ESVM training/testing using images and patch-based feature extraction
     // Number of patches to use in each direction, must fit within the ROIs (ex: 4x4 patches & ROI 128x128 -> 16 patches of 32x32)
     cv::Size patchCounts = cv::Size(3, 3);
     cv::Size imageSize = cv::Size(48, 48);
     #endif/* (1|2) params */
+
     #if PROC_READ_DATA_FILES & 0b00000011
-    err = test_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts);
-    if (err)
-    {
-        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' failed (" << std::to_string(err) << ")." << std::endl;
-        return err;
-    }
-    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' completed." << std::endl;
+    RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(imageSize, patchCounts));
     #endif/* (1|2) test */
+    
     #if PROC_READ_DATA_FILES & 0b00000100   // (4) Run ESVM training/testing using pre-generated whole image samples files
-    err = test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
-    if (err)
-    {
-        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' failed (" << std::to_string(err) << ")." << std::endl;
-        return err;
-    }
-    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage' completed." << std::endl;
+    RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage());
     #endif/* (4) */
+    
     #if PROC_READ_DATA_FILES & 0b00001000   // (8) Run ESVM training/testing using pre-generated (feature+patch)-based samples files
     int nPatches = patchCounts.width * patchCounts.height;
-    err = test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches);
-    if (err)
-    {
-        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' failed ("
-               << std::to_string(err) << ")." << std::endl;
-        return err;
-    }
-    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased' completed." << std::endl;
+    RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(nPatches));
     #endif/* (8) */
+    
     #if PROC_READ_DATA_FILES & 0b11110000   // (16|32|64|128) Run ESVM training/testing using pre-generated patch-based negatives samples files
-    err = test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased();
-    if (err)
-    {
-        logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' failed ("
-               << std::to_string(err) << ")." << std::endl;
-        return err;
-    }
-    logger << "Test 'test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased' completed." << std::endl;
+    RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased());
     #endif/* (16|32|64|128) */
+
+    #else/*PROC_READ_DATA_FILES*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*PROC_READ_DATA_FILES*/
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /******************************************************************************************************************************
@@ -1904,9 +1994,8 @@ TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
         ID0029      person_18                   negative -
         
 ******************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
+int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
 {
-    int err = OBSOLETE;
     #if TEST_ESVM_BASIC_STILL2VIDEO
 
     // ------------------------------------------------------------------------------------------------------------------------
@@ -2397,25 +2486,22 @@ int test_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
             logger << "Completed for individual " << i << ": " + targetName[i] << std::endl;
         }
         logger << "Success" << std::endl;
-        return 0;
     }
     catch (const mwException& e)
     {
         logger << e.what() << std::endl;
-        return -2;
+        return passThroughDisplayTestStatus(__func__, -1);
     }
     catch (...)
     {
         logger << "Unexpected error thrown" << std::endl;
-        return -3;
+        return passThroughDisplayTestStatus(__func__, -2);
     }
 
     #else/*TEST_ESVM_BASIC_STILL2VIDEO*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
@@ -2425,7 +2511,7 @@ TEST DEFINITION
     The enrolled individuals are represented by ensembles of Exemplar-SVM and are afterward tested using the probe videos.
     Classification performances are then evaluated each positive target vs. probe samples in term of FPR/TPR for ROC curbe.
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
+int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
     /* Training Targets:        single high quality still image for enrollment */    
     /*std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };*/  // same as Saman paper
@@ -2800,8 +2886,8 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             std::vector<FeatureVector> maxFeatures(nDescriptors);                   // [descriptor](FeatureVector)
             #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
             logger << "Searching feature normalization values (across features, across patches)..." << std::endl;
-            std::vector<double> minFeatures(nDescriptors, DBL_MAX);                 // [descriptor](double)
-            std::vector<double> maxFeatures(nDescriptors, -DBL_MAX);                // [descriptor](double)            
+            FeatureVector minFeatures(nDescriptors, DBL_MAX);                       // [descriptor](double)
+            FeatureVector maxFeatures(nDescriptors, -DBL_MAX);                      // [descriptor](double)            
             #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
 
             // Accumulate all positive/negative/probes samples to find min/max features according to normalization mode
@@ -2949,12 +3035,12 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         catch (const std::exception& e)
                         {
                             logger << e.what() << std::endl;
-                            return -2;
+                            return passThroughDisplayTestStatus(__func__, -1);
                         }
                         catch (...)
                         {
                             logger << "Unexpected error thrown" << std::endl;
-                            return -3;
+                            return passThroughDisplayTestStatus(__func__, -2);
                         }
 
                         logger << "Running Exemplar-SVM testing..." << std::endl;
@@ -3042,20 +3128,20 @@ int test_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     } // End session loop 
 
     logger << "Test complete" << std::endl;
-    return 0;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
 TEST DEFINITION
     
-    Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
+    Similar procedure as in 'proc_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
     vectors stored in the data files.
 
     NB:
         Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
         Changing any configuration will require new data file to be generated by running "FullChokePoint" at least once.
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
 {
     logstream logger(LOGGER_FILE);
 
@@ -3097,13 +3183,13 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
     }
 
     logger << "Test complete" << std::endl;
-    return 0;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
 TEST DEFINITION
     
-    Similar procedure as in 'test_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
+    Similar procedure as in 'proc_runSingleSamplePerPersonStillToVideo_FullChokePoint' but using pre-computed feature
     vectors stored in the data files.
 
     This test allows score fusion first for patch-based files, and then for descriptor-based files.
@@ -3114,7 +3200,7 @@ TEST DEFINITION
         Vectors depend on the configuration of images, patches, data duplication, feature extraction method, etc.
         Changing any configuration will require new data files to be generated by running "FullChokePoint" at least once.
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches)
+int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(size_t nPatches)
 {
     ASSERT_LOG(nPatches > 0, "Number of patches must be greater than zero");
 
@@ -3199,7 +3285,7 @@ int test_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         eval_PerformanceClassificationScores(combinedFusionScores, probeGroundTruths);
     }
     logger << "Test complete" << std::endl;
-    return 0;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
@@ -3209,8 +3295,10 @@ TEST DEFINITION
     Ensemble of Exemplar-SVM. Test against various probes from corresponding process pre-generated data files, and also
     against probes using feature extraction process with first ChokePoint sequence (mode 0).
 **************************************************************************************************************************/
-int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased()
+int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased()
 {
+    #if PROC_READ_DATA_FILES & 0b11110000
+
     // Paths and logging
     logstream logger(LOGGER_FILE);
         
@@ -3430,8 +3518,10 @@ int test_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         #endif/*PROC_READ_DATA_FILES & (32|64)*/
     }
     
-    logger << "Test complete" << std::endl;
-    return 0;
+    #else/*PROC_READ_DATA_FILES & 0b11110000*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*PROC_READ_DATA_FILES & 0b11110000*/
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
@@ -3442,8 +3532,7 @@ TEST DEFINITION
     Use negative samples from ChokePoint dataset across multiple camera angles.
 **************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
-{
-    int err = NO_ERROR;
+{    
     #if PROC_ESVM_TITAN
 
     /* Training Targets: single high quality still image for enrollment */
@@ -3711,11 +3800,9 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
     */
 
     #else/*PROC_ESVM_TITAN*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_TITAN*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
@@ -3726,8 +3813,7 @@ TEST DEFINITION
     Sample features are pre-extracted with HOG+PCA and normalized.
 **************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
-{
-    int err = NO_ERROR;
+{    
     #if PROC_ESVM_SAMAN
 
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
@@ -3856,11 +3942,9 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     }
 
     #else/*PROC_ESVM_SAMAN*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_SAMAN*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /**************************************************************************************************************************
@@ -3871,7 +3955,6 @@ TEST DEFINITION
 **************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 {
-    int err = NO_ERROR;
     #if PROC_ESVM_SIMPLIFIED_WORKING
 
     logstream logger(LOGGER_FILE);
@@ -4056,11 +4139,9 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     eval_PerformanceClassificationSummary(positivesID, classificationScores, probeGroundTruths);
 
     #else/*PROC_ESVM_SIMPLIFIED_WORKING*/
-    err = SKIPPED;
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_SIMPLIFIED_WORKING*/
-
-    displayTestStatus(__func__, err);
-    return err;
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 /*

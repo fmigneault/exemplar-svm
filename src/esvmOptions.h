@@ -62,7 +62,7 @@
 */
 #define TEST_FEATURES_NORMALIZATION_MODE 3
 // Validates image paths found and with expected format
-#define TEST_IMAGE_PATHS 1
+#define TEST_PATHS 1
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
@@ -93,9 +93,11 @@
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 1
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1
+// Test model resetting using 'svm_model' struct directly populated in code
+#define TEST_ESVM_MODEL_STRUCT_SVM 1
 // Test memory deallocation of various model parameters on reset or destructor calls
 #define TEST_ESVM_MODEL_MEMORY_DEALLOC 1
-// Test expected functionalities of model with reset/changed parameters
+// Test expected functionalities of model with reset/changed parameters (model properly updated)
 #define TEST_ESVM_MODEL_MEMORY_RESET 1
 
 /* -------------------------------------------------------------------
