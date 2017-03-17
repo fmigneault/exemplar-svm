@@ -28,36 +28,43 @@ std::string buildChokePointIndividualID(int id, bool withPrefixID)
 }
 
 // builds a dummy model with all valid parameters to test read/write procedures
-svm_model buildDummyExemplarSvmModel()
+svm_model buildDummyExemplarSvmModel(int value_free_sv)
 {
     svm_model *model = new svm_model;
     try
-    {        
+    {
+        // parameters must be matched with 'destroyDummyExemplarSvmModelContent'
+        int nSV = 5;
+        int nClass = 2;
+        int nFeatures = 3;
+
         model->param.kernel_type = LINEAR;
         model->param.svm_type = C_SVC;
-        model->nr_class = 2;
-        model->l = 5;
+        model->param.C = 1;        
+        model->free_sv = value_free_sv;
+        model->nr_class = nClass;
+        model->l = nSV;
         model->param.nr_weight = model->nr_class;
         model->param.weight = new double[model->nr_class]{ model->l - 1.0, 1.0 };
         model->param.weight_label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
         model->rho = new double[1]{ 2.5 };
+        model->sv_indices = new int[model->l]{ 0, 1, 2, 3, 4 };
         model->sv_coef = new double*[model->nr_class - 1]{ new double[model->l]{ 3.5, -0.1, -0.2, -0.1, -0.2} };
         model->label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
         model->nSV = new int[model->nr_class]{ 1, model->l - 1 };
         model->SV = new svm_node*[model->l];
         for (int sv = 0; sv < model->l; ++sv)
         {
-            int nFeatures = 4;
-            model->SV[sv] = new svm_node[nFeatures];
-            for (int f = 0; f < nFeatures; ++f)            
-                model->SV[sv][f].index = (f == (nFeatures - 1)) ? -1 : f;            
+            model->SV[sv] = new svm_node[nFeatures + 1];
+            for (int f = 0; f < nFeatures + 1; ++f)
+                model->SV[sv][f].index = (f == nFeatures) ? -1 : f;            
         }
         model->SV[0][0].value = 0.50;   model->SV[0][1].value = 0.75;   model->SV[0][2].value = 0.25;
         model->SV[1][0].value = 0.20;   model->SV[1][1].value = 0.75;   model->SV[1][2].value = 0.10;
         model->SV[2][0].value = 0.30;   model->SV[2][1].value = 0.75;   model->SV[2][2].value = 0.05;
         model->SV[3][0].value = 0.25;   model->SV[3][1].value = 0.75;   model->SV[3][2].value = 0.00;
         model->SV[4][0].value = 0.15;   model->SV[4][1].value = 0.75;   model->SV[4][2].value = 0.15;
-
+        
         #if ESVM_USE_PREDICT_PROBABILITY
         model->param.probability = 1;
         model->probA = new double[1]{ 1.2 };
@@ -67,28 +74,56 @@ svm_model buildDummyExemplarSvmModel()
         model->probA = nullptr;
         model->probB = nullptr;
         #endif/*ESVM_USE_PREDICT_PROBABILITY*/
-
-        /*if (!ESVM::checkModelParamers(model))
-            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");*/
+        
+        if (!ESVM::checkModelParameters(model))
+            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");
     }
     catch (std::exception& ex)
     {
         logstream logger(LOGGER_FILE);
         logger << "Error occured when building the dummy ESVM model for testing" << std::endl 
-               << "Exception: " << std::endl << ex.what() << std::endl;
-        delete[] model->param.weight;
-        delete[] model->param.weight_label;
-        delete[] model->rho;
-        delete[] model->sv_coef;
-        delete[] model->label;
-        delete[] model->nSV;
-        for (int sv = 0; sv < model->l; ++sv)
-            delete[] model->SV[sv];
-        delete[] model->SV;
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        destroyDummyExemplarSvmModelContent(model);
         delete model; 
         throw ex;  // re-throw
     }
     return *model;
+}
+
+// destroys all the contained memory references inside an 'svm_model' created with 'buildDummyExemplarSvmModel'
+void destroyDummyExemplarSvmModelContent(svm_model *model)
+{
+    if (!model) return;
+    try
+    {
+        // parameters assumed to match 'buildDummyExemplarSvmModel' since 'model->l' could be modified outside for testing purposes
+        int nSV = 5;
+        int nClass = 2;
+        int nFeatures = 4;
+
+        delete[] model->param.weight;
+        delete[] model->param.weight_label;
+        delete[] model->label;
+        delete[] model->probA;
+        delete[] model->probB;
+        delete[] model->rho;
+        delete[] model->nSV;
+        if (model->sv_coef)
+            for (int c = 0; c < nClass - 1; ++c)
+                delete[] model->sv_coef[c];
+        delete[] model->sv_coef;
+        if (model->SV)
+            for (int sv = 0; sv < nSV; ++sv)
+                delete[] model->SV[sv];
+        delete[] model->SV;
+    }
+    catch (std::exception& ex)
+    {
+        logstream logger(LOGGER_FILE);
+        logger << "Error occured when destroying the dummy ESVM model for testing" << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        throw ex;  // re-throw
+    }
 }
 
 bool checkPathEndSlash(std::string path)
@@ -187,7 +222,7 @@ void displayOptions()
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY:  " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY << std::endl
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM:  " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM << std::endl
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE: " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE << std::endl
-           << tab << "PROCESSES:" << std::endl
+           << tab << "PROCEDURES:" << std::endl
            << tab << tab << "PROC_READ_DATA_FILES:                          " << PROC_READ_DATA_FILES << std::endl
            << tab << tab << "PROC_WRITE_DATA_FILES:                         " << PROC_WRITE_DATA_FILES << std::endl
            << tab << tab << "PROC_ESVM_TITAN:                               " << PROC_ESVM_TITAN << std::endl
@@ -204,7 +239,7 @@ int test_paths()
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
     ASSERT_LOG(bfs::is_directory(negativeSamplesDir), "Cannot find negative samples directory");
-    ASSERT_LOG(bfs::is_directory(testingSamplesDir),  "Cannot find testing probe samples directory");
+    ASSERT_LOG(bfs::is_directory(testingSamplesDir), "Cannot find testing probe samples directory");
     ASSERT_LOG(checkPathEndSlash(roiVideoImagesPath), "ROI directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(negativeSamplesDir), "Negative samples directory doesn't end with slash character");
@@ -241,7 +276,7 @@ int test_paths()
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VEnrollStillsPath), "COX-S2V enroll stills root directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VAllImgsStillPath), "COX-S2V all image stills root directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(roiCOXS2VEyeLocaltionPath), "COX-S2V eye location root directory doesn't end with slash character");
-    
+
     #else/*TEST_PATHS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_PATHS*/
@@ -748,50 +783,51 @@ int test_normalizationFunctions()
     // exception cases
 
     double dummyValue;
+    logstream logger(LOGGER_FILE);
     FeatureVector vEmpty;
     try { 
         normalize(MIN_MAX, 1.0, 1.0, -1.0);
-        throw std::runtime_error("Minimum value greater than maximum value should have raised an exception");
+        logger << "Minimum value greater than maximum value should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -1);
     } catch (...) {}    // expceted exception
     try { 
         normalize(Z_SCORE, 1.0, 1.0, 0.0);
-        throw std::runtime_error("Zero value standard deviation should have raised an exception");
+        logger << "Zero value standard deviation should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -2);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, v1, nullptr, &dummyValue);
-        throw std::runtime_error("Null reference for minimum value should have raised an exception");
+        logger << "Null reference for minimum value should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -3);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, v1, &dummyValue, nullptr);
-        throw std::runtime_error("Null reference for maximum value should have raised an exception");
+        logger << "Null reference for maximum value should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -4);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, vEmpty, &dummyValue, &dummyValue);
-        throw std::runtime_error("Empty feature vector should have raised an exception");
+        logger << "Empty feature vector should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -5);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsPerFeature(MIN_MAX, v, nullptr, &vEmpty);
-        throw std::runtime_error("Null reference for minimum features should have raised an exception");
+        logger << "Null reference for minimum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -6);
     } catch (...) {}    // expceted exception
     try { 
         findNormParamsPerFeature(MIN_MAX, v, &vEmpty, nullptr);
-        throw std::runtime_error("Null reference for maximum features should have raised an exception");
+        logger << "Null reference for maximum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -7);
     } catch (...) {}    // expceted exception
     try { 
         normalizePerFeature(MIN_MAX, v1, vEmpty, v1);
-        throw std::runtime_error("Inconsistent size for minimum features should have raised an exception");
+        logger << "Inconsistent size for minimum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -8);
     } catch (...) {}    // expceted exception
     try { 
         normalizePerFeature(MIN_MAX, v1, v1, vEmpty);
-        throw std::runtime_error("Inconsistent size for maximum features should have raised an exception");
+        logger << "Inconsistent size for maximum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -9);
     } catch (...) {}    // expceted exception
 
@@ -1141,7 +1177,7 @@ int test_ESVM_ReadSampleFile_libsvm()
     catch (std::exception& ex)
     {
         logger << "Error: Valid normal indexed samples and file reading should not have generated an exception." << std::endl 
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -1);
     }
@@ -1161,7 +1197,7 @@ int test_ESVM_ReadSampleFile_libsvm()
     catch (std::exception& ex)
     {
         logger << "Error: Valid sparse indexes samples and file reading should not have generated an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -2);
     }
@@ -1185,7 +1221,7 @@ int test_ESVM_ReadSampleFile_libsvm()
     catch (std::exception& ex)
     {
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -3);
     }
@@ -1213,7 +1249,7 @@ int test_ESVM_ReadSampleFile_libsvm()
     catch (std::exception& ex)
     {
         logger << "Error: Valid final limited indexed samples and file reading should not have generated an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -4);
     }
@@ -1331,7 +1367,7 @@ int test_ESVM_ReadSampleFile_binary()
     catch (std::exception& ex)
     {
         logger << "Error: Valid BINARY samples file reading should not have generated an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -1);
     }
@@ -1470,7 +1506,7 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
     {
         bfs::remove(timingSampleFileName_libsvm);
         bfs::remove(timingSampleFileName_binary);
-        throw ex;   // re-throw
+        return passThroughDisplayTestStatus(__func__, -1);
     }
 
     #else/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
@@ -1516,7 +1552,7 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
     {
         bfs::remove(timingSampleFileName_libsvm);
         bfs::remove(timingSampleFileName_binary);
-        throw ex;   // re-throw
+        return passThroughDisplayTestStatus(__func__, -1);
     }
 
     #else/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
@@ -1543,24 +1579,13 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     {
         logger << "Generating dummy test model file (LIBSVM) for functionality evaluation..." << std::endl;
         validModel = buildDummyExemplarSvmModel();
-
-        logger << "SAVE MODEL!!!!" << std::endl;        ///TODO REMOVE
-        logger << "MODEL nSV: " << validModel.l << std::endl;        ///TODO REMOVE
-        for (int i = 0; i < 5; i++)
-            for (int j = 0; j < 4; j++)
-                logger << "(" << i << "," << j << ") = " << validModel.SV[i][j].index << ":" << validModel.SV[i][j].value << std::endl;        ///TODO REMOVE
-
         ASSERT_LOG(svm_save_model(validModelFileName.c_str(), &validModel) == 0, "Failed to create dummy model file: '" + validModelFileName + "'");
-
-        logger << "SAVED MODEL!!!!" << std::endl;        ///TODO REMOVE
-
-
         ASSERT_LOG(bfs::is_regular_file(validModelFileName), "Couldn't find dummy model file: '" + validModelFileName + "'");
     }
     catch (std::exception& ex)
     {
         logger << "Model pre-generation for following ESVM tests should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -1);
     }
@@ -1569,28 +1594,18 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     try
     {
         ESVM esvm;
-
-        logger << "LOAD MODEL!!!!" << std::endl;        ///TODO REMOVE
-
         esvm.loadModelFile(validModelFileName, LIBSVM, "TEST");
-
-        logger << "LOADED MODEL!!!!" << std::endl;        ///TODO REMOVE
-
         ASSERT_LOG(esvm.isModelTrained(), "Model should be trained after loading LIBSVM formatted model file");
         ASSERT_LOG(esvm.targetID == "TEST", "Target ID should have been properly set from model file loading function");
-
-        logger << "PREDICT MODEL!!!!" << std::endl;        ///TODO REMOVE
-
         esvm.predict(validSample);  // call test to ensure file loading provided a working model
     }
     catch (std::exception& ex)
     {
         logger << "Valid LIBSVM formatted model file should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -2);
     }
-
     bfs::remove_all(testDir);
     
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
@@ -1624,7 +1639,7 @@ int test_ESVM_SaveLoadModelFile_binary()
     catch (std::exception& ex)
     {
         logger << "Valid BINARY pre-trained model file loading should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -1);
     }
@@ -1640,7 +1655,7 @@ int test_ESVM_SaveLoadModelFile_binary()
     catch (std::exception& ex)
     {
         logger << "Invalid BINARY model file saving from untrained ESVM should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -2);
     }
@@ -1655,12 +1670,20 @@ int test_ESVM_SaveLoadModelFile_binary()
     }
     catch (...) {}  // expected exception
 
-    ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY), "Loading valid BINARY model file should have returned a success"); 
-    ASSERT_LOG(esvmLoaded.targetID == validModelFileName, "Target ID should have been set to file name when not specified upon model file loading");
-    ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
-    ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY, "TEST-LOAD"), "Loading valid BINARY model file should have returned a success");
-    ASSERT_LOG(esvmLoaded.targetID == "TEST-LOAD", "Target ID should have been set to specified value upon model file loading");
-    ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
+    try
+    {
+        ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY), "Loading valid BINARY model file should have returned a success"); 
+        ASSERT_LOG(esvmLoaded.targetID == validModelFileName, "Target ID should equal file name when not specified upon model file loading");
+        ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
+        ASSERT_LOG(esvmLoaded.loadModelFile(validModelFileName, BINARY, "TEST-LOAD"), "Loading valid BINARY model file should return successfully");
+        ASSERT_LOG(esvmLoaded.targetID == "TEST-LOAD", "Target ID should have been set to specified value upon model file loading");
+        ASSERT_LOG(esvmLoaded.isModelTrained(), "Model should be trained after loading BINARY formatted model file");
+    }
+    catch (std::exception& ex)
+    {
+        bfs::remove_all(testDir);
+        return passThroughDisplayTestStatus(__func__, -4);
+    }
 
     try
     {
@@ -1669,9 +1692,9 @@ int test_ESVM_SaveLoadModelFile_binary()
     catch (std::exception& ex)
     {
         logger << "Valid BINARY formatted model file should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
-        return passThroughDisplayTestStatus(__func__, -4);
+        return passThroughDisplayTestStatus(__func__, -5);
     }
 
     bfs::remove_all(testDir);
@@ -1741,7 +1764,7 @@ int test_ESVM_SaveLoadModelFile_compare()
     {
         logstream logger(LOGGER_FILE);
         logger << "Valid test procedures should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         bfs::remove_all(testDir);
         return passThroughDisplayTestStatus(__func__, -1);
     }
@@ -1756,9 +1779,10 @@ int test_ESVM_SaveLoadModelFile_compare()
 
 int test_ESVM_ModelFromStructSVM()
 {
-    #if TEST_ESVM_MODEL_STRUCT_SVM
+    #if TEST_ESVM_MODEL_STRUCT_SVM_PARAMS
     
     logstream logger(LOGGER_FILE);
+    logger << "Starting ESVM model resetting evaluation using predefined 'svm_model' struct..." << std::endl;
     try
     {
         // verify valid model setting
@@ -1768,86 +1792,133 @@ int test_ESVM_ModelFromStructSVM()
 
         logger << "Testing ESVM model setting operation with dummy 'svm_model'..." << std::endl;
         ESVM esvm(&validModel, "TEST");
-
     }
     catch (std::exception& ex)
     {
-
         logger << "Valid test procedures should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
+               << "Exception: [" << ex.what() << "]" << std::endl;
         return passThroughDisplayTestStatus(__func__, -1);
-    }    
+    }
 
-    svm_model* invalidModels;
-    size_t nSVM = 15;
+    svm_model *invalidModels_preTrained, *invalidModels_notTrained;
+    size_t nSVM_preTrained = 12, nSVM_notTrained = 10;
     try
     {
         // verify invalid model paramters
-        ASSERT_LOG(ESVM::checkModelParameters(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
+        ASSERT_LOG(!ESVM::checkModelParameters(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
 
         logger << "Generating dummy 'svm_model' with invalid parameters..." << std::endl;        
-        invalidModels = new svm_model[nSVM];
-        for (size_t svm = 0; svm < nSVM; ++svm)
-            invalidModels[svm] = buildDummyExemplarSvmModel();
-        invalidModels[0].param.kernel_type = RBF;           // not 'LINEAR'
-        invalidModels[1].param.svm_type = ONE_CLASS;        // not 'C_SVC'
-        invalidModels[2].param.C = -1;                      // C <= 0
-        invalidModels[2].label[1] = 2;                      // negative class label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
-        invalidModels[3].nr_class = 3;                      // not 2 class
-        invalidModels[4].l = 1;                             // at least 2 samples (1 positive + 1 negative minimum)
-        invalidModels[5].nSV[0] = 0;                        // no positive samples
-        invalidModels[6].param.nr_weight = 1;               // not 0 or 2
-        invalidModels[7].param.weight_label[1] = 2;         // negative class weight label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
-        invalidModels[8].param.weight[1] = -1;              // negative class weight not > 0
-        delete[] invalidModels[9].rho;
-        invalidModels[9].rho = nullptr;                     // missing rho
-        invalidModels[10].probA = new double[2]{ 1, 1 };    // probability estimates not matching
-        invalidModels[10].probB = nullptr;
-        delete[] invalidModels[11].sv_coef[0];              // missing SV coefficient for decision function
-        invalidModels[11].sv_coef[0] = nullptr;
-        delete[] invalidModels[12].sv_coef[0];              // missing SV coefficient container (only 1D for ESVM containing 2 classes)
-        delete[] invalidModels[12].sv_coef;
-        invalidModels[12].sv_coef = nullptr;
-        delete[] invalidModels[13].SV[2];                   // missing any of the SV features (not zero chosen to ensure validation of whole set)
-        invalidModels[13].SV[2] = nullptr;
-        for (int sv = 0; sv < invalidModels[14].l; ++sv)    // missing the SV container
-            delete[] invalidModels[14].SV[sv];               
-        delete[] invalidModels[14].SV;
-        invalidModels[14].SV = nullptr;
+        invalidModels_preTrained = new svm_model[nSVM_preTrained];
+        invalidModels_notTrained = new svm_model[nSVM_notTrained];
+        for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
+            invalidModels_notTrained[svm] = buildDummyExemplarSvmModel(0);     // 'free_sv' = 0 for not trained
+        for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
+            invalidModels_preTrained[svm] = buildDummyExemplarSvmModel(1);     // 'free_sv' = 1 for pre-trained
 
-        for (size_t svm = 0; svm < nSVM; ++svm)
-            ASSERT_LOG(ESVM::checkModelParameters(&invalidModels[svm]), "Invalid SVM model paramters (svm=" +
-                       std::to_string(svm) + ") check should haved returned 'false' status");        
+        // params required for both 'free_sv' = 0 | 1
+        invalidModels_preTrained[0].param.kernel_type = RBF;            // not 'LINEAR' when 'free_sv' = 0
+        invalidModels_preTrained[1].param.svm_type = ONE_CLASS;         // not 'C_SVC'        
+        invalidModels_preTrained[2].label[1] = 2;                       // negative class label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
+        invalidModels_preTrained[3].nr_class = 3;                       // not 2 class
+        invalidModels_preTrained[4].l = 1;                              // >= 2 samples (1 positive + 1 negative minimum)
+        invalidModels_preTrained[5].probA = new double[2]{ 1, 1 };     // probability estimates not matching
+        invalidModels_preTrained[5].probB = nullptr;
+        invalidModels_notTrained[0].param.kernel_type = POLY;           // not 'LINEAR' when 'free_sv' = 0
+        invalidModels_notTrained[1].param.svm_type = NU_SVC;            // not 'C_SVC'
+        invalidModels_notTrained[2].label[1] = 1;                       // negative class label as '1' (duplicate of 'ESVM_POSITIVE_CLASS')
+        invalidModels_notTrained[3].nr_class = 1;                       // not 2 class
+        invalidModels_notTrained[4].l = 0;                              // >= 2 samples (1 positive + 1 negative minimum)
+        invalidModels_notTrained[5].probA = nullptr;                    // probability estimates not matching
+        invalidModels_notTrained[5].probB = new double[2]{ 1, 1 };
+
+        // params required only when 'free_sv' = 0
+        invalidModels_notTrained[6].param.C = -1;                       // C <= 0
+        invalidModels_notTrained[7].param.nr_weight = 1;                // not 0 or 2
+        invalidModels_notTrained[8].param.weight_label[1] = 2;          // negative class weight label as '2' instead of 'ESVM_NEGATIVE_CLASS'
+        invalidModels_notTrained[9].param.weight[1] = -1;               // negative class weight not > 0        
+        
+        // params required only when 'free_sv' = 1
+        invalidModels_preTrained[6].nSV[0] = 0;                         // no positive samples
+        delete[] invalidModels_preTrained[7].rho;
+        invalidModels_preTrained[7].rho = nullptr;                      // missing rho
+        delete[] invalidModels_preTrained[8].sv_coef[0];                // missing SV coefficient for decision function
+        invalidModels_preTrained[8].sv_coef[0] = nullptr;
+        delete[] invalidModels_preTrained[9].sv_coef[0];                // missing SV coefficient container (only 1D for ESVM containing 2 classes)
+        delete[] invalidModels_preTrained[9].sv_coef;
+        invalidModels_preTrained[9].sv_coef = nullptr;
+        delete[] invalidModels_preTrained[10].SV[2];                    // missing any of the SV features (not zero to validate whole set check)
+        invalidModels_preTrained[10].SV[2] = nullptr;
+        for (int sv = 0; sv < invalidModels_preTrained[11].l; ++sv)     // missing the SV container
+            delete[] invalidModels_preTrained[11].SV[sv];
+        delete[] invalidModels_preTrained[11].SV;
+        invalidModels_preTrained[11].SV = nullptr;
+
+        for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
+            ASSERT_LOG(!ESVM::checkModelParameters(&invalidModels_notTrained[svm]), "Invalid SVM not trained model paramters (svm=" +
+                       std::to_string(svm) + ") check should haved returned 'false' status");
+        for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
+            ASSERT_LOG(!ESVM::checkModelParameters(&invalidModels_preTrained[svm]), "Invalid SVM pre-trained model paramters (svm=" +
+                       std::to_string(svm) + ") check should haved returned 'false' status");
+        logger << "Generation of dummy 'svm_model' for test validated." << std::endl;
     }
     catch (std::exception& ex)
     {
         logger << "Valid test preparation of test classes should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
-        for (size_t svm = 0; svm < nSVM; ++svm)
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
         {
-            svm_destroy_param(&invalidModels[svm].param);
-            svm_free_model_content(&invalidModels[svm]);
+            svm_destroy_param(&invalidModels_notTrained[svm].param);
+            svm_free_model_content(&invalidModels_notTrained[svm]);
         }
+        for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
+        {
+            svm_destroy_param(&invalidModels_preTrained[svm].param);
+            svm_free_model_content(&invalidModels_preTrained[svm]);
+        }
+        delete[] invalidModels_notTrained;
+        delete[] invalidModels_preTrained;
         return passThroughDisplayTestStatus(__func__, -2);
     }
 
-    // verify invalid model paramters not initialized
-    for (size_t svm = 0; svm < nSVM; ++svm)
+    // verify invalid model paramters not initialized (not trained models)
+    logger << "Testing invalid 'svm_model' paramters for not trained models." << std::endl;
+    for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
     {
         ESVM esvm;
         try 
         {   
-            esvm = ESVM(&invalidModels[svm], "INVALID " + std::to_string(svm));            
-            logger << "Invalid paramters specified in SVM model to train should have raised an exception." << std::endl;
+            esvm = ESVM(&invalidModels_notTrained[svm], "INVALID " + std::to_string(svm));
+            logger << "Invalid parameters specified in SVM model to reset should have raised an exception." << std::endl;
             return passThroughDisplayTestStatus(__func__, -3);
-        }
+        } 
         catch (...) {} // expected exception
-        ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization and training");
+        ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
+        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
+        destroyDummyExemplarSvmModelContent(&invalidModels_notTrained[svm]);
     }
 
-    #else/*TEST_ESVM_MODEL_STRUCT_SVM*/
+    // verify invalid model paramters not initialized (pre-trained models)
+    logger << "Testing invalid 'svm_model' paramters for pre-trained models." << std::endl;
+    for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
+    {
+        ESVM esvm;
+        try
+        {
+            esvm = ESVM(&invalidModels_preTrained[svm], "INVALID " + std::to_string(svm));
+            logger << "Invalid parameters specified in SVM model to reset should have raised an exception." << std::endl;
+            return passThroughDisplayTestStatus(__func__, -4);
+        }
+        catch (...) {} // expected exception
+        ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
+        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
+        destroyDummyExemplarSvmModelContent(&invalidModels_preTrained[svm]);
+    }
+    delete[] invalidModels_notTrained;
+    delete[] invalidModels_preTrained;
+
+    #else/*TEST_ESVM_MODEL_STRUCT_SVM_PARAMS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
-    #endif/*TEST_ESVM_MODEL_STRUCT_SVM*/
+    #endif/*TEST_ESVM_MODEL_STRUCT_SVM_PARAMS*/
     return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
@@ -1856,58 +1927,98 @@ int test_ESVM_ModelMemoryDealloc()
     #if TEST_ESVM_MODEL_MEMORY_DEALLOC
 
     logstream logger(LOGGER_FILE);
-    
+    logger << "Starting ESVM model memory deallocation evaluation from destructor or reset operations..." << std::endl;
     try
     {
         // test deallocated memory when destructor is called
         svm_model model = buildDummyExemplarSvmModel();
-        ESVM esvm(&model, "TEST-DESTRUCTOR");
-        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
-        esvm.~ESVM();
-    }
-    catch (std::exception& ex)
-    {
-        
-        logger << "Valid test procedure destroying the model should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
-        return passThroughDisplayTestStatus(__func__, -1);
-    }
+        {
+            ESVM esvm(&model, "TEST-DESTRUCTOR");
+            ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
+        }   // out of score will call destructor
 
-    std::string modelFileName = "test_model-reset.model";
-    try
-    {
-        // test deallocated memory when reset of model is called
-        svm_model model = buildDummyExemplarSvmModel();
-        int nSV = model.l;
-        svm_node **refSV = new svm_node*[nSV];      // reference to check SV deallocation since we won't be able to access them via the model
-        for (int sv = 0; sv < nSV; ++sv)
-            refSV[sv] = model.SV[sv];
-
-        ESVM esvm(&model, "TEST-RESET");
-        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
-        esvm.saveModelFile(modelFileName, LIBSVM);  // save to file then reload to induce a 'reset' (replace old model by loaded one)
-        esvm.loadModelFile(modelFileName, LIBSVM);
-        ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly reset to evaluate following functionality");
+        // verify results of model destructor
         ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
-        ASSERT_LOG(model.nSV = nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
         ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
         ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
         ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
-        ASSERT_LOG(model.param.weight == nullptr, "Model 'weight' should have been deallocated and its reference be set to 'null'");
-        ASSERT_LOG(model.param.weight_label == nullptr, "Model 'weight_label' should have been deallocated and its reference be set to 'null'");
-        for (int sv = 0; sv < nSV; ++sv)
-            ASSERT_LOG(refSV[sv] == nullptr, "Model 'SV' should have been deallocated and all their references be set to 'null'");
+        ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
+        ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
         ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
     }
     catch (std::exception& ex)
     {
-
-        logger << "Valid test procedure resetting the model should not have raised an exception." << std::endl
-               << "Exception: " << std::endl << ex.what() << std::endl;
-        bfs::remove_all(modelFileName);
+        logger << "Valid test procedure destroying the model should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
         return passThroughDisplayTestStatus(__func__, -1);
     }
 
+    // test deallocated memory when reset of model is called
+    std::string modelFileName = "test_model-reset.model";
+    ESVM esvm;
+    svm_model model;
+    try
+    {
+        // prepare test model data (pre-trained model)
+        model = buildDummyExemplarSvmModel(1);
+        esvm = ESVM(&model, "TEST-RESET");
+        ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been properly set to evaluate following functionality");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid test model preparation for reset evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        bfs::remove_all(modelFileName);
+        return passThroughDisplayTestStatus(__func__, -2);
+    }
+    logger << "Model for reset memory evaluation properly generated, preparing to reset..." << std::endl;
+    try
+    {
+        // save to file then reload to induce a 'reset' (replace old model by loaded one)
+        logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
+        esvm.saveModelFile(modelFileName, LIBSVM);  
+        logger << "THAT? 2" << std::endl;  ///TODO REMOVE
+        esvm.loadModelFile(modelFileName, LIBSVM);
+        logger << "THAT? 3" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been set from reset operation");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid test resetting operation for model reset evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        bfs::remove_all(modelFileName);
+        return passThroughDisplayTestStatus(__func__, -3);
+    }
+    logger << "Model for reset memory evaluation properly resetted, validating resetted parameters..." << std::endl;
+    try
+    {
+        // verify results of model reset   
+        logger << "THIS? 1" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 2" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 3" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 4" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 5" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 6" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 7" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 8" << std::endl;  ///TODO REMOVE
+        ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
+        logger << "THIS? 9" << std::endl;  ///TODO REMOVE
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Valid test parameter validation for model reset evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        bfs::remove_all(modelFileName);
+        return passThroughDisplayTestStatus(__func__, -4);
+    }
     bfs::remove_all(modelFileName);
 
     #else/*TEST_ESVM_MODEL_MEMORY_DEALLOC*/
@@ -1919,8 +2030,102 @@ int test_ESVM_ModelMemoryDealloc()
 int test_ESVM_ModelMemoryReset()
 {
     #if TEST_ESVM_MODEL_MEMORY_RESET
-    return passThroughDisplayTestStatus(__func__, SKIPPED); ////////////////////// NOT IMPLEMENTED
 
+    logstream logger(LOGGER_FILE);
+    logger << "Starting ESVM model resetting evaluation and validation of updated paramters..." << std::endl;
+    
+    svm_model model1, model2;
+    ESVM esvm1, esvm2;
+    std::vector<FeatureVector> testFeatureVectors;  // feature vectors for testing 'model2'
+    std::vector<double> expectedPredictions;        // values expected with corresponding feature vectors with 'model2'
+    try
+    {
+        // initial model to test that parameters are reset
+        model1 = buildDummyExemplarSvmModel(1);
+        esvm1 = ESVM(&model1, "RESET-PARAM-1");
+        ASSERT_LOG(esvm1.isModelTrained(), "First model for parameter reset validation should be set and trained for following evaluations");        
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Generation of first test model for reset parameter evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        return passThroughDisplayTestStatus(__func__, -1);
+    }
+    try
+    {
+        // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
+        model2.param.kernel_type = LINEAR;
+        model2.param.svm_type = C_SVC;
+        model2.free_sv = 1;
+        model2.nr_class = 2;
+        model2.l = 3;
+        model2.rho = new double[1]{ 4.8 };
+        model2.sv_indices = new int[model2.l]{ 10, 9, 8 };
+        model2.sv_coef = new double*[model2.nr_class - 1]{ new double[model2.l]{ 2.4, -0.8, -0.4 } };
+        model2.label = new int[model2.nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+        model2.nSV = new int[model2.nr_class]{ 1, model2.l - 1 };
+        model2.SV = new svm_node*[model2.l];
+        int nFeatures = 2;                          // number of samples features different to induce error on failed reset of parameters
+        for (int sv = 0; sv < model2.l; ++sv)
+        {
+            model2.SV[sv] = new svm_node[nFeatures + 1];
+            for (int f = 0; f < nFeatures + 1; ++f)
+                model2.SV[sv][f].index = (f == nFeatures) ? -1 : f;
+        }
+        model2.SV[0][0].value = -2.8;   model2.SV[0][1].value = 1.25;
+        model2.SV[1][0].value = 3.25;   model2.SV[1][1].value = 0.25;
+        model2.SV[2][0].value = 1.75;   model2.SV[2][1].value = -1.5;
+        model2.param.probability = 0;
+        model2.probA = nullptr;
+        model2.probB = nullptr;
+
+        // set testing feature vectors
+        testFeatureVectors.push_back(FeatureVector{ -2.8, 1.25 });    expectedPredictions.push_back(1);
+        testFeatureVectors.push_back(FeatureVector{ 3.25, 0.25 });    expectedPredictions.push_back(-1);
+        testFeatureVectors.push_back(FeatureVector{ -1.8, 1.10 });    expectedPredictions.push_back(-1);
+
+        esvm2 = ESVM(&model2, "RESET-PARAM-2");
+        ASSERT_LOG(esvm1.isModelTrained(), "Second model for parameter reset validation should be set and trained for following evaluations");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Generation of second test model for reset parameter evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        return passThroughDisplayTestStatus(__func__, -2);
+    }
+    std::string modelFile = "test_model2-reset.model";
+    try
+    {       
+        esvm2.saveModelFile(modelFile, LIBSVM);
+        ASSERT_LOG(bfs::is_regular_file(modelFile), "Second models file hould have been created");
+    }
+    catch (std::exception& ex)
+    {
+        logger << "Second model saving to file for reset parameter evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        return passThroughDisplayTestStatus(__func__, -3);
+    }
+    try 
+    {
+        // induce reset of 'model1' by loading 'model2'
+        ASSERT_LOG(esvm1.loadModelFile(modelFile, LIBSVM), "Loading of second model into first ESVM should be successful");
+        for (size_t fv = 0; fv < testFeatureVectors.size(); ++fv)
+        {
+            double pred = esvm2.predict(testFeatureVectors[fv]);
+            ASSERT_LOG(pred == expectedPredictions[fv], "Second model modified paramters from reset operation should return expected result (" +
+                       std::to_string(pred) + " != " + std::to_string(expectedPredictions[fv]) + ")");
+        }
+        destroyDummyExemplarSvmModelContent(&model1);
+        destroyDummyExemplarSvmModelContent(&model2);
+    }
+    catch (std::exception& ex)
+    {
+        bfs::remove_all(modelFile);
+        logger << "Final model reset parameter evaluation should not have raised an exception." << std::endl
+               << "Exception: [" << ex.what() << "]" << std::endl;
+        return passThroughDisplayTestStatus(__func__, -4);
+    }    
+    bfs::remove_all(modelFile);
 
     #else/*TEST_ESVM_MODEL_MEMORY_RESET*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);

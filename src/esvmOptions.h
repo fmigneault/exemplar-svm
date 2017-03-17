@@ -89,13 +89,13 @@
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
 // Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY 0
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 1
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 0
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 1
-// Test model resetting using 'svm_model' struct directly populated in code
-#define TEST_ESVM_MODEL_STRUCT_SVM 1
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
+// Test model resetting using 'svm_model' struct directly populated in code, validate parameter checks
+#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 0
 // Test memory deallocation of various model parameters on reset or destructor calls
-#define TEST_ESVM_MODEL_MEMORY_DEALLOC 1
+#define TEST_ESVM_MODEL_MEMORY_DEALLOC 0
 // Test expected functionalities of model with reset/changed parameters (model properly updated)
 #define TEST_ESVM_MODEL_MEMORY_RESET 1
 

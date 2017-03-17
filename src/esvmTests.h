@@ -32,8 +32,8 @@ enum TestStatus     // errors should be defined as negative values (-#) to ensur
 };
 
 /* Test utilities */
-svm_node buildNode(int index, double value);
-svm_model buildDummyExemplarSvmModel();
+svm_model buildDummyExemplarSvmModel(int value_free_sv = 1);
+void destroyDummyExemplarSvmModelContent(svm_model *model);
 bool checkPathEndSlash(std::string path);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);

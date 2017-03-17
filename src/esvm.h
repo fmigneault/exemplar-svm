@@ -10,15 +10,19 @@
 
 #include <memory>
 
+/* ESVM */
+
 class ESVM
 {
 public:
-    inline ESVM() {}
-    inline ~ESVM() {}
+    ~ESVM();
+    ESVM();
+    ESVM(const ESVM&);
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
     ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");
+    bool isModelSet();
     bool isModelTrained();
     void logModelParameters(bool displaySV = false);
     static bool checkModelParameters(svm_model* model);
@@ -51,7 +55,14 @@ private:
     static svm_node* getFeatureNodes(FeatureVector features);
     static svm_node* getFeatureNodes(double* features, int featureCount);
     void resetModel(svm_model* model = nullptr);
-    std::shared_ptr<svm_model> esvmModel;
+    svm_model *esvmModel = nullptr;
 };
+
+/* libsvm extra utilities */
+
+std::string svm_type_name(svm_model*);
+std::string svm_type_name(int /*svm_type*/);
+std::string svm_kernel_name(svm_model*);
+std::string svm_kernel_name(int /*kernel_type*/);
 
 #endif/*ESVM_LIBSVM_H*/

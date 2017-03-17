@@ -239,7 +239,7 @@ do {                                                    \
     throw std::runtime_error(str); }                    \
 } while(0)
 
-// Assert with message printing and logging (non failing)
+// Assert with message printing and logging (no throw)
 #define ASSERT_WARN(cond, msg)                          \
 do {                                                    \
     if (!(cond)) {                                      \
