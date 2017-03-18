@@ -60,8 +60,8 @@ int test_ESVM_SaveLoadModelFile_libsvm();
 int test_ESVM_SaveLoadModelFile_binary();
 int test_ESVM_SaveLoadModelFile_compare();
 int test_ESVM_ModelFromStructSVM();
-int test_ESVM_ModelMemoryDealloc();
-int test_ESVM_ModelMemoryReset();
+int test_ESVM_ModelMemoryOperations();
+int test_ESVM_ModelMemoryParamCheck();
 
 /* Procedures */
 int proc_ReadDataFiles();

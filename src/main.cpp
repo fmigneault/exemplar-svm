@@ -35,8 +35,8 @@ int main(int argc, char* argv[])
         RETURN_ERROR(test_ESVM_SaveLoadModelFile_libsvm());
         RETURN_ERROR(test_ESVM_SaveLoadModelFile_compare());
         RETURN_ERROR(test_ESVM_ModelFromStructSVM());
-        RETURN_ERROR(test_ESVM_ModelMemoryDealloc());
-        RETURN_ERROR(test_ESVM_ModelMemoryReset());
+        RETURN_ERROR(test_ESVM_ModelMemoryOperations());
+        RETURN_ERROR(test_ESVM_ModelMemoryParamCheck());
 
         /* ----------------
           procedure tests
