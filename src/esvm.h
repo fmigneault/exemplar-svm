@@ -24,6 +24,7 @@ public:
     ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
     ESVM(svm_model* trainedModel, std::string id = "");
+    static svm_model* makeEmptyModel();
     bool isModelSet() const;
     bool isModelTrained() const;
     void logModelParameters(bool displaySV = false) const;
@@ -57,7 +58,6 @@ private:
     static svm_node* getFeatureNodes(FeatureVector features);
     static svm_node* getFeatureNodes(double* features, int featureCount);
     static svm_model* deepCopyModel(svm_model* model = nullptr);
-    static svm_model* makeEmptyModel();
     void resetModel(svm_model* model = nullptr);
     svm_model *esvmModel = nullptr;
     /*std::unique_ptr<svm_model> esvmModel = nullptr;*/

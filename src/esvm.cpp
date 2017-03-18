@@ -177,8 +177,8 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
     if (!model) return nullptr;
     
 
-    logstream logger(LOGGER_FILE);///TODO REMOVE
-    logger << "DEEPCOPY!" << std::endl;///TODO REMOVE
+    ///logstream logger(LOGGER_FILE);///TODO REMOVE
+    ///logger << "DEEPCOPY!" << std::endl;///TODO REMOVE
 
     // deep copy of memory
     svm_model* newModel = makeEmptyModel();
@@ -193,7 +193,7 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
 
     if (!model->free_sv)
     {
-        logger << "free_sv == 0" << std::endl;///TODO REMOVE
+        ///logger << "free_sv == 0" << std::endl;///TODO REMOVE
 
         if (!model->param.weight)
             newModel->param.weight = nullptr;
@@ -208,13 +208,13 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
     }
     else
     {
-        logger << "Free_sv != 0 (1)" << std::endl;///TODO REMOVE
+        ///logger << "Free_sv != 0 (1)" << std::endl;///TODO REMOVE
         
         newModel->nSV = new int[newModel->nr_class];
         for (int c = 0; c < newModel->nr_class; ++c)
             newModel->nSV[c] = model->nSV[c];
 
-        logger << "Free_sv != 0 (2)" << std::endl;///TODO REMOVE
+        ///logger << "Free_sv != 0 (2)" << std::endl;///TODO REMOVE
 
         newModel->sv_coef = new double*[model->nr_class - 1];
         for (int c_1 = 0; c_1 < newModel->nr_class - 1; ++c_1) {
@@ -223,35 +223,35 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
                 newModel->sv_coef[c_1][cn] = model->sv_coef[c_1][cn];
         }
 
-        logger << "Free_sv != 0 (3)" << std::endl;///TODO REMOVE
+        ///logger << "Free_sv != 0 (3)" << std::endl;///TODO REMOVE
 
         int nFeatures = 0;
         while (model->SV[0][nFeatures++].index != -1); // count 'svm_nodes'
 
-        logger << "Free_sv != 0 (4) " << std::to_string(nFeatures) << " " << std::to_string(newModel->l) << std::endl;///TODO REMOVE
+        ///logger << "Free_sv != 0 (4) " << std::to_string(nFeatures) << " " << std::to_string(newModel->l) << std::endl;///TODO REMOVE
         
         newModel->sv_indices = (model->sv_indices) ? new int[newModel->l] : nullptr;
         newModel->SV = new svm_node*[newModel->l];
         for (int sv = 0; sv < newModel->l; ++sv) {
-            logger << "Free_sv != 0 (4.1)" << std::endl;///TODO REMOVE
+            ///logger << "Free_sv != 0 (4.1)" << std::endl;///TODO REMOVE
             if (model->sv_indices)
                 newModel->sv_indices[sv] = model->sv_indices[sv];
-            logger << "Free_sv != 0 (4.11) " << std::to_string(sv) << std::endl;///TODO REMOVE
+            ///logger << "Free_sv != 0 (4.11) " << std::to_string(sv) << std::endl;///TODO REMOVE
             newModel->SV[sv] = new svm_node[nFeatures];
-            logger << "Free_sv != 0 (4.2)" << std::endl;///TODO REMOVE
+            ///logger << "Free_sv != 0 (4.2)" << std::endl;///TODO REMOVE
             for (int f = 0; f < nFeatures; ++f)
                 newModel->SV[sv][f] = model->SV[sv][f];
-            logger << "Free_sv != 0 (4.3)" << std::endl;///TODO REMOVE
+            ///logger << "Free_sv != 0 (4.3)" << std::endl;///TODO REMOVE
         }
 
-        logger << "Free_sv != 0 (5)" << std::endl;///TODO REMOVE
+        //////logger << "Free_sv != 0 (5)" << std::endl;///TODO REMOVE
 
         int nClassPairWise = newModel->nr_class*(newModel->nr_class - 1) / 2;
         newModel->rho = new double[nClassPairWise];
         for (int cPW = 0; cPW < nClassPairWise; ++cPW)
             newModel->rho[cPW] = model->rho[cPW];
 
-        logger << "Free_sv != 0 (6)" << std::endl;///TODO REMOVE
+        ///logger << "Free_sv != 0 (6)" << std::endl;///TODO REMOVE
 
         if (ESVM_USE_PREDICT_PROBABILITY && newModel->param.probability && model->probA && model->probB) {
             newModel->param.probability = 1;
@@ -269,7 +269,7 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
         }
     }
 
-    logger << "DEEPCOPY != null? " << (newModel != nullptr) << std::endl;///TODO REMOVE
+    ///logger << "DEEPCOPY != null? " << (newModel != nullptr) << std::endl;///TODO REMOVE
 
     return newModel;
 }
@@ -277,71 +277,71 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
 // Deallocation of model subparts
 void ESVM::resetModel(svm_model* model)
 {
-    logstream logger(LOGGER_FILE);  ///TODO REMOVE
-    logger << "RESET!" << std::endl;///TODO REMOVE
+    ///logstream logger(LOGGER_FILE);  ///TODO REMOVE
+    ///logger << "RESET!" << std::endl;///TODO REMOVE
 
     if (isModelSet())
     {
-        logger << "RESET! 1" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 1" << std::endl;///TODO REMOVE
 
         if (!esvmModel->free_sv)    // weights not used if pre-trained
         {
-            logger << "RESET! 2" << std::endl;///TODO REMOVE
+            ///logger << "RESET! 2" << std::endl;///TODO REMOVE
             delete[] esvmModel->param.weight;
             esvmModel->param.weight = nullptr;
-            logger << "RESET! 3" << std::endl;///TODO REMOVE
+            ///logger << "RESET! 3" << std::endl;///TODO REMOVE
             delete[] esvmModel->param.weight_label;
             esvmModel->param.weight_label = nullptr;
-            logger << "RESET! 4" << std::endl;///TODO REMOVE
+            ///logger << "RESET! 4" << std::endl;///TODO REMOVE
         }
-        logger << "RESET! 5" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 5" << std::endl;///TODO REMOVE
         delete[] esvmModel->label;
         esvmModel->label = nullptr;
-        logger << "RESET! 6" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 6" << std::endl;///TODO REMOVE
         delete[] esvmModel->probA;
         esvmModel->probA = nullptr;
-        logger << "RESET! 7" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 7" << std::endl;///TODO REMOVE
         delete[] esvmModel->probB;
         esvmModel->probB = nullptr;
-        logger << "RESET! 8" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 8" << std::endl;///TODO REMOVE
         delete[] esvmModel->rho;
         esvmModel->rho = nullptr;
-        logger << "RESET! 9" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 9" << std::endl;///TODO REMOVE
         delete[] esvmModel->nSV;
         esvmModel->nSV = nullptr;
-        logger << "RESET! 10" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 10" << std::endl;///TODO REMOVE
         delete[] esvmModel->sv_indices;
         esvmModel->sv_indices = nullptr;
-        logger << "RESET! 11" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 11" << std::endl;///TODO REMOVE
         if (esvmModel->sv_coef)
             for (int c = 0; c < esvmModel->nr_class - 1; ++c)
                 delete[] esvmModel->sv_coef[c];
-        logger << "RESET! 12" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 12" << std::endl;///TODO REMOVE
         delete[] esvmModel->sv_coef;
         esvmModel->sv_coef = nullptr;
-        logger << "RESET! 13" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 13" << std::endl;///TODO REMOVE
         if (esvmModel->SV)
             for (int sv = 0; sv < esvmModel->l; ++sv)
                 delete[] esvmModel->SV[sv];
-        logger << "RESET! 14" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 14" << std::endl;///TODO REMOVE
         delete[] esvmModel->SV;
         esvmModel->SV = nullptr;
-        logger << "RESET! 15" << std::endl;///TODO REMOVE
+        ///logger << "RESET! 15" << std::endl;///TODO REMOVE
     }
-    logger << "RESET! 16" << std::endl;///TODO REMOVE
+    ///logger << "RESET! 16" << std::endl;///TODO REMOVE
     esvmModel = model;      // set requested model or 'null'
-    logger << "RESET! DONE!" << std::endl;///TODO REMOVE
+    ///logger << "RESET! DONE!" << std::endl;///TODO REMOVE
 }
 
 // Destructor
 ESVM::~ESVM()
 {
     try {
-        logstream logger(LOGGER_FILE);  ///TODO REMOVE
-        logger << "DTOR BEFORE RESET" << std::endl;///TODO REMOVE
+        ///logstream logger(LOGGER_FILE);  ///TODO REMOVE
+        ///logger << "DTOR BEFORE RESET" << std::endl;///TODO REMOVE
         logModelParameters(true);
         resetModel();
-        logger << "DTOR AFTER RESET" << std::endl;///TODO REMOVE
+        ///logger << "DTOR AFTER RESET" << std::endl;///TODO REMOVE
         logModelParameters(true);
     }
     catch (...) {}
@@ -818,9 +818,6 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     #elif ESVM_READ_LIBSVM_PARSER_MODE == 2
                     index = parse(spart.substr(0, offset).c_str());
                     value = parse(spart.erase(0, offset + offDelim).c_str());
-                    logstream logger(LOGGER_FILE);
-                    logger << "INDEX: " << std::setprecision(12) << index << std::endl;
-                    logger << "value: " << std::setprecision(12) << value << std::endl;
                     #else
                     throw std::runtime_error("Undefined parser mode");
                     #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
@@ -1051,9 +1048,11 @@ bool ESVM::isModelSet() const
 
 bool ESVM::isModelTrained() const
 {
-    logstream logger(LOGGER_FILE);
+    ///TODO REMOVE
+    /*logstream logger(LOGGER_FILE);
     logger << "MODEL TRAINED?!" << std::endl;
     logModelParameters(true);
+    */
 
     /// TODO - check multiple parameters or not?   && model->SV != nullptr && model->sv_coef != nullptr && model->
     return (isModelSet() && esvmModel->free_sv);

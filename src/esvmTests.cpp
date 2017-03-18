@@ -33,6 +33,9 @@ svm_model buildDummyExemplarSvmModel(int value_free_sv)
     svm_model *model = new svm_model;
     try
     {
+        //////////////////////////////////////////////////////////////////////////////////////////// TODO - USE 'makeEmptyModel'
+
+
         // parameters must be matched with 'destroyDummyExemplarSvmModelContent'
         int nSV = 5;
         int nClass = 2;
@@ -93,7 +96,9 @@ svm_model buildDummyExemplarSvmModel(int value_free_sv)
 // destroys all the contained memory references inside an 'svm_model' created with 'buildDummyExemplarSvmModel'
 void destroyDummyExemplarSvmModelContent(svm_model *model)
 {
+    logstream logger(LOGGER_FILE);///TODO REMOVE
     if (!model) return;
+    logger << "CLEANUP - MODEL !null" << std::endl;///TODO REMOVE
     try
     {
         // parameters assumed to match 'buildDummyExemplarSvmModel' since 'model->l' could be modified outside for testing purposes
@@ -101,20 +106,31 @@ void destroyDummyExemplarSvmModelContent(svm_model *model)
         int nClass = 2;
         int nFeatures = 4;
 
+        logger << "CLEANUP - DEL weight" << std::endl;///TODO REMOVE
         delete[] model->param.weight;
+        logger << "CLEANUP - DEL weight_label" << std::endl;///TODO REMOVE
         delete[] model->param.weight_label;
+        logger << "CLEANUP - DEL label" << std::endl;///TODO REMOVE
         delete[] model->label;
+        logger << "CLEANUP - DEL probA" << std::endl;///TODO REMOVE
         delete[] model->probA;
+        logger << "CLEANUP - DEL probB" << std::endl;///TODO REMOVE
         delete[] model->probB;
+        logger << "CLEANUP - DEL rho" << std::endl;///TODO REMOVE
         delete[] model->rho;
+        logger << "CLEANUP - DEL nSV" << std::endl;///TODO REMOVE
         delete[] model->nSV;
+        logger << "CLEANUP - DEL sv_coef" << std::endl;///TODO REMOVE
         if (model->sv_coef)
             for (int c = 0; c < nClass - 1; ++c)
                 delete[] model->sv_coef[c];
+        logger << "CLEANUP - DEL sv_coef*" << std::endl;///TODO REMOVE
         delete[] model->sv_coef;
+        logger << "CLEANUP - DEL SV" << std::endl;///TODO REMOVE
         if (model->SV)
             for (int sv = 0; sv < nSV; ++sv)
                 delete[] model->SV[sv];
+        logger << "CLEANUP - DEL SV*" << std::endl;///TODO REMOVE
         delete[] model->SV;
     }
     catch (std::exception& ex)
@@ -1955,7 +1971,7 @@ int test_ESVM_ModelMemoryOperations()
     }
 
     // test deallocated memory when reset of model is called
-    std::string modelFileName = "test_model-reset.model";
+    std::string modelFileName = "test_model-memory-operations.model";
     ESVM esvm;
     svm_model model;
     try
@@ -2066,11 +2082,15 @@ int test_ESVM_ModelMemoryParamCheck()
     try
     {
         // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
+
+        //////////////////////////////////////////////////////////////////////////////////////////// TODO - USE 'makeEmptyModel'
         model2.param.kernel_type = LINEAR;
         model2.param.svm_type = C_SVC;
         model2.free_sv = 1;
         model2.nr_class = 2;
         model2.l = 3;
+        model2.param.weight = nullptr;
+        model2.param.weight_label = nullptr;
         model2.rho = new double[1]{ 4.8 };
         model2.sv_indices = new int[model2.l]{ 10, 9, 8 };
         model2.sv_coef = new double*[model2.nr_class - 1]{ new double[model2.l]{ 2.4, -0.8, -0.4 } };
@@ -2105,11 +2125,11 @@ int test_ESVM_ModelMemoryParamCheck()
                << "Exception: [" << ex.what() << "]" << std::endl;
         return passThroughDisplayTestStatus(__func__, -2);
     }
-    std::string modelFile = "test_model2-reset.model";
+    std::string modelFileName = "test_model2-memory-param-reset.model";
     try
     {       
-        esvm2.saveModelFile(modelFile, LIBSVM);
-        ASSERT_LOG(bfs::is_regular_file(modelFile), "Second models file hould have been created");
+        esvm2.saveModelFile(modelFileName, LIBSVM);
+        ASSERT_LOG(bfs::is_regular_file(modelFileName), "Second models file hould have been created");
     }
     catch (std::exception& ex)
     {
@@ -2119,8 +2139,8 @@ int test_ESVM_ModelMemoryParamCheck()
     }
     try 
     {
-        // induce reset of 'model1' by loading 'model2'
-        ASSERT_LOG(esvm1.loadModelFile(modelFile, LIBSVM), "Loading of second model into first ESVM should be successful");
+        // induce reset of 'model1' by loading 'model2' from file
+        ASSERT_LOG(esvm1.loadModelFile(modelFileName, LIBSVM), "Loading of second model into first ESVM should be successful");
         for (size_t fv = 0; fv < testFeatureVectors.size(); ++fv)
         {
             double pred = esvm2.predict(testFeatureVectors[fv]);
@@ -2131,15 +2151,19 @@ int test_ESVM_ModelMemoryParamCheck()
     }
     catch (std::exception& ex)
     {
-        bfs::remove_all(modelFile);
+        bfs::remove_all(modelFileName);
         logger << "Final model reset parameter evaluation should not have raised an exception." << std::endl
                << "Exception: [" << ex.what() << "]" << std::endl;
         return passThroughDisplayTestStatus(__func__, -4);
-    }  
-
+    }
+    
+    logger << "CLEANUP MODEL1" << std::endl;   ///TODO REMOVE
     destroyDummyExemplarSvmModelContent(&model1);
+    logger << "CLEANUP MODEL2" << std::endl;   ///TODO REMOVE
     destroyDummyExemplarSvmModelContent(&model2);
-    bfs::remove_all(modelFile);
+    logger << "CLEANUP FILE" << std::endl;   ///TODO REMOVE
+    bfs::remove_all(modelFileName);
+    logger << "CLEANUP DONE" << std::endl;   ///TODO REMOVE
 
 
     ///////////////////////////////////////////////////////////////////////// TODO SAME TEST, BUT FOR 'BINARY' FILE RESET
