@@ -1944,6 +1944,8 @@ int test_ESVM_ModelMemoryOperations()
 
     logstream logger(LOGGER_FILE);
     logger << "Starting ESVM model memory operations evaluation (ctor, copy, move, operator=, reset, dtor)..." << std::endl;
+    std::string modelFileName = "test_model-memory-operations.model";
+
     try
     {
         // test deallocated memory when destructor is automatically called from out of scope
@@ -1970,78 +1972,83 @@ int test_ESVM_ModelMemoryOperations()
         return passThroughDisplayTestStatus(__func__, -1);
     }
 
-    // test deallocated memory when reset of model is called
-    std::string modelFileName = "test_model-memory-operations.model";
-    ESVM esvm;
-    svm_model model;
-    try
-    {
-        // prepare test model data (pre-trained model)
-        model = buildDummyExemplarSvmModel(1);
-        esvm = ESVM(&model, "TEST-RESET");
-        ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been properly set to evaluate following functionality");
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Valid test model preparation for reset evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        bfs::remove_all(modelFileName);
-        return passThroughDisplayTestStatus(__func__, -2);
-    }
-    logger << "Model for reset memory evaluation properly generated, preparing to reset..." << std::endl;
-    try
-    {
-        // save to file then reload to induce a 'reset' (replace old model by loaded one)
-        logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
-        esvm.saveModelFile(modelFileName, LIBSVM);  
-        logger << "THAT? 2" << std::endl;  ///TODO REMOVE
-        esvm.loadModelFile(modelFileName, LIBSVM);
-        logger << "THAT? 3" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been set from reset operation");
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Valid test resetting operation for model reset evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        bfs::remove_all(modelFileName);
-        return passThroughDisplayTestStatus(__func__, -3);
-    }
-    logger << "Model for reset memory evaluation properly resetted, validating resetted parameters..." << std::endl;
-    try
-    {
-        // verify results of model reset   
-        logger << "THIS? 1" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 2" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 3" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 4" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 5" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 6" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 7" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 8" << std::endl;  ///TODO REMOVE
-        ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
-        logger << "THIS? 9" << std::endl;  ///TODO REMOVE
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Valid test parameter validation for model reset evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        bfs::remove_all(modelFileName);
-        return passThroughDisplayTestStatus(__func__, -4);
-    }
+    try {   // scope to call ESVM destructors before actual end of test
+        
+        // test deallocated memory when reset of model is called        
+        ESVM esvm;
+        svm_model model;
+        try
+        {
+            // prepare test model data (pre-trained model)
+            model = buildDummyExemplarSvmModel(1);
+            esvm = ESVM(&model, "TEST-RESET");
+            ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been properly set to evaluate following functionality");
+        }
+        catch (std::exception& ex)
+        {
+            logger << "Valid test model preparation for reset evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            bfs::remove_all(modelFileName);
+            return passThroughDisplayTestStatus(__func__, -2);
+        }
+        logger << "Model for reset memory evaluation properly generated, preparing to reset..." << std::endl;
+        try
+        {
+            // save to file then reload to induce a 'reset' (replace old model by loaded one)
+            logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
+            esvm.saveModelFile(modelFileName, LIBSVM);  
+            logger << "THAT? 2" << std::endl;  ///TODO REMOVE
+            esvm.loadModelFile(modelFileName, LIBSVM);
+            logger << "THAT? 3" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been set from reset operation");
+        }
+        catch (std::exception& ex)
+        {
+            logger << "Valid test resetting operation for model reset evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            bfs::remove_all(modelFileName);
+            return passThroughDisplayTestStatus(__func__, -3);
+        }
+        logger << "Model for reset memory evaluation properly resetted, validating resetted parameters..." << std::endl;
+        try
+        {
+            // verify results of model reset   
+            logger << "THIS? 1" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 2" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 3" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 4" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 5" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 6" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 7" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 8" << std::endl;  ///TODO REMOVE
+            ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
+            logger << "THIS? 9" << std::endl;  ///TODO REMOVE
+        }
+        catch (std::exception& ex)
+        {
+            logger << "Valid test parameter validation for model reset evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            bfs::remove_all(modelFileName);
+            return passThroughDisplayTestStatus(__func__, -4);
+        }
 
 
-    /// TODO    
-    //OPERATION THAT CHECKS COPY-CTOR TO SELF! (not dealloc)
-    //OPERATION THAT CHECKS MOVE-CTOR + to self
-    //OPERATION THAT CHECKS =()-CTOR, + to self
-    //OPERATION THAT CHECKS DTOR direct call
+        /// TODO    
+        //OPERATION THAT CHECKS COPY-CTOR TO SELF! (not dealloc)
+        //OPERATION THAT CHECKS MOVE-CTOR + to self
+        //OPERATION THAT CHECKS =()-CTOR, + to self
+        //OPERATION THAT CHECKS DTOR direct call
+
+
+    } // end scope for ESVM destructor calls
+    catch (...) {}
 
     bfs::remove_all(modelFileName);
 
@@ -2057,117 +2064,121 @@ int test_ESVM_ModelMemoryParamCheck()
 
     logstream logger(LOGGER_FILE);
     logger << "Starting ESVM model resetting evaluation and validation of updated paramters..." << std::endl;
-    
-    svm_model model1, model2;
-    ESVM esvm1, esvm2;
-    std::vector<FeatureVector> testFeatureVectors;  // feature vectors for testing 'model2'
-    std::vector<double> expectedPredictions;        // values expected with corresponding feature vectors with 'model2'
-    try
-    {
-        // initial model to test that parameters are reset
-        model1 = buildDummyExemplarSvmModel(1);
-        logger << "esvm1 = ESVM(&model1, 'RESET-PARAM-1');" << std::endl;  ///TODO REMOVE
-        esvm1 = ESVM(&model1, "RESET-PARAM-1");
-        logger << "INFOS::" << std::endl;  ///TODO REMOVE
-        esvm1.logModelParameters(true);  ///TODO REMOVE
-        ASSERT_LOG(esvm1.isModelTrained(), "First model for parameter reset validation should be set and trained for following evaluations");
-        ASSERT_LOG(esvm1.targetID == "RESET-PARAM-1", "First model for parameter reset validation should be set with expected first target ID");
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Generation of first test model for reset parameter evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        return passThroughDisplayTestStatus(__func__, -1);
-    }
-    try
-    {
-        // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
-
-        //////////////////////////////////////////////////////////////////////////////////////////// TODO - USE 'makeEmptyModel'
-        model2.param.kernel_type = LINEAR;
-        model2.param.svm_type = C_SVC;
-        model2.free_sv = 1;
-        model2.nr_class = 2;
-        model2.l = 3;
-        model2.param.weight = nullptr;
-        model2.param.weight_label = nullptr;
-        model2.rho = new double[1]{ 4.8 };
-        model2.sv_indices = new int[model2.l]{ 10, 9, 8 };
-        model2.sv_coef = new double*[model2.nr_class - 1]{ new double[model2.l]{ 2.4, -0.8, -0.4 } };
-        model2.label = new int[model2.nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
-        model2.nSV = new int[model2.nr_class]{ 1, model2.l - 1 };
-        model2.SV = new svm_node*[model2.l];
-        int nFeatures = 2;                          // number of samples features different to induce error on failed reset of parameters
-        for (int sv = 0; sv < model2.l; ++sv)
-        {
-            model2.SV[sv] = new svm_node[nFeatures + 1];
-            for (int f = 0; f < nFeatures + 1; ++f)
-                model2.SV[sv][f].index = (f == nFeatures) ? -1 : f;
-        }
-        model2.SV[0][0].value = -2.8;   model2.SV[0][1].value = 1.25;
-        model2.SV[1][0].value = 3.25;   model2.SV[1][1].value = 0.25;
-        model2.SV[2][0].value = 1.75;   model2.SV[2][1].value = -1.5;
-        model2.param.probability = 0;
-        model2.probA = nullptr;
-        model2.probB = nullptr;
-
-        // set some testing feature vectors, verify that expected prediction values are obtained from proper parameter update 
-        testFeatureVectors.push_back(FeatureVector{ -2.8, 1.25 });    expectedPredictions.push_back(-14.32);
-        testFeatureVectors.push_back(FeatureVector{ 3.25, 0.25 });    expectedPredictions.push_back(6.25);
-        testFeatureVectors.push_back(FeatureVector{ -1.8, 1.10 });    expectedPredictions.push_back(-10.92);
-
-        esvm2 = ESVM(&model2, "RESET-PARAM-2");
-        ASSERT_LOG(esvm1.isModelTrained(), "Second model for parameter reset validation should be set and trained for following evaluations");
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Generation of second test model for reset parameter evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        return passThroughDisplayTestStatus(__func__, -2);
-    }
     std::string modelFileName = "test_model2-memory-param-reset.model";
-    try
-    {       
-        esvm2.saveModelFile(modelFileName, LIBSVM);
-        ASSERT_LOG(bfs::is_regular_file(modelFileName), "Second models file hould have been created");
-    }
-    catch (std::exception& ex)
-    {
-        logger << "Second model saving to file for reset parameter evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        return passThroughDisplayTestStatus(__func__, -3);
-    }
-    try 
-    {
-        // induce reset of 'model1' by loading 'model2' from file
-        ASSERT_LOG(esvm1.loadModelFile(modelFileName, LIBSVM), "Loading of second model into first ESVM should be successful");
-        for (size_t fv = 0; fv < testFeatureVectors.size(); ++fv)
+
+    try {   // scope to call ESVM destructors before actual end of test
+
+        svm_model model1, model2;
+        ESVM esvm1, esvm2;
+        std::vector<FeatureVector> testFeatureVectors;  // feature vectors for testing 'model2'
+        std::vector<double> expectedPredictions;        // values expected with corresponding feature vectors with 'model2'
+        try
         {
-            double pred = esvm2.predict(testFeatureVectors[fv]);
-            ASSERT_LOG(doubleAlmostEquals(pred, expectedPredictions[fv]), 
-                       "Second model modified paramters from reset operation should return expected result (" +
-                       std::to_string(pred) + " != " + std::to_string(expectedPredictions[fv]) + ")");
+            // initial model to test that parameters are reset
+            model1 = buildDummyExemplarSvmModel(1);
+            logger << "esvm1 = ESVM(&model1, 'RESET-PARAM-1');" << std::endl;  ///TODO REMOVE
+            esvm1 = ESVM(&model1, "RESET-PARAM-1");
+            logger << "INFOS::" << std::endl;  ///TODO REMOVE
+            esvm1.logModelParameters(true);  ///TODO REMOVE
+            ASSERT_LOG(esvm1.isModelTrained(), "First model for parameter reset validation should be set and trained for following evaluations");
+            ASSERT_LOG(esvm1.targetID == "RESET-PARAM-1", "First model for parameter reset validation should be set with expected first target ID");
         }
-    }
-    catch (std::exception& ex)
-    {
-        bfs::remove_all(modelFileName);
-        logger << "Final model reset parameter evaluation should not have raised an exception." << std::endl
-               << "Exception: [" << ex.what() << "]" << std::endl;
-        return passThroughDisplayTestStatus(__func__, -4);
-    }
+        catch (std::exception& ex)
+        {
+            logger << "Generation of first test model for reset parameter evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            return passThroughDisplayTestStatus(__func__, -1);
+        }
+        try
+        {
+            // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
+
+            //////////////////////////////////////////////////////////////////////////////////////////// TODO - USE 'makeEmptyModel'
+            model2.param.kernel_type = LINEAR;
+            model2.param.svm_type = C_SVC;
+            model2.free_sv = 1;
+            model2.nr_class = 2;
+            model2.l = 3;
+            model2.param.weight = nullptr;
+            model2.param.weight_label = nullptr;
+            model2.rho = new double[1]{ 4.8 };
+            model2.sv_indices = new int[model2.l]{ 10, 9, 8 };
+            model2.sv_coef = new double*[model2.nr_class - 1]{ new double[model2.l]{ 2.4, -0.8, -0.4 } };
+            model2.label = new int[model2.nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+            model2.nSV = new int[model2.nr_class]{ 1, model2.l - 1 };
+            model2.SV = new svm_node*[model2.l];
+            int nFeatures = 2;                          // number of samples features different to induce error on failed reset of parameters
+            for (int sv = 0; sv < model2.l; ++sv)
+            {
+                model2.SV[sv] = new svm_node[nFeatures + 1];
+                for (int f = 0; f < nFeatures + 1; ++f)
+                    model2.SV[sv][f].index = (f == nFeatures) ? -1 : f;
+            }
+            model2.SV[0][0].value = -2.8;   model2.SV[0][1].value = 1.25;
+            model2.SV[1][0].value = 3.25;   model2.SV[1][1].value = 0.25;
+            model2.SV[2][0].value = 1.75;   model2.SV[2][1].value = -1.5;
+            model2.param.probability = 0;
+            model2.probA = nullptr;
+            model2.probB = nullptr;
+
+            // set some testing feature vectors, verify that expected prediction values are obtained from proper parameter update 
+            testFeatureVectors.push_back(FeatureVector{ -2.8, 1.25 });    expectedPredictions.push_back(-14.32);
+            testFeatureVectors.push_back(FeatureVector{ 3.25, 0.25 });    expectedPredictions.push_back(6.25);
+            testFeatureVectors.push_back(FeatureVector{ -1.8, 1.10 });    expectedPredictions.push_back(-10.92);
+
+            esvm2 = ESVM(&model2, "RESET-PARAM-2");
+            ASSERT_LOG(esvm1.isModelTrained(), "Second model for parameter reset validation should be set and trained for following evaluations");
+        }
+        catch (std::exception& ex)
+        {
+            logger << "Generation of second test model for reset parameter evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            return passThroughDisplayTestStatus(__func__, -2);
+        }        
+        try
+        {       
+            esvm2.saveModelFile(modelFileName, LIBSVM);
+            ASSERT_LOG(bfs::is_regular_file(modelFileName), "Second models file hould have been created");
+        }
+        catch (std::exception& ex)
+        {
+            logger << "Second model saving to file for reset parameter evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            return passThroughDisplayTestStatus(__func__, -3);
+        }
+        try 
+        {
+            // induce reset of 'model1' by loading 'model2' from file
+            ASSERT_LOG(esvm1.loadModelFile(modelFileName, LIBSVM), "Loading of second model into first ESVM should be successful");
+            for (size_t fv = 0; fv < testFeatureVectors.size(); ++fv)
+            {
+                double pred = esvm2.predict(testFeatureVectors[fv]);
+                ASSERT_LOG(doubleAlmostEquals(pred, expectedPredictions[fv]), 
+                           "Second model modified paramters from reset operation should return expected result (" +
+                           std::to_string(pred) + " != " + std::to_string(expectedPredictions[fv]) + ")");
+            }
+        }
+        catch (std::exception& ex)
+        {
+            bfs::remove_all(modelFileName);
+            logger << "Final model reset parameter evaluation should not have raised an exception." << std::endl
+                   << "Exception: [" << ex.what() << "]" << std::endl;
+            return passThroughDisplayTestStatus(__func__, -4);
+        }
     
-    logger << "CLEANUP MODEL1" << std::endl;   ///TODO REMOVE
-    destroyDummyExemplarSvmModelContent(&model1);
-    logger << "CLEANUP MODEL2" << std::endl;   ///TODO REMOVE
-    destroyDummyExemplarSvmModelContent(&model2);
-    logger << "CLEANUP FILE" << std::endl;   ///TODO REMOVE
-    bfs::remove_all(modelFileName);
-    logger << "CLEANUP DONE" << std::endl;   ///TODO REMOVE
-
-
+        logger << "CLEANUP MODEL1" << std::endl;   ///TODO REMOVE
+        destroyDummyExemplarSvmModelContent(&model1);
+        logger << "CLEANUP MODEL2" << std::endl;   ///TODO REMOVE
+        destroyDummyExemplarSvmModelContent(&model2);
+        logger << "CLEANUP FILE" << std::endl;   ///TODO REMOVE
+        bfs::remove_all(modelFileName);
+        logger << "CLEANUP DONE" << std::endl;   ///TODO REMOVE
+    
+    } // end scope for ESVM destructor calls
+    catch (...) {}
+    
     ///////////////////////////////////////////////////////////////////////// TODO SAME TEST, BUT FOR 'BINARY' FILE RESET
-
+    bfs::remove_all(modelFileName);
 
     #else/*TEST_ESVM_MODEL_MEMORY_PARAM_CHECK*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
