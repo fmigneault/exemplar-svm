@@ -96,9 +96,9 @@ svm_model buildDummyExemplarSvmModel(int value_free_sv)
 // destroys all the contained memory references inside an 'svm_model' created with 'buildDummyExemplarSvmModel'
 void destroyDummyExemplarSvmModelContent(svm_model *model)
 {
-    logstream logger(LOGGER_FILE);///TODO REMOVE
+    ///logstream logger(LOGGER_FILE);///TODO REMOVE
     if (!model) return;
-    logger << "CLEANUP - MODEL !null" << std::endl;///TODO REMOVE
+    ///logger << "CLEANUP - MODEL !null" << std::endl;///TODO REMOVE
     try
     {
         // parameters assumed to match 'buildDummyExemplarSvmModel' since 'model->l' could be modified outside for testing purposes
@@ -106,31 +106,31 @@ void destroyDummyExemplarSvmModelContent(svm_model *model)
         int nClass = 2;
         int nFeatures = 4;
 
-        logger << "CLEANUP - DEL weight" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL weight" << std::endl;///TODO REMOVE
         delete[] model->param.weight;
-        logger << "CLEANUP - DEL weight_label" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL weight_label" << std::endl;///TODO REMOVE
         delete[] model->param.weight_label;
-        logger << "CLEANUP - DEL label" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL label" << std::endl;///TODO REMOVE
         delete[] model->label;
-        logger << "CLEANUP - DEL probA" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL probA" << std::endl;///TODO REMOVE
         delete[] model->probA;
-        logger << "CLEANUP - DEL probB" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL probB" << std::endl;///TODO REMOVE
         delete[] model->probB;
-        logger << "CLEANUP - DEL rho" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL rho" << std::endl;///TODO REMOVE
         delete[] model->rho;
-        logger << "CLEANUP - DEL nSV" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL nSV" << std::endl;///TODO REMOVE
         delete[] model->nSV;
-        logger << "CLEANUP - DEL sv_coef" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL sv_coef" << std::endl;///TODO REMOVE
         if (model->sv_coef)
             for (int c = 0; c < nClass - 1; ++c)
                 delete[] model->sv_coef[c];
-        logger << "CLEANUP - DEL sv_coef*" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL sv_coef*" << std::endl;///TODO REMOVE
         delete[] model->sv_coef;
-        logger << "CLEANUP - DEL SV" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL SV" << std::endl;///TODO REMOVE
         if (model->SV)
             for (int sv = 0; sv < nSV; ++sv)
                 delete[] model->SV[sv];
-        logger << "CLEANUP - DEL SV*" << std::endl;///TODO REMOVE
+        ///logger << "CLEANUP - DEL SV*" << std::endl;///TODO REMOVE
         delete[] model->SV;
     }
     catch (std::exception& ex)
@@ -1995,11 +1995,11 @@ int test_ESVM_ModelMemoryOperations()
         try
         {
             // save to file then reload to induce a 'reset' (replace old model by loaded one)
-            logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
+            ///logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
             esvm.saveModelFile(modelFileName, LIBSVM);  
-            logger << "THAT? 2" << std::endl;  ///TODO REMOVE
+            ///logger << "THAT? 2" << std::endl;  ///TODO REMOVE
             esvm.loadModelFile(modelFileName, LIBSVM);
-            logger << "THAT? 3" << std::endl;  ///TODO REMOVE
+            ///logger << "THAT? 3" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been set from reset operation");
         }
         catch (std::exception& ex)
@@ -2013,23 +2013,23 @@ int test_ESVM_ModelMemoryOperations()
         try
         {
             // verify results of model reset   
-            logger << "THIS? 1" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 1" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 2" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 2" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 3" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 3" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 4" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 4" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 5" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 5" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 6" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 6" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 7" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 7" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 8" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 8" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
-            logger << "THIS? 9" << std::endl;  ///TODO REMOVE
+            ///logger << "THIS? 9" << std::endl;  ///TODO REMOVE
         }
         catch (std::exception& ex)
         {
@@ -2076,10 +2076,10 @@ int test_ESVM_ModelMemoryParamCheck()
         {
             // initial model to test that parameters are reset
             model1 = buildDummyExemplarSvmModel(1);
-            logger << "esvm1 = ESVM(&model1, 'RESET-PARAM-1');" << std::endl;  ///TODO REMOVE
+            ///logger << "esvm1 = ESVM(&model1, 'RESET-PARAM-1');" << std::endl;  ///TODO REMOVE
             esvm1 = ESVM(&model1, "RESET-PARAM-1");
-            logger << "INFOS::" << std::endl;  ///TODO REMOVE
-            esvm1.logModelParameters(true);  ///TODO REMOVE
+            ///logger << "INFOS::" << std::endl;  ///TODO REMOVE
+            ///esvm1.logModelParameters(true);  ///TODO REMOVE
             ASSERT_LOG(esvm1.isModelTrained(), "First model for parameter reset validation should be set and trained for following evaluations");
             ASSERT_LOG(esvm1.targetID == "RESET-PARAM-1", "First model for parameter reset validation should be set with expected first target ID");
         }
@@ -2166,13 +2166,13 @@ int test_ESVM_ModelMemoryParamCheck()
             return passThroughDisplayTestStatus(__func__, -4);
         }
     
-        logger << "CLEANUP MODEL1" << std::endl;   ///TODO REMOVE
+        ///logger << "CLEANUP MODEL1" << std::endl;   ///TODO REMOVE
         destroyDummyExemplarSvmModelContent(&model1);
-        logger << "CLEANUP MODEL2" << std::endl;   ///TODO REMOVE
+        ///logger << "CLEANUP MODEL2" << std::endl;   ///TODO REMOVE
         destroyDummyExemplarSvmModelContent(&model2);
-        logger << "CLEANUP FILE" << std::endl;   ///TODO REMOVE
+        ///logger << "CLEANUP FILE" << std::endl;   ///TODO REMOVE
         bfs::remove_all(modelFileName);
-        logger << "CLEANUP DONE" << std::endl;   ///TODO REMOVE
+        ///logger << "CLEANUP DONE" << std::endl;   ///TODO REMOVE
     
     } // end scope for ESVM destructor calls
     catch (...) {}

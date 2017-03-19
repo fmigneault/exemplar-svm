@@ -93,14 +93,14 @@ ESVM::ESVM()
 ESVM::ESVM(const ESVM& esvm)
 {
     ///TODO REMOVE
-    logstream logger(LOGGER_FILE);
-    logger << "COPY_CTOR!" << std::endl;    
+    ///logstream logger(LOGGER_FILE);
+    ///logger << "COPY_CTOR!" << std::endl;    
 
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
 
-    logger << "COPY_CTOR - AFTER OPERATIONS: " << std::endl;
-    logModelParameters(true);    
+    ///logger << "COPY_CTOR - AFTER OPERATIONS: " << std::endl;
+    ///logModelParameters(true);    
 }
 
 // Move constructor
@@ -135,8 +135,8 @@ ESVM::ESVM(ESVM&& esvm)
 ESVM& ESVM::operator=(const ESVM& esvm)
 {
     ///TODO REMOVE
-    logstream logger(LOGGER_FILE);
-    logger << "EQUAL_CTOR!" << std::endl;
+    ///logstream logger(LOGGER_FILE);
+    ///logger << "EQUAL_CTOR!" << std::endl;
 
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
@@ -339,10 +339,10 @@ ESVM::~ESVM()
     try {
         ///logstream logger(LOGGER_FILE);  ///TODO REMOVE
         ///logger << "DTOR BEFORE RESET" << std::endl;///TODO REMOVE
-        logModelParameters(true);
+        ///logModelParameters(true);
         resetModel();
         ///logger << "DTOR AFTER RESET" << std::endl;///TODO REMOVE
-        logModelParameters(true);
+        ///logModelParameters(true);
     }
     catch (...) {}
 
