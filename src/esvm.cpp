@@ -14,7 +14,7 @@ namespace bfs = boost::filesystem;
 /*
     Initializes and trains an ESVM using list of positive and negative feature vectors
 */
-ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id) 
+ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id)
     : targetID(id), esvmModel(nullptr)
 {
     ASSERT_THROW(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
@@ -176,7 +176,6 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
 {
     if (!model) return nullptr;
     
-
     ///logstream logger(LOGGER_FILE);///TODO REMOVE
     ///logger << "DEEPCOPY!" << std::endl;///TODO REMOVE
 
@@ -274,63 +273,100 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
     return newModel;
 }
 
-// Deallocation of model subparts
-void ESVM::resetModel(svm_model* model)
+// Deallocates all model contained memory block and the model itself
+void ESVM::destroyModel(svm_model** model)
 {
-    ///logstream logger(LOGGER_FILE);  ///TODO REMOVE
-    ///logger << "RESET!" << std::endl;///TODO REMOVE
-
-    if (isModelSet())
+    if (model != nullptr && *model != nullptr)
     {
-        ///logger << "RESET! 1" << std::endl;///TODO REMOVE
+        svm_model* pModel = *model;
+        delete[] pModel->label;
+        pModel->label = nullptr;
 
-        if (!esvmModel->free_sv)    // weights not used if pre-trained
-        {
-            ///logger << "RESET! 2" << std::endl;///TODO REMOVE
-            delete[] esvmModel->param.weight;
-            esvmModel->param.weight = nullptr;
-            ///logger << "RESET! 3" << std::endl;///TODO REMOVE
-            delete[] esvmModel->param.weight_label;
-            esvmModel->param.weight_label = nullptr;
-            ///logger << "RESET! 4" << std::endl;///TODO REMOVE
+        bool freeParam = pModel->free_sv == FreeModelState::PARAM || pModel->free_sv == FreeModelState::MULTI;
+        bool freeModel = pModel->free_sv == FreeModelState::MODEL || pModel->free_sv == FreeModelState::MULTI;
+        
+        if (freeParam) {
+            delete[] pModel->param.weight;
+            pModel->param.weight = nullptr;
+            delete[] pModel->param.weight_label;
+            pModel->param.weight_label = nullptr;
         }
-        ///logger << "RESET! 5" << std::endl;///TODO REMOVE
-        delete[] esvmModel->label;
-        esvmModel->label = nullptr;
-        ///logger << "RESET! 6" << std::endl;///TODO REMOVE
-        delete[] esvmModel->probA;
-        esvmModel->probA = nullptr;
-        ///logger << "RESET! 7" << std::endl;///TODO REMOVE
-        delete[] esvmModel->probB;
-        esvmModel->probB = nullptr;
-        ///logger << "RESET! 8" << std::endl;///TODO REMOVE
-        delete[] esvmModel->rho;
-        esvmModel->rho = nullptr;
-        ///logger << "RESET! 9" << std::endl;///TODO REMOVE
-        delete[] esvmModel->nSV;
-        esvmModel->nSV = nullptr;
-        ///logger << "RESET! 10" << std::endl;///TODO REMOVE
-        delete[] esvmModel->sv_indices;
-        esvmModel->sv_indices = nullptr;
-        ///logger << "RESET! 11" << std::endl;///TODO REMOVE
-        if (esvmModel->sv_coef)
-            for (int c = 0; c < esvmModel->nr_class - 1; ++c)
-                delete[] esvmModel->sv_coef[c];
-        ///logger << "RESET! 12" << std::endl;///TODO REMOVE
-        delete[] esvmModel->sv_coef;
-        esvmModel->sv_coef = nullptr;
-        ///logger << "RESET! 13" << std::endl;///TODO REMOVE
-        if (esvmModel->SV)
-            for (int sv = 0; sv < esvmModel->l; ++sv)
-                delete[] esvmModel->SV[sv];
-        ///logger << "RESET! 14" << std::endl;///TODO REMOVE
-        delete[] esvmModel->SV;
-        esvmModel->SV = nullptr;
-        ///logger << "RESET! 15" << std::endl;///TODO REMOVE
+
+        if (freeModel) {
+            delete[] pModel->rho;
+            pModel->rho = nullptr;
+            delete[] pModel->nSV;
+            pModel->nSV = nullptr;
+            delete[] pModel->sv_indices;
+            pModel->sv_indices = nullptr;
+            if (pModel->sv_coef)
+                for (int c = 0; c < pModel->nr_class - 1; ++c)
+                    delete[] pModel->sv_coef[c];
+            delete[] pModel->sv_coef;
+            pModel->sv_coef = nullptr;
+            if (pModel->SV)
+                for (int sv = 0; sv < pModel->l; ++sv)
+                    delete[] pModel->SV[sv];
+            delete[] pModel->SV;
+            pModel->SV = nullptr;
+        }
+
+        if (ESVM_USE_PREDICT_PROBABILITY && pModel->param.probability) {
+            delete[] pModel->probA;
+            delete[] pModel->probB;
+        }
+        pModel->probA = nullptr;
+        pModel->probB = nullptr;
+
+        delete[] pModel;
+        *model = nullptr;
     }
-    ///logger << "RESET! 16" << std::endl;///TODO REMOVE
-    esvmModel = model;      // set requested model or 'null'
-    ///logger << "RESET! DONE!" << std::endl;///TODO REMOVE
+}
+
+// Deallocation of unused support vectors and training parameters, updates parameters accordingly for new model state
+//      free only sample vectors not used as support vectors and update model state
+//      cannot directly free inner x[] 'svm_node' as they are shared with 'model->SV'
+void ESVM::removeTrainedModelUnusedData(svm_model* model, svm_problem* problem)
+{
+    ASSERT_THROW(model != nullptr, "Missing model reference to remove unused sample vectors and training paramters");
+    ASSERT_THROW(model->sv_indices != nullptr, "Missing model 'sv_indices' reference to indicate which unused sample vectors to remove");
+    ASSERT_THROW(model->free_sv == FreeModelState::PARAM, "Improper 'free_sv' mode to allow deallocation of unused sample vectors and parameters");
+    ASSERT_THROW(problem != nullptr, "Missing problem reference to remove unused sample vectors");
+    ASSERT_THROW(problem->x != nullptr, "Missing problem contained sample references to remove unused sample vectors");
+
+    // remove unused sample vectors
+    int i = 0;
+    for (int s = 0; s < problem->l; ++s) {
+        if (model->sv_indices[i] - 1 == s)  // indices are one-based
+            i++;
+        else
+            delete[] problem->x[s];
+    }
+
+    // remove unused training paramters
+    if (model->param.probability) {
+        delete[] model->param.weight;
+        delete[] model->param.weight_label;
+    }
+    model->param.weight = nullptr;
+    model->param.weight_label = nullptr;
+
+    // destroy problem contained data
+    delete[] problem->x;
+    delete[] problem->y;
+    problem->x = nullptr;
+    problem->y = nullptr;
+
+    // update mode
+    model->free_sv = FreeModelState::MODEL;
+}
+
+// Deallocation of model subparts
+void ESVM::resetModel(svm_model* model, bool copy)
+{
+    if (isModelSet())
+        destroyModel(&esvmModel);
+    esvmModel = copy ? deepCopyModel(model) : model;    // set requested model or 'null'
 }
 
 // Destructor
@@ -345,18 +381,6 @@ ESVM::~ESVM()
         ///logModelParameters(true);
     }
     catch (...) {}
-
-    /*/// TODO ENABLE
-    logstream logger(LOGGER_FILE);                                              /// TODO REMOVE
-    logger << "BEFORE FREE MODEL REF: " << esvmModel << " isModelTrained? " << isModelTrained() << std::endl;       /// TODO REMOVE
-    //svm_free_model_content(esvmModel.get());
-    logger << "BEFORE TMP RELEASE MODEL REF: " << esvmModel << " isModelTrained? " << isModelTrained() << std::endl;       /// TODO REMOVE
-
-    logger << "AFTER RELEASE MODEL REF: " << esvmModel << " isModelTrained? " << isModelTrained() << std::endl;       /// TODO REMOVE
-    if (isModelTrained())
-    svm_free_model_content(model.p);
-    logger << "AFTER CONTENT FREE - DELETE MODEL" << std::endl;
-    delete model;*/
 }
 
 void ESVM::logModelParameters(bool displaySV) const
@@ -382,16 +406,19 @@ void ESVM::logModelParameters(svm_model *model, std::string id, bool displaySV)
            << "   free sv:       " << model->free_sv << std::endl
            << "   svm type:      " << svm_type_name(model) << std::endl
            << "   kernel type:   " << svm_kernel_name(model) << std::endl
-           << "   C:             " << (model->free_sv ? "n/a" : std::to_string(model->param.C)) << std::endl
-           << "   eps:           " << (model->free_sv ? "n/a" : std::to_string(model->param.eps)) << std::endl
-           << "   shrinking:     " << (model->free_sv ? "n/a" : std::to_string(model->param.shrinking)) << std::endl
-           << "   probability:   " << (model->free_sv ? "n/a" : std::to_string(model->param.probability)) << std::endl;
+           << "   nr class:      " << model->nr_class << std::endl
+           << "   pos label:     " << model->label[0] << std::endl
+           << "   neg label:     " << model->label[1] << std::endl
+           << "   C:             " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.C)) << std::endl
+           << "   eps:           " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.eps)) << std::endl
+           << "   shrinking:     " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.shrinking)) << std::endl
+           << "   probability:   " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.probability)) << std::endl;
     if (model->param.probability) {
     logger << "   probA:         " << (model->probA == nullptr ? "'null'" : std::to_string(model->probA[0])) << std::endl
            << "   probB:         " << (model->probB == nullptr ? "'null'" : std::to_string(model->probB[0])) << std::endl; 
     } // end if
     logger << "   W mode:        " << ESVM_WEIGHTS_MODE << std::endl;
-    if (!model->free_sv) {       // when 'free_sv' indicates a pre-trained model, 'rho' is used instead of weights (they are not set)           
+    if (model->free_sv != FreeModelState::MODEL) {  // when using a pre-trained model, 'rho' is used instead of weights (they are not set)           
     #if ESVM_WEIGHTS_MODE
     logger << "   nr W:          " << model->param.nr_weight << std::endl
            << "   W pos:         " << model->param.weight[0] << std::endl
@@ -400,15 +427,14 @@ void ESVM::logModelParameters(svm_model *model, std::string id, bool displaySV)
            << "   W neg label:   " << model->param.weight_label[1] << std::endl;
     #endif/*ESVM_WEIGHTS_MODE*/
     } // end if
-    logger << "   pos label:     " << model->label[0] << std::endl
-           << "   neg label:     " << model->label[1] << std::endl
-           << "   nr class:      " << model->nr_class << std::endl
-           << "   rho:           " << (model->rho ? std::to_string(model->rho[0]) : "'null'") << std::endl
+    if (model->free_sv != FreeModelState::PARAM) {  
+    logger << "   rho:           " << (model->rho ? std::to_string(model->rho[0]) : "'null'") << std::endl
            << "   pos SV:        " << model->nSV[0] << std::endl
            << "   neg SV:        " << model->nSV[1] << std::endl
            << "   total SV:      " << model->l << std::endl
            << "   SV coef:       " << featuresToVectorString(svCoefVector) << std::endl
            << "   SV:            " << (displaySV ? model->SV ? "" : "'null'" : "'displaySV=false'") << std::endl;
+    } // end if
     if (displaySV && model->SV) {
     for (int sv = 0; sv < model->l; ++sv) {
     logger << "      " << featuresToVectorString(getFeatureVector(model->SV[sv])) << std::endl;
@@ -453,7 +479,13 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     ASSERT_THROW(model->probB == nullptr, "Reference of probability estimate parameter 'probB' not null for ESVM not using probability prediction");
     #endif/*ESVM_USE_PREDICT_PROBABILITY*/
 
-    if (model->free_sv == 0)        // trained from samples
+    bool checkParam = model->free_sv == FreeModelState::PARAM || model->free_sv == FreeModelState::MULTI;
+    bool checkModel = model->free_sv == FreeModelState::MODEL || model->free_sv == FreeModelState::MULTI;
+
+    if (!(checkParam || checkModel))
+        throw std::runtime_error("Unsupported model 'free_sv' mode");
+
+    if (checkParam)
     {
         ASSERT_THROW(model->param.C > 0, "ESVM model cost must be greater than zero");
         int nWeights = model->param.nr_weight;
@@ -466,7 +498,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
             ASSERT_THROW(model->param.weight_label[1] == model->label[1], "ESVM model weight label [1] must match label [1]");
         }
     }
-    else if (model->free_sv == 1)   // loaded from pre-trained file
+    if (checkModel) 
     {
         ASSERT_THROW(model->rho != nullptr, "ESVM model constant for decision function must be specified");
         ASSERT_THROW(model->sv_coef != nullptr, "ESVM model coefficients container for decision functions must be specified");
@@ -475,8 +507,6 @@ void ESVM::checkModelParameters_assert(svm_model* model)
         for (int sv = 0; sv < model->l; ++sv)
             ASSERT_THROW(model->SV[sv] != nullptr, "ESVM model specific support vectors must be specified");
     }
-    else
-        throw std::runtime_error("Unsupported model 'free_sv' mode");
 }
 
 /*
@@ -524,7 +554,8 @@ void ESVM::loadModelFile_libsvm(std::string filePath)
         modelFile.close();
     if (!isBinary)
     {
-        svm_model *model = deepCopyModel(svm_load_model(filePath.c_str()));
+        // load pre-trained model, returns NULL if failed, otherwise adress of trained model with 'free_sv' = 1
+        svm_model *model = svm_load_model(filePath.c_str());
         if (model && model->free_sv)
         {
             resetModel(model);
@@ -554,7 +585,7 @@ void ESVM::loadModelFile_binary(std::string filePath)
         svm_parameter param;        
         param.svm_type = C_SVC;
         param.kernel_type = LINEAR;
-        model = new svm_model;
+        model = makeEmptyModel();
         model->param = param;
         model->nr_class = 2;        
         model->rho = new double[1];                 // 1 decision function parameter
@@ -1006,7 +1037,8 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     param.weight_label = new int[2] { ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };   // class labels    
     #endif/*ESVM_WEIGHTS_MODE*/
 
-    // validate parameters and train models    
+    // validate parameters and train models
+    svm_model* trainedModel = nullptr;
     try
     {
         const char* msg = svm_check_parameter(&prob, &param);
@@ -1014,28 +1046,24 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     }
     catch(std::exception& ex)
     {
-        logger << "Exception occurred during parameter check: " << ex.what() << std::endl;
+        logger << "Exception occurred during parameter check: [" << ex.what() << "]" << std::endl;
         throw ex;
     }
 
     logger << "ESVM training..." << std::endl;
     try
     {
-        resetModel(svm_train(&prob, &param));
+        trainedModel = svm_train(&prob, &param);
     }
     catch (std::exception& ex)
     {
-        logger << "Exception occurred during ESVM training: " << ex.what() << std::endl;
+        logger << "Exception occurred during ESVM training: [" << ex.what() << "]" << std::endl;
         throw ex;
     }
 
-    // free problem 
-    // cannot free inner x[] 'svm_node' as they are shared with 'model->SV'
-    delete[] prob.y;
-    delete[] prob.x;
-    /*for (int s = 0; s < prob.l; ++s)
-        delete[] prob.x[s];
-    */
+    removeTrainedModelUnusedData(trainedModel, &prob);
+    resetModel(trainedModel, false);
+
     /// ################################################ DEBUG
     logModelParameters(esvmModel, targetID, false);
     /// ################################################ DEBUG
@@ -1136,7 +1164,7 @@ double ESVM::predict(FeatureVector probeSample) const
         return probEstimates[0];
     }
     #endif/*ESVM_USE_PREDICT_PROBABILITY*/
-    
+
     // Obtain decision values directly (instead of predicted label/probability from 'svm_predict'/'svm_predict_probability')
     // Since the number of decision values of each class combination is calculated with [ nr_class*(nr_class-1)/2 ],
     // and that we have only 2 classes, we have only one decision value (positive vs. negative)    
