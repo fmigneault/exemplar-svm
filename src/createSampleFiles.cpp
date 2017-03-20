@@ -8,7 +8,7 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
     size_t nPatches = 9;
     cv::Size imageSize = cv::Size(48, 48);
     cv::Size patchCounts = cv::Size(3, 3);
-    bool useHistEqual = false;
+    bool useHistEqual = true;
     bfs::directory_iterator endDir;
 
     if (bfs::is_directory(dir))
@@ -30,11 +30,13 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
 
 int create_negatives()
 {
+    #if PROC_ESVM_GENERATE_SAMPLE_FILES
+
     logstream logger("negatives-output.txt");
     
     // outputs
     bool writeBinaryFormat = true;
-    bool writeLibsvmFormat = true;
+    bool writeLibsvmFormat = false;
     assert(writeBinaryFormat || writeLibsvmFormat);
     
     // general parameters
@@ -49,8 +51,11 @@ int create_negatives()
     double scaleFactor = 1.01;
     int nmsThreshold = 2;
     cv::Size minSize(20, 20), maxSize = imageSize;
-    std::string faceCascadeFilePath = "C:/Libraries/opencv/opencv_3_2_0/sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
-    assert(bfs::is_regular_file(faceCascadeFilePath));
+    std::string faceCascadeFilePath;
+    if (useRefineROI) {
+        faceCascadeFilePath = sourcesOpenCV + "sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
+        assert(bfs::is_regular_file(faceCascadeFilePath));
+    }
 
     // feature extraction HOG parameters
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
@@ -221,9 +226,11 @@ int create_negatives()
                     << "BINARY fmt?:   " << writeBinaryFormat << std::endl
                     << "LIBSVM fmt?:   " << writeLibsvmFormat << std::endl
                     << "all Neg IDs:   " << negativeSamplesID << std::endl;
-    
-    logger << "DONE!" << std::endl;
-    return 0;
+
+    #else/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
+    return passThroughDisplayTestStatus(__func__, NO_ERROR);
 }
 
 int create_probes(std::string positives, std::string negatives)

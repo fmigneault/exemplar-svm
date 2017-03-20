@@ -62,7 +62,7 @@
 */
 #define TEST_FEATURES_NORMALIZATION_MODE 3
 // Validates image paths found and with expected format
-#define TEST_IMAGE_PATHS 1
+#define TEST_PATHS 1
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
@@ -75,22 +75,36 @@
 #define TEST_PERF_EVAL_FUNCTIONS 1
 // Test MATLAB code procedure (obsolete)
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
+// Test classification results with simple XOR data
+#define TEST_ESVM_BASIC_CLASSIFICATION 0
 // Test alternative MATLAB procedure (obsolete)
 #define TEST_ESVM_BASIC_STILL2VIDEO 0
-// Test functionality of LIBSVM/BINARY samples file reading and parsing to feature vectors
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER 1
-// Evaluate timing performance for reading and parsing LIBSVM/BINARY samples file
-#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 1
+// Evaluate timing performance for writing/reading and parsing LIBSVM/BINARY samples file
+#define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
+#define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
+// Test functionality of BINARY/LIBSVM samples file reading and parsing to feature vectors
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 0
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM 0
 // Test functionality of samples file reading LIBSVM/BINARY format comparison
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
-// Evaluate timing performance for writing samples file
-#define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 1
 // Test functionality of BINARY/LIBSVM model file loading/saving and parsing of parameters allowing valid use afterwards
-#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER 0
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY 0
+#define TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM 0
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
+// Test model resetting using 'svm_model' struct directly populated in code, validate parameter checks
+#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 1
+// Test memory deallocation of various model parameters on reset or destructor calls
+#define TEST_ESVM_MODEL_MEMORY_OPERATIONS 1
+// Test expected functionalities of model with reset/changed parameters (model properly updated)
+#define TEST_ESVM_MODEL_MEMORY_PARAM_CHECK 1
+
+/* -------------------------------------------------------------------
+    Process options - Enable/Disable a specific procedure execution
+------------------------------------------------------------------- */
+
 /*   
-    TEST_READ_DATA_FILES:
+    PROC_READ_DATA_FILES:
         (0)   0b00000000:   no test 
         (1)   0b00000001:   images + extract features (whole-image) 
         (2)   0b00000010:   images + extract features (patch-based)
@@ -107,31 +121,28 @@
          * (128) cannot be set with any of [(16),(32),(64)]
          * any other combination of flags is allowed (different test functions)
 */
-#define TEST_READ_DATA_FILES 0b00000000
+#define PROC_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
-#define TEST_WRITE_DATA_FILES 1
+#define PROC_WRITE_DATA_FILES 1
+
 // Test training and testing using TITAN reference images against ChokePoint negatives
-#define TEST_ESVM_TITAN 0
+#define PROC_ESVM_TITAN 0
 /*
-    TEST_ESVM_SAMAN:
+    PROC_ESVM_SAMAN:
         0: not run
         1: run with PCA feature vectors
         2: run with raw feature vectors
         3: run with raw feature vectors obtained from pre-transposed images
         4: run with raw feature vectors obtained from 'FullChokePoint' test (pre-feature norm overall, post-fusion norm)
 */
-#define TEST_ESVM_SAMAN 0
+#define PROC_ESVM_SAMAN 0
 /*
-    TEST_ESVM_WORKING_PROCEDURE:
+    PROC_ESVM_SIMPLIFIED_WORKING:
         0: not run
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define TEST_ESVM_WORKING_PROCEDURE 0
-
-/* ------------------------------------------------------------
-Process options - Enable/Disable a specific work execution
------------------------------------------------------------- */
+#define PROC_ESVM_SIMPLIFIED_WORKING 0
 
 // Generate sample files using various enabled parameters
 #define PROC_ESVM_GENERATE_SAMPLE_FILES 0
@@ -145,11 +156,13 @@ const std::string roiVideoImagesPath = "../img/roi/";                           
 const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
 const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
 const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
+// OpenCV
+const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
 // ChokePoint
 const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
-const std::string roiChokePointCroppedFacePath = rootChokePointPath + "Cropped face images/";   // Path of extracted 96x96 ROI from all videos 
-const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "Results/fast-dt/";       // Path of person track ROIs found with FAST-DT
-const std::string roiChokePointEnrollStillPath = rootChokePointPath + "Enroll Images/";         // Path of enroll still images for ChokePoint
+const std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";         // Path of extracted 96x96 ROI from all videos 
+const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "results/fast-dt/";       // Path of person track ROIs found with FAST-DT
+const std::string roiChokePointEnrollStillPath = rootChokePointPath + "enroll/";                // Path of enroll still images for ChokePoint
 // TITAN Unit
 const std::string rootTitanUnitPath = std::string(std::getenv("TITAN_UNIT_ROOT")) + "/";        // TITAN Unit dataset root 
 const std::string roiTitanUnitResultTrackPath = rootTitanUnitPath + "Results/";                 // Result's path on TITAN Unit of various algorithms

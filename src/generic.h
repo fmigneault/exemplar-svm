@@ -203,47 +203,57 @@ inline double parse(char const* pen)    // 'strtod'
 }
 
 /* --------------------
-Asserts
----------------------*/ 
+Asserts / Return Macros
+---------------------*/
 
 // Assert with message printing
-#define ASSERT_THROW(cond, msg) do \
-{ if (!(cond)) { \
-    std::ostringstream oss; \
-    oss << msg; \
+#define ASSERT_THROW(cond, msg)                         \
+do {                                                    \
+    if (!(cond)) {                                      \
+    std::ostringstream oss;                             \
+    oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
-    throw std::runtime_error(str); } \
+    throw std::runtime_error(str); }                    \
 } while(0)
 
 // Assert with message printing
-#define ASSERT_MSG(cond, msg) do \
-{ if (!(cond)) { \
-    std::ostringstream oss; \
-    oss << msg; \
+#define ASSERT_MSG(cond, msg)                           \
+do {                                                    \
+    if (!(cond)) {                                      \
+    std::ostringstream oss;                             \
+    oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
-    std::cerr << str << std::endl; \
-    throw std::runtime_error(str); } \
+    std::cerr << str << std::endl;                      \
+    throw std::runtime_error(str); }                    \
 } while(0)
 
 // Assert with message printing and logging
-#define ASSERT_LOG(cond, msg) do \
-{ if (!(cond)) { \
-    logstream log(LOGGER_FILE); \
-    std::ostringstream oss; \
-    oss << msg; \
+#define ASSERT_LOG(cond, msg)                           \
+do {                                                    \
+    if (!(cond)) {                                      \
+    logstream log(LOGGER_FILE);                         \
+    std::ostringstream oss;                             \
+    oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
-    log << str << std::endl; \
-    throw std::runtime_error(str); } \
+    log << str << std::endl;                            \
+    throw std::runtime_error(str); }                    \
 } while(0)
 
-// Assert with message printing and logging (non failing)
-#define ASSERT_WARN(cond, msg) do \
-{ if (!(cond)) { \
-    logstream log(LOGGER_FILE); \
-    std::ostringstream oss; \
-    oss << msg; \
-    std::string str = "Warning: " + oss.str(); \
-    log << str << std::endl; } \
+// Assert with message printing and logging (no throw)
+#define ASSERT_WARN(cond, msg)                          \
+do {                                                    \
+    if (!(cond)) {                                      \
+    logstream log(LOGGER_FILE);                         \
+    std::ostringstream oss;                             \
+    oss << msg;                                         \
+    std::string str = "Warning: " + oss.str();          \
+    log << str << std::endl; }                          \
 } while(0)
+
+// Calls return with specified error if < 0
+#define RETURN_ERROR(error)                             \
+do {                                                    \
+    if (error < 0) { return error; }                    \
+} while (0)
 
 #endif/*GENERIC_H*/

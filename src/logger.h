@@ -46,7 +46,7 @@ inline logstream& operator<< (logstream& log, const std::vector<T>& v)
         oss << *it << " ";
     oss << *it << "]";
 
-    string s = oss.str();
+    std::string s = oss.str();
     log.coss << s;
     std::cout << s;
     return log;
