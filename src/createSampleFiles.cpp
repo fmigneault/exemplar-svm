@@ -51,8 +51,8 @@ int create_negatives()
 
     // improved LBP face detection parameters
     // (try to focus roi on more descriptive part of the face)
-    double scaleFactor = 1.01;
-    int nmsThreshold = 3;
+    double scaleFactor = 1.1;
+    int nmsThreshold = 1;                           // 0 will generate multiple detections, >0 usually returns only 1 face on 'cropped_faces' ROIs
     cv::Size minSize(20, 20), maxSize = imageSize;
     cv::CascadeClassifier faceCascade;
     if (useRefineROI) {
