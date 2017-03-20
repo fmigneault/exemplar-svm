@@ -8,7 +8,6 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
     size_t nPatches = 9;
     cv::Size imageSize = cv::Size(48, 48);
     cv::Size patchCounts = cv::Size(3, 3);
-    bool useHistEqual = true;
     bfs::directory_iterator endDir;
 
     if (bfs::is_directory(dir))
@@ -20,7 +19,7 @@ void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& 
                 size_t neg = imgVector.size();
                 imgVector.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                            useHistEqual, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
                 for (size_t p = 0; p < nPatches; p++)
                     imgVector[neg][p] = patches[p];
             }                  
@@ -37,11 +36,15 @@ int create_negatives()
     // outputs
     bool writeBinaryFormat = true;
     bool writeLibsvmFormat = false;
+    std::string windowNameOriginal = "WINDOW_ORIGINAL";     // display oringal 'cropped_face' ROIs
+    std::string windowNameROI = "WINDOW_ROI";               // display localized ROIs from LBP improved (if activated)
+    int delayShowROI = 1;                                   // [ms] - show found LBP improved ROIs with a delay (for visual inspection)
+    bool keepAllFoundROI = false;                           // keep all the found ROIs (if applicable), or only the first one (if applicable)
     assert(writeBinaryFormat || writeLibsvmFormat);
-    
+    assert(delayShowROI > 0);
+
     // general parameters
-    bool useHistEqual = true;
-    bool useRefineROI = false;
+    bool useRefineROI = true;                               // enable LBP improved localized ROI refinement
     size_t nPatches = 9;
     cv::Size patchCounts = cv::Size(3, 3);
     cv::Size imageSize = cv::Size(48, 48);
@@ -49,11 +52,11 @@ int create_negatives()
     // improved LBP face detection parameters
     // (try to focus roi on more descriptive part of the face)
     double scaleFactor = 1.01;
-    int nmsThreshold = 2;
+    int nmsThreshold = 3;
     cv::Size minSize(20, 20), maxSize = imageSize;
     cv::CascadeClassifier faceCascade;
     if (useRefineROI) {
-        std::string faceCascadeFilePath = sourcesOpenCV + "sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
+        std::string faceCascadeFilePath = sourcesOpenCV + "data/lbpcascades/lbpcascade_frontalface_improved.xml";
         assert(bfs::is_regular_file(faceCascadeFilePath));
         assert(faceCascade.load(faceCascadeFilePath));
     }
@@ -108,25 +111,33 @@ int create_negatives()
                             matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                             std::string imgPath = itDir->path().string();
                             cv::Mat img = cv::imread(imgPath, cv::IMREAD_GRAYSCALE);
+                            cv::Mat roi;
                             std::vector<cv::Rect> faces;
                             if (useRefineROI)
                             {
-                                cv::imshow("WINDOW_ORIGINAL", img);
+                                cv::imshow(windowNameOriginal, img);
                                 cv::waitKey(1);
                                 faceCascade.detectMultiScale(img, faces, scaleFactor, nmsThreshold, cv::CASCADE_SCALE_IMAGE, minSize, maxSize);
-                                if (faces.size() > 0)
+                                size_t nFaces = faces.size();
+                                if (nFaces > 0)
                                 {
-                                    img(faces[0]);
-                                    logger << "Found " << faces.size() << " face(s), face[0] = " << faces[0] << std::endl;
+                                    logger << "Found " << faces.size() << " face(s)" << std::endl;
+                                    for (size_t iFace = 0; iFace < nFaces; ++iFace) {
+                                        if (keepAllFoundROI || iFace == 0)              // update kept ROI according to setting
+                                            roi = img(faces[iFace]);
+                                        logger << "  face[" << iFace << "] = " << faces[iFace] << std::endl;
+                                        cv::imshow(windowNameROI, img(faces[iFace]));   // always display all found ROIs
+                                        cv::waitKey(delayShowROI);
+                                    }
                                 }
                                 else
                                 {
                                     logger << "Did not find face on cropped image: '" << imgPath << "'" << std::endl;
-                                    continue;   // skip if not found
+                                    continue;   // skip if not found any face
                                 }
                             }
-                            std::vector<cv::Mat> patches = imPreprocess(img, imageSize, patchCounts,
-                                                                        useHistEqual, "WINDOW_ROI", cv::IMREAD_GRAYSCALE);
+                            std::vector<cv::Mat> patches = imPreprocess(useRefineROI ? roi : img, imageSize, patchCounts,
+                                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, windowNameROI, cv::IMREAD_GRAYSCALE);
                             for (size_t p = 0; p < nPatches; p++)
                                 matNegativeSamples[neg][p] = patches[p];
 
@@ -202,7 +213,7 @@ int create_negatives()
                     << "nNegatives:    " << nNegatives << std::endl
                     << "perSessionNeg: " << perSessionNegatives << std::endl
                     << "perSeqNeg      " << perSequenceNegatives << std::endl
-                    << "histEqual:     " << useHistEqual << std::endl
+                    << "histEqual:     " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
                     << "useRefineROI:  " << useRefineROI << std::endl
                     << "scaleFactor:   " << scaleFactor << std::endl
                     << "nmsThreshold:  " << nmsThreshold << std::endl
