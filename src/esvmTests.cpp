@@ -1873,10 +1873,10 @@ int test_ESVM_ModelFromStructSVM()
         invalidModels_preTrained[11]->SV = nullptr;
 
         for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
-            ASSERT_LOG(!ESVM::checkModelParameters(&invalidModels_notTrained[svm]), "Invalid SVM not trained model parameters (svm=" +
+            ASSERT_LOG(!ESVM::checkModelParameters(invalidModels_notTrained[svm]), "Invalid SVM not trained model parameters (svm=" +
                        std::to_string(svm) + ") check should have returned 'false' status");
         for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
-            ASSERT_LOG(!ESVM::checkModelParameters(&invalidModels_preTrained[svm]), "Invalid SVM pre-trained model parameters (svm=" +
+            ASSERT_LOG(!ESVM::checkModelParameters(invalidModels_preTrained[svm]), "Invalid SVM pre-trained model parameters (svm=" +
                        std::to_string(svm) + ") check should have returned 'false' status");
         logger << "Generation of dummy 'svm_model' for test validated." << std::endl;
     }
@@ -1887,12 +1887,12 @@ int test_ESVM_ModelFromStructSVM()
         for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
         {
             svm_destroy_param(&invalidModels_notTrained[svm]->param);
-            ESVM::destroyModel(invalidModels_notTrained[svm]);
+            ESVM::destroyModel(&invalidModels_notTrained[svm]);
         }
         for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
         {
             svm_destroy_param(&invalidModels_preTrained[svm]->param);
-            ESVM::destroyModel(invalidModels_preTrained[svm]);
+            ESVM::destroyModel(&invalidModels_preTrained[svm]);
         }
         delete[] invalidModels_notTrained;
         delete[] invalidModels_preTrained;
@@ -1906,7 +1906,7 @@ int test_ESVM_ModelFromStructSVM()
         ESVM esvm;
         try 
         {   
-            esvm = ESVM(&invalidModels_notTrained[svm], "INVALID " + std::to_string(svm));
+            esvm = ESVM(invalidModels_notTrained[svm], "INVALID " + std::to_string(svm));
             logger << "Invalid parameters specified in SVM model to reset should have raised an exception." << std::endl;
             return passThroughDisplayTestStatus(__func__, -3);
         } 
@@ -1914,7 +1914,7 @@ int test_ESVM_ModelFromStructSVM()
         ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
         ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
         svm_destroy_param(&invalidModels_notTrained[svm]->param);
-        ESVM::destroyModel(invalidModels_notTrained[svm]);
+        ESVM::destroyModel(&invalidModels_notTrained[svm]);
     }
 
     // verify invalid model parameters not initialized (pre-trained models)
@@ -1924,7 +1924,7 @@ int test_ESVM_ModelFromStructSVM()
         ESVM esvm;
         try
         {
-            esvm = ESVM(&invalidModels_preTrained[svm], "INVALID " + std::to_string(svm));
+            esvm = ESVM(invalidModels_preTrained[svm], "INVALID " + std::to_string(svm));
             logger << "Invalid parameters specified in SVM model to reset should have raised an exception." << std::endl;
             return passThroughDisplayTestStatus(__func__, -4);
         }
@@ -1932,7 +1932,7 @@ int test_ESVM_ModelFromStructSVM()
         ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
         ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
         svm_destroy_param(&invalidModels_preTrained[svm]->param);
-        ESVM::destroyModel(invalidModels_preTrained[svm]);
+        ESVM::destroyModel(&invalidModels_preTrained[svm]);
     }
     delete[] invalidModels_notTrained;
     delete[] invalidModels_preTrained;
@@ -1963,14 +1963,14 @@ int test_ESVM_ModelMemoryOperations()
             }   // out of score will call destructor
 
             // verify results of model destructor
-            ASSERT_LOG(model.label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
-            ASSERT_LOG(model.SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");            
+            ASSERT_LOG(model->label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
+            ASSERT_LOG(model->SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
         }
         catch (std::exception& ex)
         {
@@ -1978,7 +1978,7 @@ int test_ESVM_ModelMemoryOperations()
                    << "Exception: [" << ex.what() << "]" << std::endl;
             return passThroughDisplayTestStatus(__func__, -1);
         }
-        ESVM::destroyModel(model);
+        ESVM::destroyModel(&model);
 
         // test deallocated memory when reset of model is called        
         ESVM esvm;
@@ -2044,7 +2044,7 @@ int test_ESVM_ModelMemoryOperations()
             return passThroughDisplayTestStatus(__func__, -4);
         }
 
-        ESVM::destroyModel(model);
+        ESVM::destroyModel(&model);
 
         /// TODO    
         //OPERATION THAT CHECKS COPY-CTOR TO SELF! (not dealloc)
