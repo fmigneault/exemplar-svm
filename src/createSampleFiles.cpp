@@ -51,10 +51,11 @@ int create_negatives()
     double scaleFactor = 1.01;
     int nmsThreshold = 2;
     cv::Size minSize(20, 20), maxSize = imageSize;
-    std::string faceCascadeFilePath;
+    cv::CascadeClassifier faceCascade;
     if (useRefineROI) {
-        faceCascadeFilePath = sourcesOpenCV + "sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
+        std::string faceCascadeFilePath = sourcesOpenCV + "sources/data/lbpcascades/lbpcascade_frontalface_improved.xml";
         assert(bfs::is_regular_file(faceCascadeFilePath));
+        assert(faceCascade.load(faceCascadeFilePath));
     }
 
     // feature extraction HOG parameters
@@ -75,9 +76,6 @@ int create_negatives()
     xstd::mvector<2, FeatureVector> fvNegativeSamples;          // [patch][negative](FeatureVector)
     FeatureExtractorHOG hog;
     hog.initialize(patchSize, blockSize, blockStride, cellSize, nBins);
-    cv::CascadeClassifier faceCascade;
-    if (useRefineROI)
-        assert(faceCascade.load(faceCascadeFilePath));
 
     // Loop for all ChokePoint cropped faces
     std::vector<int> perSessionNegatives(SESSION_QUANTITY, 0);

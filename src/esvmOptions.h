@@ -93,11 +93,11 @@
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
 // Test model resetting using 'svm_model' struct directly populated in code, validate parameter checks
-#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 1
+#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 0
 // Test memory deallocation of various model parameters on reset or destructor calls
-#define TEST_ESVM_MODEL_MEMORY_OPERATIONS 1
+#define TEST_ESVM_MODEL_MEMORY_OPERATIONS 0
 // Test expected functionalities of model with reset/changed parameters (model properly updated)
-#define TEST_ESVM_MODEL_MEMORY_PARAM_CHECK 1
+#define TEST_ESVM_MODEL_MEMORY_PARAM_CHECK 0
 
 /* -------------------------------------------------------------------
     Process options - Enable/Disable a specific procedure execution
@@ -145,7 +145,7 @@
 #define PROC_ESVM_SIMPLIFIED_WORKING 0
 
 // Generate sample files using various enabled parameters
-#define PROC_ESVM_GENERATE_SAMPLE_FILES 0
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
 
 /* ------------------------------------------------------------
    Image paths
