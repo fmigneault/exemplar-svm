@@ -156,7 +156,7 @@ int create_negatives()
     cv::destroyAllWindows();
 
     size_t nNegatives = matNegativeSamples.size();
-    size_t dimsNegatives[2] = { nPatches, nNegatives };              // [patch][negative]
+    size_t dimsNegatives[2] = { nPatches, nNegatives };                     // [patch][negative]
     fvNegativeSamples = xstd::mvector<2, FeatureVector>(dimsNegatives);
 
     // feature extraction HOG
@@ -165,76 +165,92 @@ int create_negatives()
             fvNegativeSamples[p][neg] = hog.compute(matNegativeSamples[neg][p]);
 
     // find + apply normalization values
-    double minAllROI = DBL_MAX, maxAllROI = -DBL_MAX;
-    xstd::mvector<2, FeatureVector> fvNegativeSamplesNormPatch(dimsNegatives);
-    std::vector<double> fvMinPatch(nPatches), fvMaxPatch(nPatches);
+    double minAllROI = DBL_MAX, maxAllROI = -DBL_MAX, meanAllROI = -DBL_MAX, stdDevAllROI = -DBL_MAX;
+    xstd::mvector<2, FeatureVector> fvNegativeSamplesMinMaxPatch(dimsNegatives), fvNegativeSamplesMinMaxROI(dimsNegatives),
+                                    fvNegativeSamplesZScorePatch(dimsNegatives), fvNegativeSamplesZScoreROI(dimsNegatives);
+    std::vector<double> fvMinPatch(nPatches, DBL_MAX), fvMaxPatch(nPatches, -DBL_MAX), fvMeanPatch(nPatches), fvStdDevPatch(nPatches);
     for (size_t p = 0; p < nPatches; p++)
-    {    
-        double minAllPatch, maxAllPatch;
-        findNormParamsOverall(MIN_MAX, fvNegativeSamples[p], &minAllPatch, &maxAllPatch);
-        logger << "Patch Number: " << p << " Min: " << minAllPatch << " Max: " << maxAllPatch << std::endl;
-
-        for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamplesNormPatch[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllPatch, maxAllPatch);
-        fvMinPatch[p] = minAllPatch;
-        fvMaxPatch[p] = maxAllPatch;
-        if (minAllROI > minAllPatch)
-            minAllROI = minAllPatch;
-        if (maxAllROI < maxAllPatch)
-            maxAllROI = maxAllPatch;
+    {
+        findNormParamsOverall(MIN_MAX, fvNegativeSamples[p], &fvMinPatch[p], &fvMaxPatch[p]);
+        findNormParamsOverall(Z_SCORE, fvNegativeSamples[p], &fvMeanPatch[p], &fvStdDevPatch[p]);
+        logger << "Patch Number: " << p << " Min: " << fvMinPatch[p] << " Max: " << fvMaxPatch[p]
+               << " Mean: " << fvMeanPatch[p] << " StdDev: " << fvStdDevPatch[p] << std::endl;
+        
+        for (size_t neg = 0; neg < nNegatives; neg++) {
+            fvNegativeSamplesMinMaxPatch[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], fvMinPatch[p], fvMaxPatch[p]);
+            fvNegativeSamplesZScorePatch[p][neg] = normalizeAllFeatures(Z_SCORE, fvNegativeSamples[p][neg], fvMeanPatch[p], fvStdDevPatch[p], true);
+        }
+        if (minAllROI > fvMinPatch[p])
+            minAllROI = fvMinPatch[p];
+        if (maxAllROI < fvMaxPatch[p])
+            maxAllROI = fvMaxPatch[p];
     }
-    xstd::mvector<2, FeatureVector> fvNegativeSamplesNormROI(dimsNegatives);
+
+    std::vector<FeatureVector> fvNegativeSamplesAllPatches;
+    fvNegativeSamplesAllPatches.reserve(nPatches * nNegatives);
     for (size_t p = 0; p < nPatches; p++)
-        for (size_t neg = 0; neg < nNegatives; neg++)
-            fvNegativeSamplesNormROI[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllROI, maxAllROI);
-    
+        fvNegativeSamplesAllPatches.insert(fvNegativeSamplesAllPatches.end(), fvNegativeSamples[p].begin(), fvNegativeSamples[p].end());
+    findNormParamsOverall(Z_SCORE, fvNegativeSamplesAllPatches, &meanAllROI, &stdDevAllROI);
+
+    for (size_t p = 0; p < nPatches; p++)
+        for (size_t neg = 0; neg < nNegatives; neg++) {
+            fvNegativeSamplesMinMaxROI[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegativeSamples[p][neg], minAllROI, maxAllROI);
+            fvNegativeSamplesZScoreROI[p][neg] = normalizeAllFeatures(Z_SCORE, fvNegativeSamples[p][neg], meanAllROI, stdDevAllROI, true);
+        }
+
     // write resulting sample files
-    FileFormat fmt;
     std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
     for (size_t p = 0; p < nPatches; p++)
     {
+        std::string fileStart = "negatives-patch" + std::to_string(p);
         if (writeBinaryFormat) {
-            fmt = BINARY;
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.bin", fvNegativeSamples[p], negClass, fmt);
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.bin", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.bin", fvNegativeSamplesNormROI[p], negClass, fmt);
+            ESVM::writeSampleDataFile(fileStart + "-raw.bin",               fvNegativeSamples[p],            negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax.bin",  fvNegativeSamplesMinMaxPatch[p], negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax.bin",    fvNegativeSamplesMinMaxROI[p],   negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore.bin",   fvNegativeSamplesZScorePatch[p], negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore.bin",     fvNegativeSamplesZScoreROI[p],   negClass, BINARY);
         }
         if (writeLibsvmFormat) {
-            fmt = LIBSVM;
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-raw.data", fvNegativeSamples[p], negClass, fmt);
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normPatch.data", fvNegativeSamplesNormPatch[p], negClass, fmt);
-            ESVM::writeSampleDataFile("negatives-patch" + std::to_string(p) + "-normROI.data", fvNegativeSamplesNormROI[p], negClass, fmt);
+            ESVM::writeSampleDataFile(fileStart + "-raw.data",              fvNegativeSamples[p],            negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax.data", fvNegativeSamplesMinMaxPatch[p], negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax.data",   fvNegativeSamplesMinMaxROI[p],   negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore.data",  fvNegativeSamplesZScorePatch[p], negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore.data",    fvNegativeSamplesZScoreROI[p],   negClass, LIBSVM);
         }
     }
 
     // write configs employed (traceback)
     logstream logSampleConfig("negatives-output-config.txt");
-    logSampleConfig << "negativeIDs:   " << negativesID << std::endl
-                    << "nNegatives:    " << nNegatives << std::endl
-                    << "perSessionNeg: " << perSessionNegatives << std::endl
-                    << "perSeqNeg      " << perSequenceNegatives << std::endl
-                    << "histEqual:     " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
-                    << "useRefineROI:  " << useRefineROI << std::endl
-                    << "scaleFactor:   " << scaleFactor << std::endl
-                    << "nmsThreshold:  " << nmsThreshold << std::endl
-                    << "CC minSize:    " << minSize << std::endl
-                    << "CC maxSize:    " << maxSize << std::endl
-                    << "imageSize:     " << imageSize << std::endl
-                    << "nPatches:      " << nPatches << std::endl
-                    << "patchCounts:   " << patchCounts << std::endl
-                    << "patchSize:     " << patchSize << std::endl
-                    << "blockSize:     " << blockSize << std::endl
-                    << "blockStride:   " << blockStride << std::endl
-                    << "cellSize:      " << cellSize << std::endl
-                    << "nBins:         " << nBins << std::endl                    
-                    << "fv minAll[p]:  " << fvMinPatch << std::endl
-                    << "fv maxAll[p]:  " << fvMaxPatch << std::endl
-                    << "fv minAllROI:  " << minAllROI << std::endl
-                    << "fv maxAllROI:  " << maxAllROI << std::endl
-                    << "nFeatures:     " << fvNegativeSamples[0][0].size() << std::endl
-                    << "BINARY fmt?:   " << writeBinaryFormat << std::endl
-                    << "LIBSVM fmt?:   " << writeLibsvmFormat << std::endl
-                    << "all Neg IDs:   " << negativeSamplesID << std::endl;
+    logSampleConfig << "negativeIDs:      " << negativesID << std::endl
+                    << "nNegatives:       " << nNegatives << std::endl
+                    << "perSessionNeg:    " << perSessionNegatives << std::endl
+                    << "perSeqNeg         " << perSequenceNegatives << std::endl
+                    << "histEqual:        " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
+                    << "useRefineROI:     " << useRefineROI << std::endl
+                    << "scaleFactor:      " << scaleFactor << std::endl
+                    << "nmsThreshold:     " << nmsThreshold << std::endl
+                    << "CC minSize:       " << minSize << std::endl
+                    << "CC maxSize:       " << maxSize << std::endl
+                    << "imageSize:        " << imageSize << std::endl
+                    << "nPatches:         " << nPatches << std::endl
+                    << "patchCounts:      " << patchCounts << std::endl
+                    << "patchSize:        " << patchSize << std::endl
+                    << "blockSize:        " << blockSize << std::endl
+                    << "blockStride:      " << blockStride << std::endl
+                    << "cellSize:         " << cellSize << std::endl
+                    << "nBins:            " << nBins << std::endl                    
+                    << "fv minAll[p]:     " << fvMinPatch << std::endl
+                    << "fv maxAll[p]:     " << fvMaxPatch << std::endl
+                    << "fv minAllROI:     " << minAllROI << std::endl
+                    << "fv maxAllROI:     " << maxAllROI << std::endl
+                    << "fv meanAll[p]:    " << fvMeanPatch << std::endl
+                    << "fv stdDevAll[p]:  " << fvStdDevPatch << std::endl
+                    << "fv meanAllROI:    " << meanAllROI << std::endl
+                    << "fv stdDevAllROI:  " << stdDevAllROI << std::endl
+                    << "nFeatures:        " << fvNegativeSamples[0][0].size() << std::endl
+                    << "BINARY fmt?:      " << writeBinaryFormat << std::endl
+                    << "LIBSVM fmt?:      " << writeLibsvmFormat << std::endl
+                    << "all Neg IDs:      " << negativeSamplesID << std::endl;
 
     #else/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
