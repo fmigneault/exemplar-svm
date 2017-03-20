@@ -160,9 +160,9 @@ const std::string testingSamplesDir = "../data/testing/";                       
 const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
 // ChokePoint
 const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
-const std::string roiChokePointCroppedFacePath = rootChokePointPath + "Cropped face images/";   // Path of extracted 96x96 ROI from all videos 
-const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "Results/fast-dt/";       // Path of person track ROIs found with FAST-DT
-const std::string roiChokePointEnrollStillPath = rootChokePointPath + "Enroll Images/";         // Path of enroll still images for ChokePoint
+const std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";         // Path of extracted 96x96 ROI from all videos 
+const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "results/fast-dt/";       // Path of person track ROIs found with FAST-DT
+const std::string roiChokePointEnrollStillPath = rootChokePointPath + "enroll/";                // Path of enroll still images for ChokePoint
 // TITAN Unit
 const std::string rootTitanUnitPath = std::string(std::getenv("TITAN_UNIT_ROOT")) + "/";        // TITAN Unit dataset root 
 const std::string roiTitanUnitResultTrackPath = rootTitanUnitPath + "Results/";                 // Result's path on TITAN Unit of various algorithms
