@@ -2824,13 +2824,12 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     cv::namedWindow(WINDOW_NAME);
     logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
-    if (nPatches == 0) nPatches = 1;    
-    bool useHistEqual = false;
+    if (nPatches == 0) nPatches = 1;        
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
            << "   useSyntheticPositives:    " << TEST_USE_SYNTHETIC_GENERATION << std::endl
            << "   imageSize:                " << imageSize << std::endl
            << "   patchCounts:              " << patchCounts << std::endl
-           << "   useHistEqual:             " << useHistEqual << std::endl;
+           << "   useHistEqual:             " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl;
     
     size_t nDescriptors = 0;
     std::vector<std::string> descriptorNames;
@@ -2907,7 +2906,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         
             // Get original positive image with preprocessing but without patches splitting
             cv::Mat img = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, cv::Size(1, 1),
-                                       useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE)[0];
+                                       ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE)[0];
             // Get synthetic representations from original and apply patches splitting each one
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
             // Reinitialize sub-container for augmented representations using synthetic images
@@ -2927,7 +2926,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         #else/*!TEST_USE_SYNTHETIC_GENERATION*/
 
             std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
-                                                        useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
             for (size_t p = 0; p < nPatches; p++)
                 matPositiveSamples[pos][0][p] = patches[p];
         
@@ -3061,7 +3060,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                 size_t neg = matNegativeSamples.size();
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matNegativeSamples[neg][p] = patches[p];
 
@@ -3072,7 +3071,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                 size_t prb = matProbeSamples.size();
                                 matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matProbeSamples[prb][p] = patches[p];
 
@@ -3864,13 +3863,12 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
     cv::namedWindow(WINDOW_NAME);
     logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
-    if (nPatches == 0) nPatches = 1;    
-    bool useHistEqual = false;
+    if (nPatches == 0) nPatches = 1;
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
            << "   useSyntheticPositives: " << useSyntheticPositives << std::endl
            << "   imageSize:             " << imageSize << std::endl
            << "   patchCounts:           " << patchCounts << std::endl
-           << "   useHistEqual:          " << useHistEqual << std::endl;
+           << "   useHistEqual:          " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl;
     
     size_t nDescriptors = 0;
     std::vector<std::string> descriptorNames;
@@ -3938,7 +3936,8 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         if (useSyntheticPositives)
         {
             // Get original positive image with preprocessing but without patches splitting
-            cv::Mat img = imPreprocess(positiveImageStills[pos].Path, imageSize, cv::Size(1,1), useHistEqual, WINDOW_NAME, cv::IMREAD_COLOR)[0];
+            cv::Mat img = imPreprocess(positiveImageStills[pos].Path, imageSize, cv::Size(1,1), 
+                                       ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_COLOR)[0];
             // Get synthetic representations from original and apply patches splitting each one
             std::vector<cv::Mat> representations = imSyntheticGeneration(img);
             // Reinitialize sub-container for augmented representations using synthetic images
@@ -3959,7 +3958,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         {
             //// matPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
             std::vector<cv::Mat> patches = imPreprocess(positiveImageStills[pos].Path, imageSize, patchCounts,
-                                                        useHistEqual, WINDOW_NAME, cv::IMREAD_COLOR);
+                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_COLOR);
             for (size_t p = 0; p < nPatches; p++)
                 matPositiveSamples[pos][0][p] = patches[p];
         }
@@ -4063,7 +4062,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
                                 size_t neg = matNegativeSamples.size();
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; p++)
                                     matNegativeSamples[neg][p] = patches[p];
     } } } } } } }   // End of negatives loading
@@ -4075,7 +4074,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         size_t prb = matProbeSamples.size();
         matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
         std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts, 
-                                                    useHistEqual, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                                    ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
         for (size_t p = 0; p < nPatches; p++)
             matProbeSamples[prb][p] = patches[p];
 
@@ -4331,7 +4330,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     //                 size_t neg = matNegativeSamples.size();
     //                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
     //                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-    //                                                             useHistEqual, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+    //                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
     //                 for (size_t p = 0; p < nPatches; p++)
     //                     matNegativeSamples[neg][p] = patches[p];
 
