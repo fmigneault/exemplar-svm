@@ -107,8 +107,6 @@ int create_negatives()
                         std::string strID = buildChokePointIndividualID(id);
                         if (contains(negativesID, strID))
                         {
-                            size_t neg = matNegativeSamples.size();
-                            matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                             std::string imgPath = itDir->path().string();
                             cv::Mat img = cv::imread(imgPath, cv::IMREAD_GRAYSCALE);
                             cv::Mat roi;
@@ -138,17 +136,18 @@ int create_negatives()
                             }
                             std::vector<cv::Mat> patches = imPreprocess(useRefineROI ? roi : img, imageSize, patchCounts,
                                                                         ESVM_USE_HISTOGRAM_EQUALIZATION, windowNameROI, cv::IMREAD_GRAYSCALE);
+                            size_t neg = matNegativeSamples.size();
+                            matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                             for (size_t p = 0; p < nPatches; p++)
                                 matNegativeSamples[neg][p] = patches[p];
-
                             negativeSamplesID.push_back(strID);
                             perSessionNegatives[sn-1]++;
                             perSequenceNegatives[seqIdx]++;
                         }
-                    }                  
+                    }
                 }
-            }                        
-        }            
+            }
+        }
         seqIdx++;
 
     } } } } // end ChokePoint loops
