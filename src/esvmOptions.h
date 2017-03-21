@@ -31,7 +31,7 @@
         1: normalization min-max
         2: normalization z-score
 */
-#define ESVM_SCORE_NORMALIZATION_MODE 2
+#define ESVM_SCORE_NORMALIZATION_MODE 1
 /*
     ESVM_PARSER_MODE:
         0: stringstream

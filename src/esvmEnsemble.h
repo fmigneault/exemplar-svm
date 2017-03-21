@@ -34,20 +34,22 @@ private:
     cv::Size cellSize;
     int nBins;
     FeatureExtractorHOG hog;
+
+    bool useHistEqual;
     
     xstd::mvector<2, ESVM> EoESVM; 
 
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
-    
+
     double hogHardcodedFoundMin;
     double hogHardcodedFoundMax;
 
-    double scoreHardcodedFoundMin;
-    double scoreHardcodedFoundMax;
+    double scoresHardcodedFoundMin;
+    double scoresHardcodedFoundMax;
 
-    double scoresHardCodedFoundMean;
-    double scoresHardCodedFoundStdDev;
+    double scoresHardcodedFoundMean;
+    double scoresHardcodedFoundStdDev;
 };
 
 #endif/*ESVM_ENSEMBLE_H*/
