@@ -71,8 +71,6 @@ void esvmEnsemble::setConstants()
     nBins = 3;
     hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
 
-    useHistEqual = true; 
-
     // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
     ///hogHardcodedFoundMin = 0;
     ///hogHardcodedFoundMax = 0.675058;
@@ -132,7 +130,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
     // load probe still images, extract features and normalize
     logger << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
-    std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, useHistEqual);
+    std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
     for (size_t p = 0; p < nPatches; p++)
         probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
 
