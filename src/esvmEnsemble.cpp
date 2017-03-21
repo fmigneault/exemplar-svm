@@ -37,7 +37,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts);
+        std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts, useHistEqual);
         for (size_t p = 0; p < nPatches; p++)
             positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
     }
@@ -52,8 +52,9 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         */
         std::vector<FeatureVector> negativePatchSamples;
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
-        ESVM::readSampleDataFile(negativesDir + "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/
-                                 sampleFileExt, negativePatchSamples, sampleFileFormat);
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax" + sampleFileExt;
+        ///std::string negativeFileName = "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/ sampleFileExt;
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negativePatchSamples, sampleFileFormat);
         logger << "Training ESVM with positives and negatives..." << std::endl;
         for (size_t pos = 0; pos < nPositives; pos++)
             EoESVM[p][pos] = ESVM({ positiveSamples[p][pos] }, negativePatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
@@ -70,14 +71,22 @@ void esvmEnsemble::setConstants()
     nBins = 3;
     hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
 
+    useHistEqual = true; 
+
     // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
     ///hogHardcodedFoundMin = 0;
     ///hogHardcodedFoundMax = 0.675058;
 
     // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
-    // feature extraction is executed using the same pre-process as on-line execution
+    // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
+    ///hogHardcodedFoundMin = 0;
+    ///hogHardcodedFoundMax = 0.682703;
+
+    // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (11344 samples)
+    // uses the 'LBP improved' localized face ROI refinement for more focused face details / less background noise
+    // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 1)
     hogHardcodedFoundMin = 0;
-    hogHardcodedFoundMax = 0.682703;
+    hogHardcodedFoundMax = 0.695519;
 
     // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
     ///scoreHardcodedFoundMin = -1.578030;
@@ -92,7 +101,7 @@ void esvmEnsemble::setConstants()
     scoresHardCodedFoundStdDev = 0.247168;
 
     sampleFileExt = ".bin";
-    sampleFileFormat = BINARY;
+    sampleFileFormat = BINARY;    
 }
 
 std::string esvmEnsemble::getPositiveID(int positiveIndex)
@@ -113,7 +122,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
     // load probe still images, extract features and normalize
     logger << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
-    std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts);
+    std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, useHistEqual);
     for (size_t p = 0; p < nPatches; p++)
         probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);
 
