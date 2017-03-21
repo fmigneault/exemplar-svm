@@ -45,11 +45,11 @@ private:
     double hogHardcodedFoundMin;
     double hogHardcodedFoundMax;
 
-    double scoreHardcodedFoundMin;
-    double scoreHardcodedFoundMax;
+    double scoresHardcodedFoundMin;
+    double scoresHardcodedFoundMax;
 
-    double scoresHardCodedFoundMean;
-    double scoresHardCodedFoundStdDev;
+    double scoresHardcodedFoundMean;
+    double scoresHardcodedFoundStdDev;
 };
 
 #endif/*ESVM_ENSEMBLE_H*/

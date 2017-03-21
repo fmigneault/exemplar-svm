@@ -89,16 +89,26 @@ void esvmEnsemble::setConstants()
     hogHardcodedFoundMax = 0.695519;
 
     // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-    ///scoreHardcodedFoundMin = -1.578030;
-    ///scoreHardcodedFoundMax = -0.478968;
+    ///scoresHardcodedFoundMin = -1.578030;
+    ///scoresHardcodedFoundMax = -0.478968;
     
     // found min/max using FAST-DT live test 
-    scoreHardcodedFoundMin = 0.085;         // Testing
-    ///scoreHardcodedFoundMin = -0.638025;
-    scoreHardcodedFoundMax =  0.513050;
+    scoresHardcodedFoundMin = 0.085;         // Testing
+    ///scoresHardcodedFoundMin = -0.638025;
+    scoresHardcodedFoundMax =  0.513050;
 
-    scoresHardCodedFoundMean = -1.26193;
-    scoresHardCodedFoundStdDev = 0.247168;
+    ///scoresHardCodedFoundMean = -1.26193;
+    ///scoresHardCodedFoundStdDev = 0.247168;
+
+    // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
+    /* found from test */
+    //scoresHardcodedFoundMin = -4.69201; 
+    //scoresHardcodedFoundMax = 1.46431;
+    scoresHardcodedFoundMean = -1.61661;
+    scoresHardcodedFoundStdDev = 0.712719;
+    /* experimental adjustment */
+    scoresHardcodedFoundMin = -2.929948; 
+    scoresHardcodedFoundMax = -0.731181;
 
     sampleFileExt = ".bin";
     sampleFileFormat = BINARY;    
@@ -141,9 +151,9 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
         // average score fusion and normalization post-fusion
         classificationScores[pos] /= (double)nPatches;
         #if ESVM_SCORE_NORMALIZATION_MODE == 1
-        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreHardcodedFoundMin, scoreHardcodedFoundMax);
+        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoresHardcodedFoundMin, scoresHardcodedFoundMax);
         #elif ESVM_SCORE_NORMALIZATION_MODE == 2
-        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoresHardCodedFoundMean, scoresHardCodedFoundStdDev);
+        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoresHardcodedFoundMean, scoresHardcodedFoundStdDev);
         #endif
     }
     return classificationScores;
