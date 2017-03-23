@@ -23,16 +23,20 @@ class logstream
 {
 public:
     std::ofstream coss;
-    logstream(std::string filepath);
+    logstream(std::string filepath, bool useConsoleOutput = true, bool useFileOutput = true);
     ~logstream(void);
     logstream& operator<< (std::ostream& (*pfun)(std::ostream&));
+private:
+    bool consoleOutput;
+    bool fileOutput;
 };
 
 template <class T>
 inline logstream& operator<< (logstream& log, T val)
 {
-    log.coss << val;
-    std::cout << val;
+    
+    if (log.fileOutput)     log.coss << val;
+    if (log.consoleOutput)  std::cout << val;
     return log;
 }
 
@@ -47,8 +51,8 @@ inline logstream& operator<< (logstream& log, const std::vector<T>& v)
     oss << *it << "]";
 
     std::string s = oss.str();
-    log.coss << s;
-    std::cout << s;
+    if (log.fileOutput)     log.coss << s;
+    if (log.consoleOutput)  std::cout << s;
     return log;
 }
 

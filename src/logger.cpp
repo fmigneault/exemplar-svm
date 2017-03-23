@@ -15,10 +15,14 @@ std::string currentTimeStamp()
     return std::string(buffer);
 }
 
-logstream::logstream(std::string filepath)
+logstream::logstream(std::string filepath, bool useConsoleOutput, bool useFileOutput)
 {
+    fileOutput = useFileOutput;
+    consoleOutput = useConsoleOutput;
+
     // Open in append mode to log continously from different functions open/close calls
-    coss.open(filepath, std::fstream::app);
+    if (fileOutput)
+        coss.open(filepath, std::fstream::app);
 }
 
 logstream::~logstream(void)
@@ -28,8 +32,8 @@ logstream::~logstream(void)
 
 logstream& logstream::operator<<(std::ostream& (*pfun)(std::ostream&))
 {
-    pfun(coss);
-    pfun(std::cout);
+    if (fileOutput)     pfun(coss);
+    if (consoleOutput)  pfun(std::cout);
     return *this;
 }
 
