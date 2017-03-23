@@ -9,6 +9,7 @@ Logging/printing operations
 
 #include "esvmTypes.h"
 #include <iostream>
+#include <istream>
 #include <fstream>
 #include <string>
 #include <ctime>
@@ -24,22 +25,22 @@ class logstream
 public:
     bool useConsoleOutput;
     bool useFileOutput;
-    std::ofstream coss;
+    std::ofstream ofss;
     logstream(std::string filepath, bool useConsoleOutput = true, bool useFileOutput = true);
     ~logstream(void);
     logstream& operator<< (std::ostream& (*pfun)(std::ostream&));
 };
 
 template <class T>
-logstream& operator<< (logstream& log, const T val)
-{    
-    if (log.useFileOutput)      log.coss << val;
+inline logstream& operator<< (logstream& log, const T& val)
+{
+    if (log.useFileOutput)      log.ofss << val;
     if (log.useConsoleOutput)   std::cout << val;
     return log;
 }
 
 template <class T>
-logstream& operator<< (logstream& log, const std::vector<T>& v)
+inline logstream& operator<< (logstream& log, const std::vector<T>& v)
 {
     std::ostringstream oss;
     oss << "[";
@@ -49,7 +50,7 @@ logstream& operator<< (logstream& log, const std::vector<T>& v)
     oss << *it << "]";
 
     std::string s = oss.str();
-    if (log.useFileOutput)      log.coss << s;
+    if (log.useFileOutput)      log.ofss << s;
     if (log.useConsoleOutput)   std::cout << s;
     return log;
 }

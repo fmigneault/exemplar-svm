@@ -21,18 +21,17 @@ logstream::logstream(std::string filepath, bool useConsoleOutput, bool useFileOu
     this->useConsoleOutput = useConsoleOutput;
 
     // Open in append mode to log continously from different functions open/close calls
-    if (useFileOutput)
-        coss.open(filepath, std::fstream::app);
+    if (useFileOutput) ofss.open(filepath, std::fstream::app);
 }
 
 logstream::~logstream(void)
 {
-    if (coss.is_open()) coss.close();
+    if (ofss.is_open()) ofss.close();
 }
 
 logstream& logstream::operator<<(std::ostream& (*pfun)(std::ostream&))
 {
-    if (this->useFileOutput)    pfun(coss);
+    if (this->useFileOutput)    pfun(ofss);
     if (this->useConsoleOutput) pfun(std::cout);
     return *this;
 }
