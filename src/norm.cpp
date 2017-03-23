@@ -30,7 +30,7 @@ double normalizeZScore(double value, double mean, double stddev, bool clipValue)
 
 FeatureVector normalizeAllFeatures(NormType norm, FeatureVector featureVector, double param1, double param2, bool clipFeatures)
 {
-    int nFeatures = featureVector.size();
+    size_t nFeatures = featureVector.size();
     for (size_t f = 0; f < nFeatures; f++)
         featureVector[f] = normalize(norm, featureVector[f], param1, param2, clipFeatures);
 
@@ -75,7 +75,7 @@ void findNormParamsAcrossFeatures(NormType norm, FeatureVector featureVector, do
     ASSERT_THROW(min != nullptr, "min reference not specified");
     ASSERT_THROW(max != nullptr, "max reference not specified");
 
-    int nFeatures = featureVector.size();
+    size_t nFeatures = featureVector.size();
     ASSERT_THROW(nFeatures > 0, "vector cannot be empty");
 
     // initialization
@@ -86,7 +86,7 @@ void findNormParamsAcrossFeatures(NormType norm, FeatureVector featureVector, do
         *posMax = 0;
 
     // update min/max
-    for (size_t f = 1; f < featureVector.size(); f++)
+    for (size_t f = 1; f < nFeatures; f++)
     {
         if (featureVector[f] < *min)
         {

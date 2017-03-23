@@ -19,8 +19,8 @@ ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> nega
 {
     ASSERT_THROW(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
         
-    int posSamples = positives.size();
-    int negSamples = negatives.size();
+    int posSamples = (int)positives.size();
+    int negSamples = (int)negatives.size();
 
     std::vector<int> targets(posSamples + negSamples, ESVM_NEGATIVE_CLASS);
     for (int s = 0; s < posSamples; s++)
@@ -42,8 +42,8 @@ ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> nega
 ESVM::ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id)
     : targetID(id), esvmModel(nullptr)
 {
-    int Np = std::count(targetOutputs.begin(), targetOutputs.end(), ESVM_POSITIVE_CLASS);
-    int Nn = std::count(targetOutputs.begin(), targetOutputs.end(), ESVM_NEGATIVE_CLASS);
+    int Np = (int)std::count(targetOutputs.begin(), targetOutputs.end(), ESVM_POSITIVE_CLASS);
+    int Nn = (int)std::count(targetOutputs.begin(), targetOutputs.end(), ESVM_NEGATIVE_CLASS);
 
     // train with penalty weights according to specified mode
     // greater penalty attributed to incorrectly classifying a positive vs the many negatives 
@@ -63,8 +63,8 @@ ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
     std::vector<int> targets;
     readSampleDataFile(trainingSamplesFilePath, samples, targets);
 
-    int Np = std::count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
-    int Nn = std::count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
+    int Np = (int)std::count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
+    int Nn = (int)std::count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
     targetID = id;
 
     // train using loaded samples
@@ -515,7 +515,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
 bool ESVM::checkBinaryHeader(std::ifstream& binaryFileStream, std::string header)
 {
     if (!binaryFileStream.is_open()) return false;
-    int headerLength = header.size();
+    size_t headerLength = header.size();
     char *headerCheck = new char[headerLength + 1];     // +1 for the terminating '\0'
     binaryFileStream.read(headerCheck, headerLength);
     headerCheck[headerLength] = '\0';                   // avoids comparing different strings because '\0' is not found
@@ -686,7 +686,7 @@ void ESVM::saveModelFile_binary(std::string filePath) const
     try
     {
         // get support vector and feature counts (expected valid dimensions from properly trained model)
-        int nFeatures = getFeatureVector(esvmModel->SV[0]).size();
+        int nFeatures = (int)getFeatureVector(esvmModel->SV[0]).size(); // warning: format 'int' required, not 'size_t' for matching binary dimension
         ASSERT_THROW(esvmModel->l > 0, "Cannot save a model that doesn't contain any support vector");
         ASSERT_THROW(nFeatures > 0, "Cannot save a model with support vectors not containing any feature");
 
@@ -794,7 +794,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
         std::vector<int> targets;
         size_t nFeatures = 0;
         static std::string delimiter = ":";
-        static int offDelim = delimiter.length();
+        static size_t offDelim = delimiter.length();
 
         // loop each line
         while (samplesFile)
@@ -933,8 +933,8 @@ void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureV
     ASSERT_THROW(samplesFile.is_open(), "Failed to open the specified samples data BINARY file: '" + filePath + "'");
     
     // get sample and feature counts (already checked valid dimensions from calling function)
-    int nSamples = sampleFeatureVectors.size();     // warning: format 'int' required, not 'size_t' for matching binary dimension
-    int nFeatures = sampleFeatureVectors[0].size(); // warning: format 'int' required, not 'size_t' for matching binary dimension
+    int nSamples = (int)sampleFeatureVectors.size();     // warning: format 'int' required, not 'size_t' for matching binary dimension
+    int nFeatures = (int)sampleFeatureVectors[0].size(); // warning: format 'int' required, not 'size_t' for matching binary dimension
 
     // write header and counts for later reading
     std::string headerStr = ESVM_BINARY_HEADER_SAMPLES;
@@ -1178,9 +1178,9 @@ double ESVM::predict(FeatureVector probeSample) const
 */
 std::vector<double> ESVM::predict(std::vector<FeatureVector> probeSamples) const
 {
-    int nPredictions = probeSamples.size();
+    size_t nPredictions = probeSamples.size();
     std::vector<double> outputs(nPredictions);
-    for (int p = 0; p < nPredictions; p++)
+    for (size_t p = 0; p < nPredictions; p++)
         outputs[p] = predict(probeSamples[p]);
     return outputs;
 }

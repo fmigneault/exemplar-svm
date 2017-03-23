@@ -13,8 +13,8 @@ void countConfusionMatrix(std::vector<double> scores, std::vector<int> targets, 
     ASSERT_LOG(scores.size() == targets.size(), "Number of scores and target classes must match");
 
     *FP = 0; *FN = 0; *TP = 0; *TN = 0;
-    int nScore = scores.size();
-    for (int i = 0; i < nScore; i++)
+    size_t nScore = scores.size();
+    for (size_t i = 0; i < nScore; i++)
     {
         if      (scores[i] >= threshold && targets[i] > 0)  (*TP)++;
         else if (scores[i] >= threshold && targets[i] <= 0) (*FP)++;
@@ -61,10 +61,10 @@ double calcAUC(std::vector<double> FPR, std::vector<double> TPR, double pFPR)
     ASSERT_LOG(pFPR > 0 && pFPR <= 1, "Partial FPR value must be in ]0,1] interval");
 
     // find sorted value indexes in ascending order
-    int nPoints = TPR.size() - 1;
+    size_t nPoints = TPR.size() - 1;
     double pAUC = 0; 
     bool goNext = true;
-    for (int n = 0; n < nPoints && goNext; n++)
+    for (size_t n = 0; n < nPoints && goNext; n++)
     {
         double currFPR = FPR[n];
         double currTPR = TPR[n];
