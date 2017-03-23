@@ -22,26 +22,24 @@ std::string currentTimeStamp();
 class logstream
 {
 public:
+    bool useConsoleOutput;
+    bool useFileOutput;
     std::ofstream coss;
     logstream(std::string filepath, bool useConsoleOutput = true, bool useFileOutput = true);
     ~logstream(void);
     logstream& operator<< (std::ostream& (*pfun)(std::ostream&));
-private:
-    bool consoleOutput;
-    bool fileOutput;
 };
 
 template <class T>
-inline logstream& operator<< (logstream& log, T val)
-{
-    
-    if (log.fileOutput)     log.coss << val;
-    if (log.consoleOutput)  std::cout << val;
+logstream& operator<< (logstream& log, const T val)
+{    
+    if (log.useFileOutput)      log.coss << val;
+    if (log.useConsoleOutput)   std::cout << val;
     return log;
 }
 
 template <class T>
-inline logstream& operator<< (logstream& log, const std::vector<T>& v)
+logstream& operator<< (logstream& log, const std::vector<T>& v)
 {
     std::ostringstream oss;
     oss << "[";
@@ -51,8 +49,8 @@ inline logstream& operator<< (logstream& log, const std::vector<T>& v)
     oss << *it << "]";
 
     std::string s = oss.str();
-    if (log.fileOutput)     log.coss << s;
-    if (log.consoleOutput)  std::cout << s;
+    if (log.useFileOutput)      log.coss << s;
+    if (log.useConsoleOutput)   std::cout << s;
     return log;
 }
 
