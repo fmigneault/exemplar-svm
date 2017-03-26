@@ -10,7 +10,7 @@ Image operations
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
 // Translation of an image with XY pixel offset
-cv::Mat imTranslate(cv::Mat image, cv::Point offset);
+cv::Mat imTranslate(const cv::Mat& image, cv::Point offset);
 
 // Flip an image in horizontal/vertital/both directions
 enum FlipCode { VERTICAL = 0, HORIZONTAL = 1, BOTH = -1 };

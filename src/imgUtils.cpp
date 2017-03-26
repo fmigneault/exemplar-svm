@@ -15,7 +15,7 @@ cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::Imre
     return img;
 }
 
-cv::Mat imTranslate(cv::Mat image, cv::Point offset)
+cv::Mat imTranslate(const cv::Mat& image, cv::Point offset)
 {
     cv::Rect source = cv::Rect(cv::max(0, -offset.x), cv::max(0, -offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
     cv::Rect target = cv::Rect(cv::max(0, offset.x), cv::max(0, offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
