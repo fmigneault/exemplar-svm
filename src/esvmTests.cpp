@@ -191,7 +191,7 @@ int passThroughDisplayTestStatus(std::string testName, int error)
     logstream logger(LOGGER_FILE);
     if      (error == SKIPPED)  logger << "Test '" << testName << "' skipped." << std::endl;
     else if (error == OBSOLETE) logger << "Test '" << testName << "' obsolete." << std::endl;
-    else if (error == NO_ERROR) logger << "Test '" << testName << "' completed." << std::endl;    
+    else if (error == PASSED)   logger << "Test '" << testName << "' passed." << std::endl;    
     else                        logger << "Test '" << testName << "' failed (" << std::to_string(error) << ")." << std::endl;
     return error;
 }
@@ -296,7 +296,7 @@ int test_paths()
     #else/*TEST_PATHS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_PATHS*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_imagePatchExtraction(void)
@@ -359,7 +359,7 @@ int test_imagePatchExtraction(void)
     #else/*TEST_IMAGE_PATCH_EXTRACTION*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_IMAGE_PATCH_EXTRACTION*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_imagePreprocessing()
@@ -595,7 +595,7 @@ int test_imagePreprocessing()
     #else/*TEST_IMAGE_PREPROCESSING*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_IMAGE_PREPROCESSING*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_multiLevelVectors()
@@ -699,7 +699,7 @@ int test_multiLevelVectors()
     #else/*TEST_MULTI_LEVEL_VECTORS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_MULTI_LEVEL_VECTORS*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_normalizationFunctions()
@@ -850,7 +850,7 @@ int test_normalizationFunctions()
     #else/*TEST_NORMALIZATION*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_NORMALIZATION*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_performanceEvaluationFunctions()
@@ -899,7 +899,7 @@ int test_performanceEvaluationFunctions()
     #else/*TEST_PERF_EVAL_FUNCTIONS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_PERF_EVAL_FUNCTIONS*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_BasicFunctionalities(void)
@@ -1041,7 +1041,7 @@ int test_ESVM_BasicFunctionalities(void)
     #else/*TEST_ESVM_BASIC_FUNCTIONALITY*/
     return passThroughDisplayTestStatus(__func__, OBSOLETE);   // DISABLE - USING OBSOLETE MATLAB PROCEDURE
     #endif/*TEST_ESVM_BASIC_FUNCTIONALITY*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_BasicClassification(void)
@@ -1105,7 +1105,7 @@ int test_ESVM_BasicClassification(void)
     #else/*TEST_ESVM_BASIC_CLASSIFICATION*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_BASIC_CLASSIFICATION*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Tests LIBSVM format sample file reading functionality of ESVM (index and value parsing)
@@ -1321,7 +1321,7 @@ int test_ESVM_ReadSampleFile_libsvm()
     #else/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Tests BINARY sample file reading functionality of ESVM
@@ -1401,7 +1401,7 @@ int test_ESVM_ReadSampleFile_binary()
     #else/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Validation of identical sample features from BINARY/LIBSVM formatted files
@@ -1482,7 +1482,7 @@ int test_ESVM_ReadSampleFile_compare()
     #else/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
@@ -1528,7 +1528,7 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
     #else/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_READ_SAMPLES_FILE_TIMING*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
@@ -1574,7 +1574,7 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
     #else/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_WRITE_SAMPLES_FILE_TIMING*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Test functionality of BINARY model file saving/loading and parsing of parameters allowing valid use afterwards
@@ -1629,7 +1629,7 @@ int test_ESVM_SaveLoadModelFile_libsvm()
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Test functionality of LIBSVM model file saving/loading and parsing of parameters allowing valid use afterwards
@@ -1721,7 +1721,7 @@ int test_ESVM_SaveLoadModelFile_binary()
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 // Test functionality of model file saving/loading from (LIBSVM/binary,pre-trained/from samples) format comparison
@@ -1793,7 +1793,7 @@ int test_ESVM_SaveLoadModelFile_compare()
     #else/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_ModelFromStructSVM()
@@ -1940,7 +1940,7 @@ int test_ESVM_ModelFromStructSVM()
     #else/*TEST_ESVM_MODEL_STRUCT_SVM_PARAMS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_MODEL_STRUCT_SVM_PARAMS*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_ModelMemoryOperations()
@@ -2061,7 +2061,7 @@ int test_ESVM_ModelMemoryOperations()
     #else/*TEST_ESVM_MODEL_MEMORY_OPERATIONS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_MODEL_MEMORY_OPERATIONS*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int test_ESVM_ModelMemoryParamCheck()
@@ -2191,14 +2191,14 @@ int test_ESVM_ModelMemoryParamCheck()
     #else/*TEST_ESVM_MODEL_MEMORY_PARAM_CHECK*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_MODEL_MEMORY_PARAM_CHECK*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int proc_ReadDataFiles()
 {
     #if PROC_READ_DATA_FILES
 
-    int err = NO_ERROR;
+    int err = PASSED;
 
     #if PROC_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -2231,7 +2231,7 @@ int proc_ReadDataFiles()
     #else/*PROC_READ_DATA_FILES*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_READ_DATA_FILES*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /******************************************************************************************************************************
@@ -2787,7 +2787,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     #else/*TEST_ESVM_BASIC_STILL2VIDEO*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -3413,7 +3413,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     } // End session loop 
 
     logger << "Test complete" << std::endl;
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -3468,7 +3468,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
     }
 
     logger << "Test complete" << std::endl;
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -3570,7 +3570,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         eval_PerformanceClassificationScores(combinedFusionScores, probeGroundTruths);
     }
     logger << "Test complete" << std::endl;
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -3806,7 +3806,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     #else/*PROC_READ_DATA_FILES & 0b11110000*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_READ_DATA_FILES & 0b11110000*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -4087,7 +4087,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
     #else/*PROC_ESVM_TITAN*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_TITAN*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -4229,7 +4229,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     #else/*PROC_ESVM_SAMAN*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_SAMAN*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /**************************************************************************************************************************
@@ -4426,7 +4426,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     #else/*PROC_ESVM_SIMPLIFIED_WORKING*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_SIMPLIFIED_WORKING*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /*
