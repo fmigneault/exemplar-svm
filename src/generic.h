@@ -206,6 +206,14 @@ inline double parse(char const* pen)    // 'strtod'
 Asserts / Return Macros
 ---------------------*/
 
+// Throw the given message
+#define THROW(msg)										\
+do {													\
+	std::ostringstream oss;								\
+	oss << msg;											\
+	throw std::runtime_error(oss.str());				\
+} while(0)
+
 // Assert with message printing
 #define ASSERT_THROW(cond, msg)                         \
 do {                                                    \
@@ -213,7 +221,7 @@ do {                                                    \
     std::ostringstream oss;                             \
     oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
-    throw std::runtime_error(str); }                    \
+    THROW(str); }										\
 } while(0)
 
 // Assert with message printing
@@ -224,7 +232,7 @@ do {                                                    \
     oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
     std::cerr << str << std::endl;                      \
-    throw std::runtime_error(str); }                    \
+    THROW(str); }										\
 } while(0)
 
 // Assert with message printing and logging
@@ -236,7 +244,7 @@ do {                                                    \
     oss << msg;                                         \
     std::string str = "Assertion failed: " + oss.str(); \
     log << str << std::endl;                            \
-    throw std::runtime_error(str); }                    \
+    THROW(str); }										\
 } while(0)
 
 // Assert with message printing and logging (no throw)

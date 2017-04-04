@@ -24,9 +24,9 @@ std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int sess
 std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
 
 /* Types */
-enum TestStatus     // errors should be defined as negative values (-#) to ensure 'RETURN_ERROR' functionality
+enum TestStatus  // errors should be defined as negative values (-#) to ensure 'RETURN_ERROR' functionality
 {
-    NO_ERROR    = 0,
+	PASSED		= 0,
     SKIPPED     = 1,
     OBSOLETE    = 2
 };
@@ -38,7 +38,7 @@ bool checkPathEndSlash(std::string path);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
-int passThroughDisplayTestStatus(std::string testName, int error = NO_ERROR);
+int passThroughDisplayTestStatus(std::string testName, int error = PASSED);
 void displayHeader();
 void displayOptions();
 
