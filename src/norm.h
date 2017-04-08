@@ -39,7 +39,7 @@ void findNormParamsAcrossFeatures(NormType norm, FeatureVector featureVector, do
                                   int *posParam1 = nullptr, int *posParam2 = nullptr);
 
 // Find the norm parameters acros features and across a whole list of feature vectors
-void findNormParamsOverall(NormType norm, std::vector<FeatureVector> featureVectors, double *param1, double *param2);
+void findNormParamsOverAll(NormType norm, std::vector<FeatureVector> featureVectors, double *param1, double *param2);
 
 // Find the norm parameters per feature across a whole list of feature vectors
 void findNormParamsPerFeature(NormType norm, std::vector<FeatureVector> featureVectors, 

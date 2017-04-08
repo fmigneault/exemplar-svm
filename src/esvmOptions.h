@@ -26,6 +26,15 @@
 */
 #define ESVM_WEIGHTS_MODE 2
 /*
+    ESVM_FEATURE_NORMALIZATION_MODE:
+        0: no normalization
+        1: normalization min-max overall
+        2: normalization z-score overall
+        3: normalization min-max per feature
+        4: normalization z-score per feature
+*/
+#define ESVM_FEATURE_NORMALIZATION_MODE 3
+/*
     ESVM_SCORE_NORMALIZATION_MODE:
         0: no normalization
         1: normalization min-max

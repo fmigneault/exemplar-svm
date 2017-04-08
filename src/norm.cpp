@@ -103,7 +103,7 @@ void findNormParamsAcrossFeatures(NormType norm, FeatureVector featureVector, do
     }
 }
 
-void findNormParamsOverall(NormType norm, std::vector<FeatureVector> featureVectors, double *param1, double *param2)
+void findNormParamsOverAll(NormType norm, std::vector<FeatureVector> featureVectors, double *param1, double *param2)
 {
     double foundParam1, foundParam2;
     size_t nSamples = featureVectors.size();

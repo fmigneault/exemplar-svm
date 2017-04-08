@@ -763,7 +763,7 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
 
     double minAll, maxAll;
-    findNormParamsOverall(MIN_MAX, v, &minAll, &maxAll);
+    findNormParamsOverAll(MIN_MAX, v, &minAll, &maxAll);
     ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
     ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
 
@@ -3206,8 +3206,8 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                        << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
                 #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
                 double dummyMinMax;
-                findNormParamsOverall(MIN_MAX, minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
-                findNormParamsOverall(MIN_MAX, maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                findNormParamsOverAll(MIN_MAX, minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
+                findNormParamsOverAll(MIN_MAX, maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
                 logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
                        << "   MIN: " << minFeatures[d] << std::endl
                        << "   MAX: " << maxFeatures[d] << std::endl;
@@ -4290,8 +4290,8 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     cv::Size cellSize(2, 2);
     int nBins = 3;
     FeatureExtractorHOG hog(imageSize, blockSize, blockStride, cellSize, nBins);
-    double hogHardcodedFoundMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
-    double hogHardcodedFoundMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogRefMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
+    double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     
     // load positive target still images, extract features and normalize
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
@@ -4299,7 +4299,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogHardcodedFoundMin, hogHardcodedFoundMax);        
+            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);        
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)

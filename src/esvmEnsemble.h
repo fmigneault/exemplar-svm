@@ -42,14 +42,29 @@ private:
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
 
-    double hogHardcodedFoundMin;
-    double hogHardcodedFoundMax;
+    /* --- Reference 'hardcoded' normalization values --- */
+    
+    #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max features - overall normalization
+    double hogRefMin;
+    double hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score features - overall normalization
+    double hogRefMean;
+    double hogRefStdDev;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 3  // Min-Max features - per feature normalization
+    FeatureVector hogRefMin;
+    FeatureVector hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 4  // Z-Score features - per feature normalization
+    FeatureVector hogRefMean;
+    FeatureVector hogRefStdDev;
+    #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
-    double scoresHardcodedFoundMin;
-    double scoresHardcodedFoundMax;
-
-    double scoresHardcodedFoundMean;
-    double scoresHardcodedFoundStdDev;
+    #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max scores normalization
+    double scoreRefMin;
+    double scoreRefMax;
+    #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score scores normalization    
+    double scoreRefMean;
+    double scoreRefStdDev;
+    #endif/*ESVM_SCORE_NORMALIZATION_MODE*/
 };
 
 #endif/*ESVM_ENSEMBLE_H*/
