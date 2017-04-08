@@ -167,12 +167,12 @@ int create_negatives()
     double minAllROIOverAll = DBL_MAX, maxAllROIOverAll = -DBL_MAX, meanAllROIOverAll = -DBL_MAX, stdDevAllROIOverAll = -DBL_MAX;
     FeatureVector minAllROIPerFeat(hogFeatCount, DBL_MAX), maxAllROIPerFeat(hogFeatCount, DBL_MAX),
                   meanAllROIPerFeat(hogFeatCount, -DBL_MAX), stdDevAllROIPerFeat(hogFeatCount, -DBL_MAX);
-    std::vector<double> fvMinPatchOverAll(nPatches, DBL_MAX), fvMaxPatchOverAll(nPatches, -DBL_MAX), 
-                        fvMeanPatchOverAll(nPatches, -DBL_MAX), fvStdDevPatchOverAll(nPatches, -DBL_MAX);
-    std::vector<FeatureVector> fvMinPatchPerFeat(nPatches, FeatureVector(hogFeatCount, DBL_MAX)), 
-                               fvMaxPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
-                               fvMeanPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
-                               fvStdDevPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX));
+    std::vector<double> minPatchOverAll(nPatches, DBL_MAX), maxPatchOverAll(nPatches, -DBL_MAX), 
+                        meanPatchOverAll(nPatches, -DBL_MAX), stdDevPatchOverAll(nPatches, -DBL_MAX);
+    std::vector<FeatureVector> minPatchPerFeat(nPatches, FeatureVector(hogFeatCount, DBL_MAX)), 
+                               maxPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
+                               meanPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
+                               stdDevPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX));
     xstd::mvector<2, FeatureVector> fvNegMinMaxPatchOverAll(dimsNegatives), fvNegMinMaxROIOverAll(dimsNegatives),
                                     fvNegZScorePatchOverAll(dimsNegatives), fvNegZScoreROIOverAll(dimsNegatives),
                                     fvNegMinMaxPatchPerFeat(dimsNegatives), fvNegMinMaxROIPerFeat(dimsNegatives),
@@ -181,31 +181,31 @@ int create_negatives()
     for (size_t p = 0; p < nPatches; p++)
     {
         // find per patch normalization paramters
-        findNormParamsOverAll(MIN_MAX, fvNegRaw[p], &fvMinPatchOverAll[p], &fvMaxPatchOverAll[p]);
-        findNormParamsOverAll(Z_SCORE, fvNegRaw[p], &fvMeanPatchOverAll[p], &fvStdDevPatchOverAll[p]);
-        findNormParamsPerFeature(MIN_MAX, fvNegRaw[p], &fvMinPatchPerFeat[p], &fvMaxPatchPerFeat[p]);
-        findNormParamsPerFeature(Z_SCORE, fvNegRaw[p], &fvMeanPatchPerFeat[p], &fvStdDevPatchPerFeat[p]);
-        logger << "Patch Number: " << p << " Min: " << fvMinPatchOverAll[p] << " Max: " << fvMaxPatchOverAll[p]
-               << " Mean: " << fvMeanPatchOverAll[p] << " StdDev: " << fvStdDevPatchOverAll[p] << std::endl;
+        findNormParamsOverAll(MIN_MAX, fvNegRaw[p], &minPatchOverAll[p], &maxPatchOverAll[p]);
+        findNormParamsOverAll(Z_SCORE, fvNegRaw[p], &meanPatchOverAll[p], &stdDevPatchOverAll[p]);
+        findNormParamsPerFeature(MIN_MAX, fvNegRaw[p], &minPatchPerFeat[p], &maxPatchPerFeat[p]);
+        findNormParamsPerFeature(Z_SCORE, fvNegRaw[p], &meanPatchPerFeat[p], &stdDevPatchPerFeat[p]);
+        logger << "Patch Number: " << p << " Min: " << minPatchOverAll[p] << " Max: " << maxPatchOverAll[p]
+               << " Mean: " << meanPatchOverAll[p] << " StdDev: " << stdDevPatchOverAll[p] << std::endl;
         
         // apply found normalization parameters
         for (size_t neg = 0; neg < nNegatives; neg++) {
-            fvNegMinMaxPatchOverAll[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegRaw[p][neg], fvMinPatchOverAll[p], fvMaxPatchOverAll[p], true);
-            fvNegZScorePatchOverAll[p][neg] = normalizeAllFeatures(Z_SCORE, fvNegRaw[p][neg], fvMeanPatchOverAll[p], fvStdDevPatchOverAll[p], true);
-            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], fvMinPatchPerFeat[p], fvMaxPatchPerFeat[p], true);
-            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], fvMeanPatchPerFeat[p], fvStdDevPatchPerFeat[p], true);
+            fvNegMinMaxPatchOverAll[p][neg] = normalizeAllFeatures(MIN_MAX, fvNegRaw[p][neg], minPatchOverAll[p], maxPatchOverAll[p], true);
+            fvNegZScorePatchOverAll[p][neg] = normalizeAllFeatures(Z_SCORE, fvNegRaw[p][neg], meanPatchOverAll[p], stdDevPatchOverAll[p], true);
+            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p], maxPatchPerFeat[p], true);
+            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], true);
         }
 
         // update across all patches min-max normalization parameters
-        if (minAllROIOverAll > fvMinPatchOverAll[p])
-            minAllROIOverAll = fvMinPatchOverAll[p];
-        if (maxAllROIOverAll < fvMaxPatchOverAll[p])
-            maxAllROIOverAll = fvMaxPatchOverAll[p];
+        if (minAllROIOverAll > minPatchOverAll[p])
+            minAllROIOverAll = minPatchOverAll[p];
+        if (maxAllROIOverAll < maxPatchOverAll[p])
+            maxAllROIOverAll = maxPatchOverAll[p];
         for (size_t f = 0; f < hogFeatCount; ++f) {
-            if (minAllROIPerFeat[f] > fvMinPatchPerFeat[f][p])
-                minAllROIPerFeat[f] = fvMinPatchPerFeat[f][p];
-            if (maxAllROIPerFeat[f] < fvMaxPatchPerFeat[f][p])
-                maxAllROIPerFeat[f] = fvMaxPatchPerFeat[f][p];
+            if (minAllROIPerFeat[f] > minPatchPerFeat[f][p])
+                minAllROIPerFeat[f] = minPatchPerFeat[f][p];
+            if (maxAllROIPerFeat[f] < maxPatchPerFeat[f][p])
+                maxAllROIPerFeat[f] = maxPatchPerFeat[f][p];
         }
     }
 
@@ -256,6 +256,15 @@ int create_negatives()
         }
     }
 
+    std::string tab = "    ";
+    std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
+    for (size_t p = 0; p < nPatches; ++p) {
+        str_minPatchPerFeat += "\n" + tab + tab + featuresToVectorString(minPatchPerFeat[p]);
+        str_maxPatchPerFeat += "\n" + tab + tab + featuresToVectorString(maxPatchPerFeat[p]);
+        str_meanPatchPerFeat += "\n" + tab + tab + featuresToVectorString(meanPatchPerFeat[p]);
+        str_stdDevPatchPerFeat += "\n" + tab + tab + featuresToVectorString(stdDevPatchPerFeat[p]);
+    }
+
     // write configs employed (traceback)
     logstream logSampleConfig("negatives-output-config.txt");
     logSampleConfig << "negativeIDs:      " << negativesID << std::endl
@@ -276,32 +285,33 @@ int create_negatives()
                     << "blockStride:      " << blockStride << std::endl
                     << "cellSize:         " << cellSize << std::endl
                     << "nBins:            " << nBins << std::endl 
-                    << "OverAll Norm:     "  << std::endl
-                    << "    minROI[p]:    " << fvMinPatchOverAll << std::endl
-                    << "    maxROI[p]:    " << fvMaxPatchOverAll << std::endl
-                    << "    minAllROI:    " << minAllROIOverAll << std::endl
-                    << "    maxAllROI:    " << maxAllROIOverAll << std::endl
-                    << "    meanROI[p]:   " << fvMeanPatchOverAll << std::endl
-                    << "    stdDevROI[p]: " << fvStdDevPatchOverAll << std::endl
-                    << "    meanAllROI:   " << meanAllROIOverAll << std::endl
-                    << "PerFeat Norm:     "  << std::endl
-                    << "    minROI[p]:    " << fvMinPatchPerFeat << std::endl
-                    << "    maxROI[p]:    " << fvMaxPatchPerFeat << std::endl
-                    << "    minAllROI:    " << minAllROIPerFeat << std::endl
-                    << "    maxAllROI:    " << maxAllROIPerFeat << std::endl
-                    << "    meanROI[p]:   " << fvMeanPatchPerFeat << std::endl
-                    << "    stdDevROI[p]: " << fvStdDevPatchPerFeat << std::endl
-                    << "    meanAllROI:   " << meanAllROIPerFeat << std::endl
-                    << "stdDevAllROI:     " << stdDevAllROIPerFeat << std::endl
                     << "nFeatures:        " << hogFeatCount << std::endl
                     << "BINARY fmt?:      " << writeBinaryFormat << std::endl
                     << "LIBSVM fmt?:      " << writeLibsvmFormat << std::endl
+                    << "OverAll Norm:     " << std::endl
+                    << tab << "minROI[p]:    " << minPatchOverAll << std::endl
+                    << tab << "maxROI[p]:    " << maxPatchOverAll << std::endl
+                    << tab << "meanROI[p]:   " << meanPatchOverAll << std::endl
+                    << tab << "stdDevROI[p]: " << stdDevPatchOverAll << std::endl
+                    << tab << "minAllROI:    " << minAllROIOverAll << std::endl
+                    << tab << "maxAllROI:    " << maxAllROIOverAll << std::endl
+                    << tab << "meanAllROI:   " << meanAllROIOverAll << std::endl
+                    << tab << "stdDevAllROI: " << stdDevAllROIOverAll << std::endl
+                    << "PerFeat Norm:     " << std::endl
+                    << tab << "minROI[p]:    " << str_minPatchPerFeat << std::endl
+                    << tab << "maxROI[p]:    " << str_maxPatchPerFeat << std::endl
+                    << tab << "meanROI[p]:   " << str_meanPatchPerFeat << std::endl
+                    << tab << "stdDevROI[p]: " << str_stdDevPatchPerFeat << std::endl
+                    << tab << "minAllROI:    " << minAllROIPerFeat << std::endl
+                    << tab << "maxAllROI:    " << maxAllROIPerFeat << std::endl
+                    << tab << "meanAllROI:   " << meanAllROIPerFeat << std::endl
+                    << tab << "stdDevAllROI: " << stdDevAllROIPerFeat << std::endl
                     << "all Neg IDs:      " << negativeSamplesID << std::endl;
 
     #else/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
-    return passThroughDisplayTestStatus(__func__, NO_ERROR);
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 int create_probes(std::string positives, std::string negatives)
