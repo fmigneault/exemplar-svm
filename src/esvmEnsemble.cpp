@@ -42,9 +42,9 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         {
             positiveSamples[p][pos] = hog.compute(patches[p]);
             #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
+            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-            positiveSamples[p][pos] = normalizeAllFeatures(Z_SCORE, positiveSamples[p][pos], hogRefMean, hogRefStdDev);
+            positiveSamples[p][pos] = normalizeOverAll(Z_SCORE, positiveSamples[p][pos], hogRefMean, hogRefStdDev);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
             positiveSamples[p][pos] = normalizePerFeature(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
@@ -78,7 +78,7 @@ void esvmEnsemble::setConstants()
     patchCounts = cv::Size(3, 3); 
     blockSize = cv::Size(2, 2);
     blockStride  = cv::Size(2, 2);
-    cellSize = cv::Size(2, 2);  
+    cellSize = cv::Size(2, 2);
     nBins = 3;
     hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
 
@@ -162,9 +162,9 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi) // this should be a
     for (size_t p = 0; p < nPatches; p++) 
     {
         #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-        probeSampleFeats[p] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);
+        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-        probeSampleFeats[p] = normalizeAllFeatures(Z_SCORE, hog.compute(patches[p]), hogRefMean, hogRefStdDev);
+        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, hog.compute(patches[p]), hogRefMean, hogRefStdDev);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
         probeSampleFeats[p] = normalizePerFeature(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 4

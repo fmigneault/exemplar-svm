@@ -734,8 +734,8 @@ int test_normalizationFunctions()
     
     double min1 = -1, max1 = -1, min2 = -1, max2 = -1;
     int posMin1 = -1, posMax1 = -1, posMin2 = -1, posMax2 = -1;
-    findNormParamsAcrossFeatures(MIN_MAX, v1, &min1, &max1, &posMin1, &posMax1);
-    findNormParamsAcrossFeatures(MIN_MAX, v2, &min2, &max2, &posMin2, &posMax2);
+    findNormParamsAcrossFeatures(MIN_MAX, v1, min1, max1, &posMin1, &posMax1);
+    findNormParamsAcrossFeatures(MIN_MAX, v2, min2, max2, &posMin2, &posMax2);
     ASSERT_LOG(min1 == -1,   "Minimum value of vector should be assigned to variable by reference");
     ASSERT_LOG(max1 == 14,   "Maximum value of vector should be assigned to variable by reference");
     ASSERT_LOG(posMin1 == 0, "Index position of minimum value of vector should be assigned to variable by reference");
@@ -746,7 +746,7 @@ int test_normalizationFunctions()
     ASSERT_LOG(posMax2 == 0, "Index position of maximum value of vector should be assigned to variable by reference");
 
     FeatureVector vmin, vmax;
-    findNormParamsPerFeature(MIN_MAX, v, &vmin, &vmax);
+    findNormParamsPerFeature(MIN_MAX, v, vmin, vmax);
     ASSERT_LOG(vmin.size() == v1.size(), "Minimum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmax.size() == v1.size(), "Maximum features vector should be assigned values to match size of search vector");
     ASSERT_LOG(vmin[0] == -1,  "Minimum value should be found");
@@ -760,26 +760,26 @@ int test_normalizationFunctions()
     ASSERT_LOG(vmax[2] == 6,   "Maximum value should be found");
     ASSERT_LOG(vmax[3] == 4,   "Maximum value should be found");
     ASSERT_LOG(vmax[4] == 5,   "Maximum value should be found");
-    ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");
+    ASSERT_LOG(vmax[5] == 14,  "Maximum value should be found");    
 
     double minAll, maxAll;
-    findNormParamsOverAll(MIN_MAX, v, &minAll, &maxAll);
+    findNormParamsOverAll(MIN_MAX, v, minAll, maxAll);
     ASSERT_LOG(minAll == -1, "Minimum value of all features of whole list should be found");
     ASSERT_LOG(maxAll == 14, "Maximum value of all features of whole list should be found");
 
-    FeatureVector normAll = normalizeAllFeatures(MIN_MAX, v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
+    FeatureVector normAll = normalizeOverAll(MIN_MAX, v1, -1, 14);     // min/max of v1 are -1,14, makes (max-min)=15
     for (size_t f = 0; f < normAll.size(); f++)
         ASSERT_LOG(normAll[f] == v1_norm01[f], "Feature should be normalized with specified min/max values");
 
-    FeatureVector normAllMore = normalizeAllFeatures(MIN_MAX, v1, -1, 29); // using max == 29 makes (max-min)=30, 1/2 norm values
+    FeatureVector normAllMore = normalizeOverAll(MIN_MAX, v1, -1, 29); // using max == 29 makes (max-min)=30, 1/2 norm values
     for (size_t f = 0; f < normAllMore.size(); f++)
         ASSERT_LOG(normAllMore[f] == v1_norm01[f] / 2.0, "Feature normalization should be enforced with specified min/max values");
 
-    FeatureVector normAllAuto = normalizeAllFeatures(MIN_MAX, v1);         // min/max not specified, find them
+    FeatureVector normAllAuto = normalizeOverAll(MIN_MAX, v1);         // min/max not specified, find them
     for (size_t f = 0; f < normAllAuto.size(); f++)
         ASSERT_LOG(normAllAuto[f] == v1_norm01[f], "Feature should be normalized with min/max found within the specified vector");
     
-    std::vector<double> scores = normalizeClassScores(MIN_MAX, v1);        // same as 'normalizeAllFeatures<MinMax>'
+    std::vector<double> scores = normalizeClassScores(MIN_MAX, v1);        // same as 'normalizeOverAll<MinMax>'
     for (size_t f = 0; f < scores.size(); f++)
         ASSERT_LOG(scores[f] == v1_norm01[f], "Score should be normalized with min/max of all scores");
 
@@ -811,6 +811,8 @@ int test_normalizationFunctions()
         logger << "Zero value standard deviation should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -2);
     } catch (...) {}    // expceted exception
+    // Does not apply with switch passing by pointer to by reference
+    /*
     try { 
         findNormParamsAcrossFeatures(MIN_MAX, v1, nullptr, &dummyValue);
         logger << "Null reference for minimum value should have raised an exception" << std::endl;
@@ -821,21 +823,25 @@ int test_normalizationFunctions()
         logger << "Null reference for maximum value should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -4);
     } catch (...) {}    // expceted exception
+    */
     try { 
-        findNormParamsAcrossFeatures(MIN_MAX, vEmpty, &dummyValue, &dummyValue);
+        findNormParamsAcrossFeatures(MIN_MAX, vEmpty, dummyValue, dummyValue);
         logger << "Empty feature vector should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -5);
-    } catch (...) {}    // expceted exception
+    } catch (...) {}    // expceted exception    
+    // Does not apply with switch passing by pointer to by reference
+    /*
     try { 
         findNormParamsPerFeature(MIN_MAX, v, nullptr, &vEmpty);
         logger << "Null reference for minimum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -6);
-    } catch (...) {}    // expceted exception
+    } catch (...) {}    // expceted exception    
     try { 
         findNormParamsPerFeature(MIN_MAX, v, &vEmpty, nullptr);
         logger << "Null reference for maximum features should have raised an exception" << std::endl;
         return passThroughDisplayTestStatus(__func__, -7);
     } catch (...) {}    // expceted exception
+    */
     try { 
         normalizePerFeature(MIN_MAX, v1, vEmpty, v1);
         logger << "Inconsistent size for minimum features should have raised an exception" << std::endl;
@@ -3190,7 +3196,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
                     
                     // Find min/max features according to normalization mode
-                    findNormParamsPerFeature(MIN_MAX, allFeatureVectors[p][d], &(minFeaturesCumul[d][p]), &(maxFeaturesCumul[d][p]));
+                    findNormParamsPerFeature(MIN_MAX, allFeatureVectors[p][d], minFeaturesCumul[d][p], maxFeaturesCumul[d][p]);
                     #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
                     logger << "Found min/max features for (descriptor,patch) (" << descriptorNames[d] << "," << p << "):" << std::endl
                            << "   MIN: " << featuresToVectorString(minFeaturesCumul[d][p]) << std::endl
@@ -3206,8 +3212,8 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                        << "   MAX: " << featuresToVectorString(maxFeatures[d]) << std::endl;
                 #elif TEST_FEATURES_NORMALIZATION_MODE == 3     // Across features and across patches normalization
                 double dummyMinMax;
-                findNormParamsOverAll(MIN_MAX, minFeaturesCumul[d], &(minFeatures[d]), &dummyMinMax);
-                findNormParamsOverAll(MIN_MAX, maxFeaturesCumul[d], &dummyMinMax, &(maxFeatures[d]));
+                findNormParamsOverAll(MIN_MAX, minFeaturesCumul[d], minFeatures[d], dummyMinMax);
+                findNormParamsOverAll(MIN_MAX, maxFeaturesCumul[d], dummyMinMax, maxFeatures[d]);
                 logger << "Found min/max features for descriptor '" << descriptorNames[d] << "':" << std::endl
                        << "   MIN: " << minFeatures[d] << std::endl
                        << "   MAX: " << maxFeatures[d] << std::endl;
@@ -3712,9 +3718,9 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     for (int p = 0; p < nPatches; p++)
     {
         for (size_t pos = 0; pos < nPositives; pos++)
-            fvPositiveSamples[pos][p] = normalizeAllFeatures(MIN_MAX, fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
+            fvPositiveSamples[pos][p] = normalizeOverAll(MIN_MAX, fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
         for (size_t prb = 0; prb < nProbesLoaded; prb++)
-            fvProbeLoadedSamples[p][prb] = normalizeAllFeatures(MIN_MAX, fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
+            fvProbeLoadedSamples[p][prb] = normalizeOverAll(MIN_MAX, fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
     }
     #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
 
@@ -4299,7 +4305,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeAllFeatures(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);        
+            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);        
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)

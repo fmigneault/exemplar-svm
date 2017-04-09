@@ -156,6 +156,15 @@
 
 // Generate sample files using various enabled parameters
 #define PROC_ESVM_GENERATE_SAMPLE_FILES 1
+/* Employ specific ROI pre-processing operation before sample files generation
+    
+    PROC_ESVM_GENERATE_SAMPLE_FILES_MODE:
+        0: 'normal' procedure without additional ROI pre-processing (using ChokePoint 'cropped_faces')
+        1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
+        2: apply specific pre-cropping of 'cropped_faces' ROI with pre-defined ROI ratio
+*/
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_MODE 0
+
 
 /* ------------------------------------------------------------
    Image paths
