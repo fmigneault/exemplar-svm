@@ -114,7 +114,7 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
                                   std::string windowName, cv::ImreadModes readMode)
 {
-    std::cout << "Preprocessing image: " << img.rows << " cols: " << img.cols << std::endl;
+    std::cout << "Preprocessing image: " << img.rows << "x" << img.cols << std::endl;
     if (windowName != "")
     {
         cv::imshow(windowName, img);
