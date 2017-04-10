@@ -164,6 +164,10 @@
         2: apply specific pre-cropping of 'cropped_faces' ROI with pre-defined ROI ratio
 */
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_MODE 0
+// Request binary format sample file generation
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
+// Request libsvm format sample file generation
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
 
 
 /* ------------------------------------------------------------

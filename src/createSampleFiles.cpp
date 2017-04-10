@@ -35,14 +35,13 @@ int create_negatives()
     std::string tab = "    ";
 
     // outputs
-    bool writeBinaryFormat = true;
-    bool writeLibsvmFormat = false;
     std::string windowNameOriginal = "WINDOW_ORIGINAL";     // display oringal 'cropped_face' ROIs
     std::string windowNameROI = "WINDOW_ROI";               // display localized ROIs from LBP improved (if activated)
     int delayShowROI = 1;                                   // [ms] - show found LBP improved ROIs with a delay (for visual inspection)
     bool keepAllFoundROI = false;                           // keep all the found ROIs (if applicable), or only the first one (if applicable)
-    assert(writeBinaryFormat || writeLibsvmFormat);
-    assert(delayShowROI > 0);
+    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY || PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM, 
+               "Either 'PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY' or 'PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM' must be enabled for file generation");
+    ASSERT_LOG(delayShowROI > 0, "Delay to display ROI during file generation must be greater than zero");
 
     // general parameters    
     size_t nPatches = 9;
@@ -165,6 +164,7 @@ int create_negatives()
     for (size_t p = 0; p < nPatches; p++)
         for (size_t neg = 0; neg < nNegatives; neg++)
             fvNegRaw[p][neg] = hog.compute(matNegativeSamples[neg][p]);
+    matNegativeSamples.clear();
 
     // find + apply normalization values
     size_t hogFeatCount = hog.getFeatureCount();
@@ -246,7 +246,7 @@ int create_negatives()
     for (size_t p = 0; p < nPatches; p++)
     {
         std::string fileStart = "negatives-patch" + std::to_string(p);
-        if (writeBinaryFormat) {
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
             ESVM::writeSampleDataFile(fileStart + "-raw.bin",                       fvNegRaw[p],                negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.bin",    fvNegMinMaxROIOverAll[p],   negClass, BINARY);
@@ -256,8 +256,8 @@ int create_negatives()
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.bin",    fvNegMinMaxROIPerFeat[p],   negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.bin",   fvNegZScorePatchPerFeat[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.bin",     fvNegZScoreROIPerFeat[p],   negClass, BINARY);
-        }
-        if (writeLibsvmFormat) {
+        #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
             ESVM::writeSampleDataFile(fileStart + "-raw.data",                      fvNegRaw[p],                negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.data", fvNegMinMaxPatchOverAll[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.data",   fvNegMinMaxROIOverAll[p],   negClass, LIBSVM);
@@ -267,7 +267,7 @@ int create_negatives()
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.data",   fvNegMinMaxROIPerFeat[p],   negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.data",  fvNegZScorePatchPerFeat[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.data",    fvNegZScoreROIPerFeat[p],   negClass, LIBSVM);
-        }
+        #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
     }
     
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
@@ -303,8 +303,8 @@ int create_negatives()
                     << "cellSize:         " << cellSize << std::endl
                     << "nBins:            " << nBins << std::endl 
                     << "nFeatures:        " << hogFeatCount << std::endl
-                    << "BINARY fmt?:      " << writeBinaryFormat << std::endl
-                    << "LIBSVM fmt?:      " << writeLibsvmFormat << std::endl
+                    << "BINARY fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
+                    << "LIBSVM fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
                     << "OverAll Norm:     " << std::endl
                     << tab << "minROI[p]:    " << minPatchOverAll << std::endl
                     << tab << "maxROI[p]:    " << maxPatchOverAll << std::endl
