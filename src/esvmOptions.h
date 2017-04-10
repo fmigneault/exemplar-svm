@@ -16,6 +16,16 @@
 #define ESVM_NEGATIVE_CLASS -1
 #define ESVM_BINARY_HEADER_MODEL "ESVM bin model"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM bin samples"
+// Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
+#define ESVM_ROI_CROP_RATIO 0.80
+/* Employ specific ROI pre-processing operation before further feature extraction operations
+    
+    ESVM_ROI_PREPROCESS_MODE:
+        0: 'normal' procedure without additional ROI pre-processing (using ChokePoint 'cropped_faces')
+        1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
+        2: apply specific pre-cropping of 'cropped_faces' ROI with ROI ratio defined by 'ESVM_ROI_CROP_RATIO'
+*/
+#define ESVM_ROI_PREPROCESS_MODE 2
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused
@@ -28,12 +38,18 @@
 /*
     ESVM_FEATURE_NORMALIZATION_MODE:
         0: no normalization
-        1: normalization min-max overall
-        2: normalization z-score overall
-        3: normalization min-max per feature
-        4: normalization z-score per feature
+        1: normalization min-max overall, across patches
+        2: normalization z-score overall, across patches
+        3: normalization min-max per feature, across patches
+        4: normalization z-score per feature, across patches
+        5: normalization min-max overall, for each patch
+        6: normalization z-score overall, for each patch
+        7: normalization min-max per feature, for each patch
+        8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORMALIZATION_MODE 3
+#define ESVM_FEATURE_NORMALIZATION_MODE 7
+// Specify if normalized features need to be clipped if outside of [0,1]
+#define ESVM_FEATURE_NORMALIZATION_CLIP 1
 /*
     ESVM_SCORE_NORMALIZATION_MODE:
         0: no normalization
@@ -41,6 +57,8 @@
         2: normalization z-score
 */
 #define ESVM_SCORE_NORMALIZATION_MODE 1
+// Specify if normalized scores need to be clipped if outside of [0,1]
+#define ESVM_SCORE_NORMALIZATION_CLIP 0
 /*
     ESVM_PARSER_MODE:
         0: stringstream
@@ -134,7 +152,6 @@
 #define PROC_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
 #define PROC_WRITE_DATA_FILES 1
-
 // Test training and testing using TITAN reference images against ChokePoint negatives
 #define PROC_ESVM_TITAN 0
 /*
@@ -153,22 +170,12 @@
         2: run with BINARY formatted sample files
 */
 #define PROC_ESVM_SIMPLIFIED_WORKING 0
-
 // Generate sample files using various enabled parameters
 #define PROC_ESVM_GENERATE_SAMPLE_FILES 1
-/* Employ specific ROI pre-processing operation before sample files generation
-    
-    PROC_ESVM_GENERATE_SAMPLE_FILES_MODE:
-        0: 'normal' procedure without additional ROI pre-processing (using ChokePoint 'cropped_faces')
-        1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
-        2: apply specific pre-cropping of 'cropped_faces' ROI with pre-defined ROI ratio
-*/
-#define PROC_ESVM_GENERATE_SAMPLE_FILES_MODE 0
 // Request binary format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
 // Request libsvm format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
-
 
 /* ------------------------------------------------------------
    Image paths

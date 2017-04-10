@@ -2,10 +2,10 @@
 Image operations
 -------------------- */
 #include "imgUtils.h"
+#include "generic.h"
 
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode)
-{
-    std::cout << "Reading image: " << imagePath << std::endl;
+{    
     cv::Mat img = cv::imread(imagePath, readMode);
     if (windowName != "")
     {
@@ -24,11 +24,49 @@ cv::Mat imTranslate(const cv::Mat& image, cv::Point offset)
     return trans;
 }
 
-cv::Mat imFlip(cv::Mat image, FlipCode flipCode)
+cv::Mat imFlip(cv::Mat image, FlipMode flipMode)
 {
     cv::Mat flip;
-    cv::flip(image, flip, flipCode);
+    cv::flip(image, flip, flipMode);
     return flip;
+}
+
+cv::Mat imCrop(cv::Mat image, int x, int y, int w, int h)
+{
+    return image(cv::Rect(x, y, w, h));
+}
+
+cv::Mat imCrop(cv::Mat image, cv::Point p1, cv::Point p2)
+{    
+    return image(cv::Rect(p1, p2));
+}
+
+cv::Mat imCrop(cv::Mat image, cv::Rect r)
+{
+    return image(r);
+}
+
+cv::Mat imCropByRatio(cv::Mat image, double ratio, CropMode cropMode)
+{
+    ASSERT_LOG(ratio > 0 && ratio <= 1.0, "Ratio must be in range ]0,1]");
+    int w = image.size().width;
+    int h = image.size().height;
+    int wc = (int)(ratio * w);
+    int hc = (int)(ratio * h);
+
+    switch (cropMode)
+    {
+        case TOP_LEFT:      return imCrop(image, 0, 0, wc, hc);
+        case TOP_MIDDLE:    return imCrop(image, (w - wc) / 2, 0, wc, hc);
+        case TOP_RIGHT:     return imCrop(image, w - wc, 0, wc, hc);
+        case CENTER_LEFT:   return imCrop(image, 0, (h - hc)/2, wc, hc);
+        case CENTER_MIDDLE: return imCrop(image, (w - wc) / 2, (h - hc) / 2, wc, hc);
+        case CENTER_RIGHT:  return imCrop(image, w - wc, (h - hc) / 2, wc, hc);
+        case BOTTOM_LEFT:   return imCrop(image, 0, h - hc, wc, hc);
+        case BOTTOM_MIDDLE: return imCrop(image, (w - wc) / 2, h - hc, wc, hc);
+        case BOTTOM_RIGHT:  return imCrop(image, w - wc, h - hc, wc, hc);
+        default:            THROW("Invalid crop mode");
+    }    
 }
 
 std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image)
@@ -50,28 +88,27 @@ std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat imag
     synthImages.push_back(image);
     int initSize = image.rows; 
     cv::Size dummySize(0, 0);
-    std::cout << "scaleJumps: " << scaleJumps << " minScale: " << minScale << std::endl; 
 
-    for(double scale = 1; scale > minScale; scale -= scaleJumps){
+    for(double scale = 1; scale > minScale; scale -= scaleJumps)
+    {
         cv::Mat resizedImage;
         int newSize = (int)initSize*scale;
         cv::Rect newRect(0, 0, newSize, newSize);
         int totalPixelDifference = initSize - newSize;
         int startingPoint = (totalPixelDifference % 2) / 2;
-        std::cout << "initSize: " << initSize << " newsize: " << newSize << std::endl; 
-        std::cout << "totalPixelDifference: " << totalPixelDifference << " translationSize: " << translationSize << std::endl; 
-        if (translationSize < totalPixelDifference) {
+
+        if (translationSize < totalPixelDifference) 
+        {
             cv::Mat cropedImage;
-            for( int x = startingPoint; x < totalPixelDifference; x += translationSize){
-                for( int y = startingPoint; y < totalPixelDifference; y += translationSize){
+            for( int x = startingPoint; x < totalPixelDifference; x += translationSize)
+            {
+                for( int y = startingPoint; y < totalPixelDifference; y += translationSize)
+                {
                     newRect.x = x;
                     newRect.y = y;
                     cv::Mat image_roi = image(newRect);
                     image_roi.copyTo(cropedImage);
                     synthImages.push_back(cropedImage);
-                    // std::stringstream ss;
-                    // ss << "cropedImage_" << scale << "_" << x << "_" << y <<  ".jpg";
-                    // cv::imwrite(ss.str(), image_roi);
                 }
             }
         }
@@ -79,8 +116,6 @@ std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat imag
 
     return synthImages;
 }
-
-
 
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
 {
@@ -114,7 +149,6 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
 std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
                                   std::string windowName, cv::ImreadModes readMode)
 {
-    std::cout << "Preprocessing image: " << img.rows << "x" << img.cols << std::endl;
     if (windowName != "")
     {
         cv::imshow(windowName, img);

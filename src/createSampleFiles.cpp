@@ -109,9 +109,9 @@ int create_negatives()
                             cv::Mat roi;
                             std::vector<cv::Rect> faces;
 
-                            #if PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 0       // directly use 'cropped_faces'
+                            #if ESVM_ROI_PREPROCESS_MODE == 0           // directly use 'cropped_faces'
                                 roi = img;
-                            #elif PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 1     // LBP improved localized ROI refinement                                
+                            #elif ESVM_ROI_PREPROCESS_MODE == 1         // LBP improved localized ROI refinement                                
                                 cv::imshow(windowNameOriginal, img);
                                 cv::waitKey(1);
                                 faceCascade.detectMultiScale(img, faces, scaleFactor, nmsThreshold, cv::CASCADE_SCALE_IMAGE, minSize, maxSize);
@@ -132,12 +132,14 @@ int create_negatives()
                                     logger << "Did not find face on cropped image: '" << imgPath << "'" << std::endl;
                                     continue;   // skip if not found any face
                                 }
-                            #elif PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 2     // pre-cropping of ROI
-
+                            #elif ESVM_ROI_PREPROCESS_MODE == 2         // pre-cropping of ROI
+                                cv::imshow(windowNameOriginal, img);
+                                cv::waitKey(1);
+                                roi = imCropByRatio(img, ESVM_ROI_CROP_RATIO);
                             #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_MODE*/
 
-                            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts,
-                                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, windowNameROI, cv::IMREAD_GRAYSCALE);
+                            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION,
+                                                                        windowNameROI, cv::IMREAD_GRAYSCALE);
                             size_t neg = matNegativeSamples.size();
                             matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                             for (size_t p = 0; p < nPatches; p++)
@@ -164,7 +166,6 @@ int create_negatives()
     for (size_t p = 0; p < nPatches; p++)
         for (size_t neg = 0; neg < nNegatives; neg++)
             fvNegRaw[p][neg] = hog.compute(matNegativeSamples[neg][p]);
-    matNegativeSamples.clear();
 
     // find + apply normalization values
     size_t hogFeatCount = hog.getFeatureCount();
@@ -182,6 +183,7 @@ int create_negatives()
                                     fvNegMinMaxPatchPerFeat(dimsNegatives), fvNegMinMaxROIPerFeat(dimsNegatives),
                                     fvNegZScorePatchPerFeat(dimsNegatives), fvNegZScoreROIPerFeat(dimsNegatives);
 
+    bool clip = ESVM_FEATURE_NORMALIZATION_CLIP;
     for (size_t p = 0; p < nPatches; p++)
     {
         // find per patch normalization paramters
@@ -204,10 +206,10 @@ int create_negatives()
 
         // apply found normalization parameters
         for (size_t neg = 0; neg < nNegatives; neg++) {
-            fvNegMinMaxPatchOverAll[p][neg] = normalizeOverAll(MIN_MAX, fvNegRaw[p][neg], minPatchOverAll[p], maxPatchOverAll[p], true);
-            fvNegZScorePatchOverAll[p][neg] = normalizeOverAll(Z_SCORE, fvNegRaw[p][neg], meanPatchOverAll[p], stdDevPatchOverAll[p], true);
-            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p], maxPatchPerFeat[p], true);
-            fvNegZScorePatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], true);
+            fvNegMinMaxPatchOverAll[p][neg] = normalizeOverAll(MIN_MAX,    fvNegRaw[p][neg], minPatchOverAll[p],  maxPatchOverAll[p],    clip);
+            fvNegZScorePatchOverAll[p][neg] = normalizeOverAll(Z_SCORE,    fvNegRaw[p][neg], meanPatchOverAll[p], stdDevPatchOverAll[p], clip);
+            fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p],  maxPatchPerFeat[p],    clip);
+            fvNegZScorePatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], clip);
         }
 
         // update across all patches min-max normalization parameters
@@ -234,10 +236,10 @@ int create_negatives()
     // apply found across all patches normalization parameters
     for (size_t p = 0; p < nPatches; p++) {
         for (size_t neg = 0; neg < nNegatives; neg++) {
-            fvNegMinMaxROIOverAll[p][neg] = normalizeOverAll(MIN_MAX, fvNegRaw[p][neg], minAllROIOverAll, maxAllROIOverAll, true);
-            fvNegZScoreROIOverAll[p][neg] = normalizeOverAll(Z_SCORE, fvNegRaw[p][neg], meanAllROIOverAll, stdDevAllROIOverAll, true);
-            fvNegMinMaxROIPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minAllROIPerFeat, maxAllROIPerFeat, true);
-            fvNegZScoreROIPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanAllROIPerFeat, stdDevAllROIPerFeat, true);
+            fvNegMinMaxROIOverAll[p][neg] = normalizeOverAll(MIN_MAX,    fvNegRaw[p][neg], minAllROIOverAll,  maxAllROIOverAll,    clip);
+            fvNegZScoreROIOverAll[p][neg] = normalizeOverAll(Z_SCORE,    fvNegRaw[p][neg], meanAllROIOverAll, stdDevAllROIOverAll, clip);
+            fvNegMinMaxROIPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minAllROIPerFeat,  maxAllROIPerFeat,    clip);
+            fvNegZScoreROIPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanAllROIPerFeat, stdDevAllROIPerFeat, clip);
         }
     }
 
@@ -285,14 +287,15 @@ int create_negatives()
                     << "perSessionNeg:    " << perSessionNegatives << std::endl
                     << "perSeqNeg         " << perSequenceNegatives << std::endl
                     << "histEqual:        " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
-                    << "generation mode:  " << PROC_ESVM_GENERATE_SAMPLE_FILES_MODE << std::endl
+                    << "feat norm clip:   " << ESVM_FEATURE_NORMALIZATION_CLIP << std::endl
+                    << "generation mode:  " << ESVM_ROI_PREPROCESS_MODE << std::endl
                     #if PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 1       // using LBP improved localized ROI refinement
                     << "scaleFactor:      " << scaleFactor << std::endl
                     << "nmsThreshold:     " << nmsThreshold << std::endl
                     << "CC minSize:       " << minSize << std::endl
                     << "CC maxSize:       " << maxSize << std::endl
                     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 2     // using pre-cropped ROI refinement
-
+                    << "pre-crop ratio:   " << ESVM_ROI_CROP_RATIO << std::endl
                     #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_MODE*/
                     << "imageSize:        " << imageSize << std::endl
                     << "nPatches:         " << nPatches << std::endl

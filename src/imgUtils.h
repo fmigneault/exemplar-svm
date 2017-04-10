@@ -12,9 +12,18 @@ cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName = "", cv:
 // Translation of an image with XY pixel offset
 cv::Mat imTranslate(const cv::Mat& image, cv::Point offset);
 
-// Flip an image in horizontal/vertital/both directions
-enum FlipCode { VERTICAL = 0, HORIZONTAL = 1, BOTH = -1 };
-cv::Mat imFlip(cv::Mat image, FlipCode flipCode);
+// Flips an image in horizontal/vertital/both directions
+enum FlipMode { VERTICAL = 0, HORIZONTAL = 1, BOTH = -1 };
+cv::Mat imFlip(cv::Mat image, FlipMode flipMode);
+
+// Crops an image with specified inputs
+cv::Mat imCrop(cv::Mat image, int x, int y, int w, int h);
+cv::Mat imCrop(cv::Mat image, cv::Point p1, cv::Point p2);
+cv::Mat imCrop(cv::Mat image, cv::Rect r);
+
+// Crops an image so that the resulting image corresponds to the specified ratio and method
+enum CropMode { TOP_LEFT, TOP_MIDDLE, TOP_RIGHT, CENTER_LEFT, CENTER_MIDDLE, CENTER_RIGHT, BOTTOM_LEFT, BOTTOM_MIDDLE, BOTTOM_RIGHT };
+cv::Mat imCropByRatio(cv::Mat image, double ratio, CropMode cropMode = CENTER_MIDDLE);
 
 // Returns a vector containing the original image followed by multiple synthetic images generated from the original
 std::vector<cv::Mat> imSyntheticGeneration(cv::Mat image);
