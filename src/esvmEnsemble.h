@@ -29,6 +29,7 @@ private:
     // Constants
     cv::Size imageSize;
     cv::Size patchCounts;
+    cv::Size windowSize;
     cv::Size blockSize;
     cv::Size blockStride;
     cv::Size cellSize;

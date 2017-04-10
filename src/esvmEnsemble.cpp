@@ -91,12 +91,13 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
 void esvmEnsemble::setConstants(std::string negativesDir)
 {
     imageSize = cv::Size(48, 48);
-    patchCounts = cv::Size(3, 3); 
+    patchCounts = cv::Size(3, 3);
     blockSize = cv::Size(2, 2);
     blockStride  = cv::Size(2, 2);
     cellSize = cv::Size(2, 2);
     nBins = 3;
-    hog = FeatureExtractorHOG(imageSize, blockSize, blockStride, cellSize, nBins);
+    windowSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
+    hog = FeatureExtractorHOG(windowSize, blockSize, blockStride, cellSize, nBins);
 
     /* --- Feature 'hardcoded' normalization values for on-line classification --- */
 
