@@ -36,8 +36,15 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     // load positive target still images, extract features and normalize
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
-    {        
-        std::vector<cv::Mat> patches = imPreprocess(positiveROIs[pos], imageSize, patchCounts, useHistEqual);
+    {       
+        // apply pre-processing operation as required
+        #if ESVM_ROI_PREPROCESS_MODE == 2
+        cv::Mat roi = imCropByRatio(positiveROIs[pos], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
+        #else
+        cv::Mat roi = positiveROIs[pos];
+        #endif
+
+        std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, useHistEqual);
         for (size_t p = 0; p < nPatches; p++) 
         {
             positiveSamples[p][pos] = hog.compute(patches[p]);
@@ -49,6 +56,14 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
             positiveSamples[p][pos] = normalizePerFeature(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
             positiveSamples[p][pos] = normalizePerFeature(Z_SCORE, positiveSamples[p][pos], hogRefMean, hogRefStdDev);
+            #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
+            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, positiveSamples[p][pos], hogRefMin[p], hogRefMax[p]);
+            #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
+            positiveSamples[p][pos] = normalizeOverAll(Z_SCORE, positiveSamples[p][pos], hogRefMean[p], hogRefStdDev[p]);
+            #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
+            positiveSamples[p][pos] = normalizePerFeature(MIN_MAX, positiveSamples[p][pos], hogRefMin[p], hogRefMax[p]);
+            #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
+            positiveSamples[p][pos] = normalizePerFeature(Z_SCORE, positiveSamples[p][pos], hogRefMean[p], hogRefStdDev[p]);
             #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         }
     }
