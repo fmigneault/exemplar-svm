@@ -28,7 +28,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     // positive samples
     nPositives = positiveROIs.size();
     size_t dimsPositives[2]{ nPatches, nPositives };
-    xstd::mvector<2, FeatureVector> positiveSamples(dimsPositives);     // [patch][positives](FeatureVector)
+    xstd::mvector<2, FeatureVector> posSamples(dimsPositives);          // [patch][positives](FeatureVector)
 
     // Exemplar-SVM
     EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)    
@@ -42,28 +42,28 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         cv::Mat roi = imCropByRatio(positiveROIs[pos], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
         #else
         cv::Mat roi = positiveROIs[pos];
-        #endif
+        #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
         std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, useHistEqual);
         for (size_t p = 0; p < nPatches; p++) 
         {
-            positiveSamples[p][pos] = hog.compute(patches[p]);
+            posSamples[p][pos] = hog.compute(patches[p]);
             #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
+            posSamples[p][pos] = normalizeOverAll(MIN_MAX, posSamples[p][pos], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-            positiveSamples[p][pos] = normalizeOverAll(Z_SCORE, positiveSamples[p][pos], hogRefMean, hogRefStdDev);
+            posSamples[p][pos] = normalizeOverAll(Z_SCORE, posSamples[p][pos], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-            positiveSamples[p][pos] = normalizePerFeature(MIN_MAX, positiveSamples[p][pos], hogRefMin, hogRefMax);
+            posSamples[p][pos] = normalizePerFeature(MIN_MAX, posSamples[p][pos], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-            positiveSamples[p][pos] = normalizePerFeature(Z_SCORE, positiveSamples[p][pos], hogRefMean, hogRefStdDev);
+            posSamples[p][pos] = normalizePerFeature(Z_SCORE, posSamples[p][pos], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, positiveSamples[p][pos], hogRefMin[p], hogRefMax[p]);
+            posSamples[p][pos] = normalizeOverAll(MIN_MAX, posSamples[p][pos], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-            positiveSamples[p][pos] = normalizeOverAll(Z_SCORE, positiveSamples[p][pos], hogRefMean[p], hogRefStdDev[p]);
+            posSamples[p][pos] = normalizeOverAll(Z_SCORE, posSamples[p][pos], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-            positiveSamples[p][pos] = normalizePerFeature(MIN_MAX, positiveSamples[p][pos], hogRefMin[p], hogRefMax[p]);
+            posSamples[p][pos] = normalizePerFeature(MIN_MAX, posSamples[p][pos], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
             #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-            positiveSamples[p][pos] = normalizePerFeature(Z_SCORE, positiveSamples[p][pos], hogRefMean[p], hogRefStdDev[p]);
+            posSamples[p][pos] = normalizePerFeature(Z_SCORE, posSamples[p][pos], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
             #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         }
     }
@@ -76,15 +76,15 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
                 we re-assign the negative samples per patch individually and sequentially as loading them all 
                 simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
         */
-        std::vector<FeatureVector> negativePatchSamples;
+        std::vector<FeatureVector> negPatchSamples;
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-perFeat" + sampleFileExt;
         ///std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax" + sampleFileExt;
         ///std::string negativeFileName = "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/ sampleFileExt;
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negativePatchSamples, sampleFileFormat);
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);
         logger << "Training ESVM with positives and negatives..." << std::endl;
         for (size_t pos = 0; pos < nPositives; pos++)
-            EoESVM[p][pos] = ESVM({ positiveSamples[p][pos] }, negativePatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+            EoESVM[p][pos] = ESVM({ posSamples[p][pos] }, negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
     }
 }
 
@@ -185,8 +185,8 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
     #if ESVM_ROI_PREPROCESS_MODE == 2
     cv::Mat procROI = imCropByRatio(roi, ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
     #else
-    procROI = roi;
-    #endif
+    cv::Mat procROI = roi;
+    #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
     // load probe still images, extract features and normalize
     logger << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
@@ -194,23 +194,24 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
     std::vector<cv::Mat> patches = imPreprocess(procROI, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
     for (size_t p = 0; p < nPatches; p++) 
     {
+        probeSampleFeats[p] = hog.compute(patches[p]);
         #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);
+        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, probeSampleFeats[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, hog.compute(patches[p]), hogRefMean, hogRefStdDev);
+        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, probeSampleFeats[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);
+        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, probeSampleFeats[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, hog.compute(patches[p]), hogRefMean, hogRefStdDev);
+        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, probeSampleFeats[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin[p], hogRefMax[p]);
+        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, probeSampleFeats[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, hog.compute(patches[p]), hogRefMean[p], hogRefStdDev[p]);
+        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, probeSampleFeats[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, hog.compute(patches[p]), hogRefMin[p], hogRefMax[p]);
+        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, probeSampleFeats[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, hog.compute(patches[p]), hogRefMean[p], hogRefStdDev[p]);
-        #endif
+        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, probeSampleFeats[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+        #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
     }
 
     // testing, score fusion, normalization
@@ -228,10 +229,10 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
         // average score fusion and normalization post-fusion
         classificationScores[pos] /= (double)nPatches;
         #if ESVM_SCORE_NORMALIZATION_MODE == 1
-        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreRefMin, scoreRefMax);
+        classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreRefMin, scoreRefMax, ESVM_SCORE_NORMALIZATION_CLIP);
         #elif ESVM_SCORE_NORMALIZATION_MODE == 2
-        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoreRefMean, scoreRefStdDev);        
-        #endif
+        classificationScores[pos] = normalize(Z_SCORE, classificationScores[pos], scoreRefMean, scoreRefStdDev, ESVM_SCORE_NORMALIZATION_CLIP);
+        #endif/*ESVM_SCORE_NORMALIZATION_MODE*/
     }
     return classificationScores;
 }

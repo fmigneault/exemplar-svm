@@ -4295,7 +4295,8 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     cv::Size blockStride(2, 2);
     cv::Size cellSize(2, 2);
     int nBins = 3;
-    FeatureExtractorHOG hog(imageSize, blockSize, blockStride, cellSize, nBins);
+    cv::Size windowSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
+    FeatureExtractorHOG hog(windowSize, blockSize, blockStride, cellSize, nBins);
     double hogRefMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     
@@ -4305,46 +4306,21 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax);        
+            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);        
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
     logger << "Loading negative samples from files..." << std::endl;
-    FileFormat sampleFileFormat = BINARY;
-    std::string sampleFileExt = sampleFileFormat == BINARY ? ".bin" : ".data";
     for (size_t p = 0; p < nPatches; p++)
-        ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + 
-                                 sampleFileExt, negativeSamples[p], sampleFileFormat);
+        ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + sampleFileExt,
+                                 negativeSamples[p], sampleFileFormat);
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
     for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
-            ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + 
-                                     sampleFileExt, probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);
-
-    // // Add ROI to corresponding sample vectors according to individual IDs            
-    // if (bfs::is_directory(dirPath))
-    // {
-    //     for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
-    //     {
-    //         if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
-    //         {
-    //             std::string strID = buildChokePointIndividualID(id);
-    //             if (contains(negativesID, strID))
-    //             {
-    //                 size_t neg = matNegativeSamples.size();
-    //                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-    //                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-    //                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
-    //                 for (size_t p = 0; p < nPatches; p++)
-    //                     matNegativeSamples[neg][p] = patches[p];
-
-    //                 negativeSamplesID.push_back(strID);
-    //             }
-    //         }                  
-    //     }
-    // }                        
+            ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + sampleFileExt,
+                                     probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
 
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
@@ -4377,8 +4353,8 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
                 maxScore = classificationScores[pos][prb];
         }
         // score normalization post-fusion
-        minmaxClassificationScores[pos] = normalizeClassScores(MIN_MAX, classificationScores[pos]); 
-        zscoreClassificationScores[pos] = normalizeClassScores(Z_SCORE, classificationScores[pos]);
+        minmaxClassificationScores[pos] = normalizeClassScores(MIN_MAX, classificationScores[pos], false); 
+        zscoreClassificationScores[pos] = normalizeClassScores(Z_SCORE, classificationScores[pos], false);
     }
     // mean / stddev evaluation
     std::vector<size_t> nTotalPatch(nPatches, 0);
@@ -4423,11 +4399,15 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // performance evaluation
     for (size_t pos = 0; pos < nPositives; pos++)
     {
-        logger << "Performance evaluation results for target " << positivesID[pos] << ":" << std::endl;
-        eval_PerformanceClassificationScores(classificationScores[pos], probeGroundTruths[pos]);
+        logger << "Performance evaluation results (min-max normalization) for target " << positivesID[pos] << ":" << std::endl;
+        eval_PerformanceClassificationScores(minmaxClassificationScores[pos], probeGroundTruths[pos]);
+        logger << "Performance evaluation results (z-score normalization) for target " << positivesID[pos] << ":" << std::endl;
+        eval_PerformanceClassificationScores(zscoreClassificationScores[pos], probeGroundTruths[pos]);
     }
-    logger << "Summary of performance evaluation results:" << std::endl;
-    eval_PerformanceClassificationSummary(positivesID, classificationScores, probeGroundTruths);
+    logger << "Summary of performance evaluation results (min-max normalization):" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, minmaxClassificationScores, probeGroundTruths);
+    logger << "Summary of performance evaluation results (z-score normalization):" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, zscoreClassificationScores, probeGroundTruths);
 
     #else/*PROC_ESVM_SIMPLIFIED_WORKING*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
