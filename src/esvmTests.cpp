@@ -4290,7 +4290,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // Exemplar-SVM    
     xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM)    
 
-    // prepare hog feature extractor    
+    // prepare hog feature extractor
     cv::Size blockSize(2, 2);
     cv::Size blockStride(2, 2);
     cv::Size cellSize(2, 2);
@@ -4306,7 +4306,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     {        
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
         for (size_t p = 0; p < nPatches; p++)
-            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);        
+            positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
@@ -4317,10 +4317,44 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
-    for (size_t p = 0; p < nPatches; p++)
+    /*for (size_t p = 0; p < nPatches; p++)
         for (size_t pos = 0; pos < nPositives; pos++)
             ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + sampleFileExt,
                                      probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
+    */
+    /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
+    std::string fastDTProbePath = "F:/images/";
+    bfs::directory_iterator endDir; 
+    #define INCLUDE_HARD_CASES 0;
+    std::map<std::string, std::string> posGT{ { "person_0", "ID0003"}, {"person_2", ""}, {"person_3", "" }, {"person_4", "ID0005"},
+                                              { "person_6", "ID0013"},{ "person_10", "ID0015" }
+                                                #if INCLUDE_HARD_CASES
+                                                , {"person_0_hard", "ID0003"},{ "person_4_hard", "ID0005" }
+                                                #endif
+                                            };
+    for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
+    {
+        if (bfs::is_directory(*itPersDir)) {
+            logger << "[DEBUG] dir: " << *itPersDir << std::endl;
+            for (bfs::directory_iterator itPrb(*itPersDir); itPrb != endDir; ++itPrb)  // probes in 'person' dir
+            {
+                logger << "[DEBUG] img: " << *itPrb << std::endl;
+                if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
+                {
+                    std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts);
+                    for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
+                        for (size_t p = 0; p < nPatches; ++p) {
+                            probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
+                        }
+                        bool isPos = posGT[itPersDir->path().stem().string()] == positivesID[pos];
+                        logger << "[DEBUG] GT: " << posGT[itPersDir->path().stem().string()] << " =?= " << positivesID[pos] << " | " << isPos << std::endl;
+                        probeGroundTruths[pos].push_back(isPos ? 1 : -1);
+                    }
+                }
+            }
+        }
+    }
+    /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
