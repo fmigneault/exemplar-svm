@@ -35,8 +35,6 @@ private:
     cv::Size cellSize;
     int nBins;
     FeatureExtractorHOG hog;
-
-    bool useHistEqual;
     
     xstd::mvector<2, ESVM> EoESVM; 
 

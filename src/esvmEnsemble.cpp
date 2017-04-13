@@ -44,7 +44,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         cv::Mat roi = positiveROIs[pos];
         #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
-        std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, useHistEqual);
+        std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
         for (size_t p = 0; p < nPatches; p++) 
         {
             posSamples[p][pos] = hog.compute(patches[p]);

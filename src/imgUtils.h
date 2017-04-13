@@ -35,10 +35,12 @@ std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat imag
 std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Size(0, 0));
 
 // Returns a vector of images combining patches splitting and other preprocessing steps (resizing, grayscale, hist.equal., etc.) 
-std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization = false,
-                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
+std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistEqual = false,
+                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE, 
+                                  cv::InterpolationFlags resizeMode = cv::INTER_LINEAR);
 
-std::vector<cv::Mat> imPreprocess(cv::Mat roi, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization = false,
-                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
+std::vector<cv::Mat> imPreprocess(cv::Mat roi, cv::Size imSize, cv::Size patchCounts, bool useHistEqual = false,
+                                  std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE, 
+                                  cv::InterpolationFlags resizeMode = cv::INTER_LINEAR);
 
 #endif/*IMG_UTILS_H*/

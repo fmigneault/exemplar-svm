@@ -139,15 +139,15 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
     return std::vector<cv::Mat>();
 }
 
-std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
-                                  std::string windowName, cv::ImreadModes readMode)
+std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistEqual,
+                                  std::string windowName, cv::ImreadModes readMode, cv::InterpolationFlags resizeMode)
 {
     cv::Mat img = imReadAndDisplay(imagePath, windowName, readMode);
-    return imPreprocess(img, imSize, patchCounts, useHistogramEqualization, windowName, readMode);
+    return imPreprocess(img, imSize, patchCounts, useHistEqual, windowName, readMode, resizeMode);
 }
 
-std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistogramEqualization,
-                                  std::string windowName, cv::ImreadModes readMode)
+std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistEqual,
+                                  std::string windowName, cv::ImreadModes readMode, cv::InterpolationFlags resizeMode)
 {
     if (windowName != "")
     {
@@ -156,8 +156,8 @@ std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCo
     }
     if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
         cv::cvtColor(img, img, CV_BGR2GRAY);
-    if (useHistogramEqualization)
+    if (useHistEqual)
         cv::equalizeHist(img, img);
-    cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);
+    cv::resize(img, img, imSize, 0, 0, resizeMode);
     return imSplitPatches(img, patchCounts);
 }
