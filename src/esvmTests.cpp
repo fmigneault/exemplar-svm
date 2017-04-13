@@ -4327,14 +4327,34 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
                                      probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
     */
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
-    std::string fastDTProbePath = "F:/images/";
-    bfs::directory_iterator endDir; 
     #define INCLUDE_HARD_CASES 0;
+    #define INCLUDE_MEDIUM_CASES 0;
+    bfs::directory_iterator endDir;
+    /* // FIRST TEST (Flash Disk)
+    std::string fastDTProbePath = "F:/images/";
     std::map<std::string, std::string> posGT{ { "person_0", "ID0003"}, {"person_2", ""}, {"person_3", "" }, {"person_4", "ID0005"},
                                               { "person_6", "ID0013"},{ "person_10", "ID0015" }
                                                 #if INCLUDE_HARD_CASES
                                                 , {"person_0_hard", "ID0003"},{ "person_4_hard", "ID0005" }
                                                 #endif
+                                            };
+    */
+    // SECOND TEST (FaceRecog Dir)
+    std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_RESIZE_NN/";
+    std::map<std::string, std::string> posGT{ { "person_1", "ID0005"},{ "person_3", "ID0003" }, {"person_4", "ID0019"},
+                                              { "person_8", "ID0013"},{ "person_12", "ID0010" },{ "person_13", "ID0011" },{ "person_14", "ID0011" },
+                                              { "person_19", "ID0010" },{ "person_20", "ID0012" },{ "person_21", "ID0020" },{ "person_23", "ID0024"},
+                                              { "person_24", "ID0024" }
+                                            #if INCLUDE_MEDIUM_CASES
+                                            , {"person_1_medium", "ID0005"},{ "person_3_medium", "ID0003" },{ "person_8_medium", "ID0013" },
+                                            { "person_12_medium", "ID0010" },{ "person_19_medium", "ID0010"},{ "person_20_medium", "ID0012" },
+                                            { "person_21_medium", "ID0020" }
+                                            #endif
+                                            #if INCLUDE_HARD_CASES
+                                            , {"person_1", "ID0005"}, {"person_2","ID0005"},{"person_3_hard","ID0003" },{"person_8_hard","ID0013"}
+                                            ,{ "person_12_hard", "ID0010" },{ "person_16", "ID0011" },{ "person_19_hard", "ID0010" },
+                                            { "person_21_hard", "ID0020" },{ "person_24_hard", "ID0024" }
+                                            #endif
                                             };
     for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
     {
