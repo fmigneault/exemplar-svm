@@ -4297,8 +4297,12 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     int nBins = 3;
     cv::Size windowSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
     FeatureExtractorHOG hog(windowSize, blockSize, blockStride, cellSize, nBins);
+    
     double hogRefMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
+    /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
+    //double hogRefMax = 1.02558;
+    /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
     
     // load positive target still images, extract features and normalize
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
@@ -4354,6 +4358,18 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
             }
         }
     }
+    double actualMin, actualMax, realMin = DBL_MAX, realMax = -DBL_MAX;
+    for (size_t pos = 0; pos < nPositives; ++pos)
+        for (size_t p = 0; p < nPatches; ++p) {            
+            findNormParamsOverAll(MIN_MAX, probeSamples[p][pos], actualMin, actualMax);
+            logger << "[DEBUG] (pos,p): " << pos << "," << p << " MIN: " << actualMin << " <? REFMIN " << hogRefMin << " " << (actualMin < hogRefMin) 
+                   << " | MAX: " << actualMax << " >? REFMAX " << hogRefMax << " " << (actualMax > hogRefMax) << std::endl;  
+            if (realMin > actualMin)
+                realMin = actualMin;
+            if (realMax < actualMax)
+                realMax = actualMax;
+        }
+    logger << "REAL MIN: " << realMin << " REAL MAX: " << realMax << std::endl;
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
