@@ -4301,95 +4301,99 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     double hogRefMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
-    //double hogRefMax = 1.02558;
+    //double hogRefMax = 0.978284;
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
     
     // load positive target still images, extract features and normalize
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; pos++)
     {        
-        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts);
-        for (size_t p = 0; p < nPatches; p++)
+        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+        for (size_t p = 0; p < nPatches; ++p)
             positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);
     }
 
     // load negative samples from pre-generated files for training (samples in files are pre-normalized)
     logger << "Loading negative samples from files..." << std::endl;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + sampleFileExt,
                                  negativeSamples[p], sampleFileFormat);
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
-    /*for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         for (size_t pos = 0; pos < nPositives; pos++)
             ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + sampleFileExt,
                                      probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
-    */
+    
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
-    #define INCLUDE_HARD_CASES 0;
-    #define INCLUDE_MEDIUM_CASES 0;
-    bfs::directory_iterator endDir;
-    /* // FIRST TEST (Flash Disk)
-    std::string fastDTProbePath = "F:/images/";
-    std::map<std::string, std::string> posGT{ { "person_0", "ID0003"}, {"person_2", ""}, {"person_3", "" }, {"person_4", "ID0005"},
-                                              { "person_6", "ID0013"},{ "person_10", "ID0015" }
-                                                #if INCLUDE_HARD_CASES
-                                                , {"person_0_hard", "ID0003"},{ "person_4_hard", "ID0005" }
-                                                #endif
-                                            };
-    */
-    // SECOND TEST (FaceRecog Dir)
-    std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_RESIZE_NN/";
-    std::map<std::string, std::string> posGT{ { "person_1", "ID0005"},{ "person_3", "ID0003" }, {"person_4", "ID0019"},
-                                              { "person_8", "ID0013"},{ "person_12", "ID0010" },{ "person_13", "ID0011" },{ "person_14", "ID0011" },
-                                              { "person_19", "ID0010" },{ "person_20", "ID0012" },{ "person_21", "ID0020" },{ "person_23", "ID0024"},
-                                              { "person_24", "ID0024" }
-                                            #if INCLUDE_MEDIUM_CASES
-                                            , {"person_1_medium", "ID0005"},{ "person_3_medium", "ID0003" },{ "person_8_medium", "ID0013" },
-                                            { "person_12_medium", "ID0010" },{ "person_19_medium", "ID0010"},{ "person_20_medium", "ID0012" },
-                                            { "person_21_medium", "ID0020" }
-                                            #endif
-                                            #if INCLUDE_HARD_CASES
-                                            , {"person_1", "ID0005"}, {"person_2","ID0005"},{"person_3_hard","ID0003" },{"person_8_hard","ID0013"}
-                                            ,{ "person_12_hard", "ID0010" },{ "person_16", "ID0011" },{ "person_19_hard", "ID0010" },
-                                            { "person_21_hard", "ID0020" },{ "person_24_hard", "ID0024" }
-                                            #endif
-                                            };
-    for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
-    {
-        if (bfs::is_directory(*itPersDir)) {
-            logger << "[DEBUG] dir: " << *itPersDir << std::endl;
-            for (bfs::directory_iterator itPrb(*itPersDir); itPrb != endDir; ++itPrb)  // probes in 'person' dir
-            {
-                logger << "[DEBUG] img: " << *itPrb << std::endl;
-                if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
-                {
-                    std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts);
-                    for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
-                        for (size_t p = 0; p < nPatches; ++p) {
-                            probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
-                        }
-                        bool isPos = posGT[itPersDir->path().stem().string()] == positivesID[pos];
-                        logger << "[DEBUG] GT: " << posGT[itPersDir->path().stem().string()] << " =?= " << positivesID[pos] << " | " << isPos << std::endl;
-                        probeGroundTruths[pos].push_back(isPos ? 1 : -1);
-                    }
-                }
-            }
-        }
-    }
-    double actualMin, actualMax, realMin = DBL_MAX, realMax = -DBL_MAX;
-    for (size_t pos = 0; pos < nPositives; ++pos)
-        for (size_t p = 0; p < nPatches; ++p) {            
-            findNormParamsOverAll(MIN_MAX, probeSamples[p][pos], actualMin, actualMax);
-            logger << "[DEBUG] (pos,p): " << pos << "," << p << " MIN: " << actualMin << " <? REFMIN " << hogRefMin << " " << (actualMin < hogRefMin) 
-                   << " | MAX: " << actualMax << " >? REFMAX " << hogRefMax << " " << (actualMax > hogRefMax) << std::endl;  
-            if (realMin > actualMin)
-                realMin = actualMin;
-            if (realMax < actualMax)
-                realMax = actualMax;
-        }
-    logger << "REAL MIN: " << realMin << " REAL MAX: " << realMax << std::endl;
+    //#define INCLUDE_HARD_CASES 0;
+    //#define INCLUDE_MEDIUM_CASES 0;
+    //bfs::directory_iterator endDir;
+    ///* // FIRST TEST (Flash Disk)
+    //std::string fastDTProbePath = "F:/images/";
+    //std::map<std::string, std::string> posGT{ { "person_0", "ID0003"}, {"person_2", ""}, {"person_3", "" }, {"person_4", "ID0005"},
+    //                                          { "person_6", "ID0013"},{ "person_10", "ID0015" }
+    //                                            #if INCLUDE_HARD_CASES
+    //                                            , {"person_0_hard", "ID0003"},{ "person_4_hard", "ID0005" }
+    //                                            #endif
+    //                                        };
+    //*/
+    ///*// SECOND TEST (FaceRecog Dir)
+    //std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_RESIZE_NN/";
+    //std::map<std::string, std::string> posGT{ { "person_1", "ID0005"},{ "person_3", "ID0003" }, {"person_4", "ID0019"},
+    //                                          { "person_8", "ID0013"},{ "person_12", "ID0010" },{ "person_13", "ID0011" },{ "person_14", "ID0011" },
+    //                                          { "person_19", "ID0010" },{ "person_20", "ID0012" },{ "person_21", "ID0020" },{ "person_23", "ID0024"},
+    //                                          { "person_24", "ID0024" }
+    //                                        #if INCLUDE_MEDIUM_CASES
+    //                                        , {"person_1_medium", "ID0005"},{ "person_3_medium", "ID0003" },{ "person_8_medium", "ID0013" },
+    //                                        { "person_12_medium", "ID0010" },{ "person_19_medium", "ID0010"},{ "person_20_medium", "ID0012" },
+    //                                        { "person_21_medium", "ID0020" }
+    //                                        #endif
+    //                                        #if INCLUDE_HARD_CASES
+    //                                        , {"person_1", "ID0005"}, {"person_2","ID0005"},{"person_3_hard","ID0003" },{"person_8_hard","ID0013"}
+    //                                        ,{ "person_12_hard", "ID0010" },{ "person_16", "ID0011" },{ "person_19_hard", "ID0010" },
+    //                                        { "person_21_hard", "ID0020" },{ "person_24_hard", "ID0024" }
+    //                                        #endif
+    //                                        };*/
+    //// THIRD TEST (FaceRecog+LocalSearchROI)
+    //std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_LOCAL_SEARCH/";
+    //std::vector<std::string> positivesDirs = { "0003", "0005", "0006", "0010", "0024" };
+    //
+    //for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
+    //{
+    //    if (bfs::is_directory(*itPersDir)) {
+    //        logger << "[DEBUG] dir: " << *itPersDir << std::endl;
+    //        for (bfs::directory_iterator itPrb(*itPersDir); itPrb != endDir; ++itPrb)  // probes in 'person' dir
+    //        {
+    //            logger << "[DEBUG] img: " << *itPrb << std::endl;
+    //            if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
+    //            {
+    //                std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+    //                for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
+    //                    for (size_t p = 0; p < nPatches; ++p) {
+    //                        probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
+    //                    }
+    //                    bool isPos = positivesDirs[pos] == itPersDir->path().stem().string();
+    //                    logger << "[DEBUG] GT: " << itPersDir->path().stem().string() << " =?= " << positivesDirs[pos] << " | " << isPos << std::endl;
+    //                    probeGroundTruths[pos].push_back(isPos ? 1 : -1);
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
+    //double actualMin, actualMax, realMin = DBL_MAX, realMax = -DBL_MAX;
+    //for (size_t pos = 0; pos < nPositives; ++pos)
+    //    for (size_t p = 0; p < nPatches; ++p) {            
+    //        findNormParamsOverAll(MIN_MAX, probeSamples[p][pos], actualMin, actualMax);
+    //        logger << "[DEBUG] (pos,p): " << pos << "," << p << " MIN: " << actualMin << " <? REFMIN " << hogRefMin << " " << (actualMin < hogRefMin) 
+    //               << " | MAX: " << actualMax << " >? REFMAX " << hogRefMax << " " << (actualMax > hogRefMax) << std::endl;  
+    //        if (realMin > actualMin)
+    //            realMin = actualMin;
+    //        if (realMax < actualMax)
+    //            realMax = actualMax;
+    //    }
+    //logger << "REAL MIN: " << realMin << " REAL MAX: " << realMax << std::endl;
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
@@ -4490,15 +4494,15 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths)
 {
-    std::vector<double> FPR, TPR;
-    eval_PerformanceClassificationScores(normScores, probeGroundTruths, FPR, TPR);
+    std::vector<double> FPR, TPR, PPV;
+    eval_PerformanceClassificationScores(normScores, probeGroundTruths, FPR, TPR, PPV);
 }
 
 /*
     Evaluates various performance mesures of classification scores according to ground truths and return (FPR,TPR) results
 */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths,
-                                          std::vector<double>& FPR, std::vector<double>& TPR)
+                                          std::vector<double>& FPR, std::vector<double>& TPR, std::vector<double>& PPV)
 {
     ASSERT_LOG(normScores.size() == probeGroundTruths.size(), "Number of classification scores and ground truth must match");
 
@@ -4506,21 +4510,24 @@ void eval_PerformanceClassificationScores(std::vector<double> normScores, std::v
 
     // Evaluate results    
     int steps = 100;
+    std::vector<double> thresholds(steps + 1);
     FPR = std::vector<double>(steps + 1, 0);
     TPR = std::vector<double>(steps + 1, 0);
-    for (int i = 0; i <= steps; i++)
+    PPV = std::vector<double>(steps + 1, 0);
+    for (int i = 0; i <= steps; ++i)
     {
         int FP, FN, TP, TN;
-        double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
-        countConfusionMatrix(normScores, probeGroundTruths, T, &TP, &TN, &FP, &FN);
+        thresholds[i] = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
+        countConfusionMatrix(normScores, probeGroundTruths, thresholds[i], &TP, &TN, &FP, &FN);
         TPR[i] = calcTPR(TP, FN);
         FPR[i] = calcFPR(FP, TN);
+        PPV[i] = calcPPV(TP, FP);
     }
     double AUC = calcAUC(FPR, TPR);
     double pAUC10 = calcAUC(FPR, TPR, 0.10);
     double pAUC20 = calcAUC(FPR, TPR, 0.20);
-    for (size_t j = 0; j < FPR.size(); j++)
-        logger << "(FPR,TPR)[" << j << "] = " << FPR[j] << "," << TPR[j] << std::endl;
+    for (size_t i = 0; i < FPR.size(); i++)
+        logger << "(FPR,TPR,PPV)[" << i << "] = " << FPR[i] << "," << TPR[i] << "," << PPV[i] << " | T = " << thresholds[i] << std::endl;
     logger << "AUC = " << AUC << std::endl              // Area Under ROC Curve
            << "pAUC(10%) = " << pAUC10 << std::endl     // Partial Area Under ROC Curve (FPR=10%)
            << "pAUC(20%) = " << pAUC20 << std::endl;    // Partial Area Under ROC Curve (FPR=20%)

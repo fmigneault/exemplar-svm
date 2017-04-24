@@ -77,7 +77,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking();
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths, 
-                                          std::vector<double>& FPR, std::vector<double>& TPR);
+                                          std::vector<double>& FPR, std::vector<double>& TPR, std::vector<double>& PPV);
 void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
                                            xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 
