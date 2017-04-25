@@ -17,7 +17,7 @@
 #include "esvmOptions.h"
 
 /* Processes */
-int proc_generateImageTypes();
+int proc_generateConvertedImageTypes();
 int proc_createNegativesSampleFiles();
 int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string negativesImageDirPath);
 

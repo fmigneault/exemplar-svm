@@ -22,7 +22,7 @@ xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string 
                 processedImagePatches.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
-                for (size_t p = 0; p < nPatches; p++)
+                for (size_t p = 0; p < nPatches; ++p)
                     processedImagePatches[neg][p] = patches[p];
             }                  
         }
@@ -30,7 +30,7 @@ xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string 
     return processedImagePatches;
 }
 
-int proc_generateImageTypes()
+int proc_generateConvertedImageTypes()
 {
     #if PROC_ESVM_GENERATE_CONVERTED_IMAGES
 
@@ -102,17 +102,17 @@ int proc_createNegativesSampleFiles()
     int seqIdx = 0;
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
-    for (int sn = 1; sn <= SESSION_QUANTITY; sn++) {
-    for (int pn = 1; pn <= PORTAL_QUANTITY; pn++) {
-    for (auto it = types.begin(); it != types.end(); ++it) {
-    for (int cn = 1; cn <= CAMERA_QUANTITY; cn++)
+    for (int sn = 1; sn <= SESSION_QUANTITY; ++sn) {            // session number
+    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
+    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
     {     
-        string seq = buildChokePointSequenceString(pn, *it, sn, cn);
+        string seq = buildChokePointSequenceString(pn, *pt, sn, cn);
 
         // Add ROI to corresponding sample vectors according to individual IDs            
         for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
         {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *it, sn, cn, id) + "/";
+            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
             logger << "Loading negative from directory: '" << dirPath << "'" << std::endl;
             if (bfs::is_directory(dirPath))
             {
@@ -161,7 +161,7 @@ int proc_createNegativesSampleFiles()
                                                                         windowNameROI, cv::IMREAD_GRAYSCALE);
                             size_t neg = matNegativeSamples.size();
                             matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                            for (size_t p = 0; p < nPatches; p++)
+                            for (size_t p = 0; p < nPatches; ++p)
                                 matNegativeSamples[neg][p] = patches[p];
                             negativeSamplesID.push_back(strID);
                             perSessionNegatives[sn-1]++;
@@ -182,8 +182,8 @@ int proc_createNegativesSampleFiles()
     xstd::mvector<2, FeatureVector> fvNegRaw(dimsNegatives);        // [patch][negative](FeatureVector)
 
     // feature extraction HOG
-    for (size_t p = 0; p < nPatches; p++)
-        for (size_t neg = 0; neg < nNegatives; neg++)
+    for (size_t p = 0; p < nPatches; ++p)
+        for (size_t neg = 0; neg < nNegatives; ++neg)
             fvNegRaw[p][neg] = hog.compute(matNegativeSamples[neg][p]);
 
     // find + apply normalization values
@@ -203,7 +203,7 @@ int proc_createNegativesSampleFiles()
                                     fvNegZScorePatchPerFeat(dimsNegatives), fvNegZScoreROIPerFeat(dimsNegatives);
 
     bool clip = ESVM_FEATURE_NORMALIZATION_CLIP;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         // find per patch normalization paramters
         findNormParamsOverAll(MIN_MAX, fvNegRaw[p], minPatchOverAll[p], maxPatchOverAll[p]);
@@ -224,7 +224,7 @@ int proc_createNegativesSampleFiles()
                << tab << tab << "StdDev: " << stdDevPatchPerFeat[p] << std::endl;
 
         // apply found normalization parameters
-        for (size_t neg = 0; neg < nNegatives; neg++) {
+        for (size_t neg = 0; neg < nNegatives; ++neg) {
             fvNegMinMaxPatchOverAll[p][neg] = normalizeOverAll(MIN_MAX,    fvNegRaw[p][neg], minPatchOverAll[p],  maxPatchOverAll[p],    clip);
             fvNegZScorePatchOverAll[p][neg] = normalizeOverAll(Z_SCORE,    fvNegRaw[p][neg], meanPatchOverAll[p], stdDevPatchOverAll[p], clip);
             fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p],  maxPatchPerFeat[p],    clip);
@@ -247,14 +247,14 @@ int proc_createNegativesSampleFiles()
     // update across all patches z-score normalization parameters
     std::vector<FeatureVector> fvNegAllPatches;
     fvNegAllPatches.reserve(nPatches * nNegatives);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         fvNegAllPatches.insert(fvNegAllPatches.end(), fvNegRaw[p].begin(), fvNegRaw[p].end());
     findNormParamsOverAll(Z_SCORE, fvNegAllPatches, meanAllROIOverAll, stdDevAllROIOverAll);
     findNormParamsPerFeature(Z_SCORE, fvNegAllPatches, meanAllROIPerFeat, stdDevAllROIPerFeat);
 
     // apply found across all patches normalization parameters
-    for (size_t p = 0; p < nPatches; p++) {
-        for (size_t neg = 0; neg < nNegatives; neg++) {
+    for (size_t p = 0; p < nPatches; ++p) {
+        for (size_t neg = 0; neg < nNegatives; ++neg) {
             fvNegMinMaxROIOverAll[p][neg] = normalizeOverAll(MIN_MAX,    fvNegRaw[p][neg], minAllROIOverAll,  maxAllROIOverAll,    clip);
             fvNegZScoreROIOverAll[p][neg] = normalizeOverAll(Z_SCORE,    fvNegRaw[p][neg], meanAllROIOverAll, stdDevAllROIOverAll, clip);
             fvNegMinMaxROIPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minAllROIPerFeat,  maxAllROIPerFeat,    clip);
@@ -264,7 +264,7 @@ int proc_createNegativesSampleFiles()
 
     // write resulting sample files
     std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         std::string fileStart = "negatives-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
@@ -393,21 +393,21 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     fvPositiveSamples = xstd::mvector<2, FeatureVector>(dims);
 
     // Calculate Feature Vectors
-    for (size_t p = 0; p < nPatches; p++){
-        for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t p = 0; p < nPatches; ++p) {
+        for (size_t pos = 0; pos < nPositives; ++pos)
             fvPositiveSamples[p].push_back(hog.compute(matPositiveSamples[pos][p]));
-        for (size_t neg = 0; neg < nNegatives; neg++)
+        for (size_t neg = 0; neg < nNegatives; ++neg)
             fvNeg[p].push_back(hog.compute(matNegativeSamples[neg][p]));
     }
 
-    for (size_t p = 0; p < nPatches; p++){
-        for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t p = 0; p < nPatches; ++p) {
+        for (size_t pos = 0; pos < nPositives; ++pos)
             fvPositiveSamples[p][pos] = normalizeOverAll(MIN_MAX, fvPositiveSamples[p][pos], hogRefMin, hogRefMax);
-        for (size_t neg = 0; neg < nNegatives; neg++)
+        for (size_t neg = 0; neg < nNegatives; ++neg)
             fvNeg[p][neg] = normalizeOverAll(MIN_MAX, fvNeg[p][neg], hogRefMin, hogRefMax);
     }
 
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         fvPositiveSamples[p].insert(fvPositiveSamples[p].end(), fvNeg[p].begin(), fvNeg[p].end());
 
     std::vector<int> targetOutputs(nPositives, 1);
@@ -416,16 +416,16 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 
     logger << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         ESVM::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");
 
     // logger << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
-    // for (size_t p = 0; p < nPatches; p++)
-    //     for (size_t neg = 0; neg < nNegatives; neg++){
-    //         for (size_t i = 0; i < fvNeg[p][neg].size(); i++){
+    // for (size_t p = 0; p < nPatches; ++p)
+    //     for (size_t neg = 0; neg < nNegatives; ++neg) {
+    //         for (size_t i = 0; i < fvNeg[p][neg].size(); ++i) {
     //             outputFile << fvNeg[p][neg][i];
     //         }
     //         outputFile << endl;

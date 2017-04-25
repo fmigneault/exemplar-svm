@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
           procedure for file generation
         ------------------------------ */
 
-        RETURN_ERROR(proc_generateImageTypes());
+        RETURN_ERROR(proc_generateConvertedImageTypes());
         RETURN_ERROR(proc_createNegativesSampleFiles());
     }
     catch(std::exception& ex)
