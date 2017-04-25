@@ -17,7 +17,11 @@
 #include "esvmOptions.h"
 
 /* Processes */
-int create_negatives();
-int create_probes(std::string positives, std::string negatives);
+int proc_generateImageTypes();
+int proc_createNegativesSampleFiles();
+int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string negativesImageDirPath);
+
+/* Utilities */
+xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension);
 
 #endif/*CREATE_NEGATIVES_H*/

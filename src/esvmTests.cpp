@@ -2200,7 +2200,7 @@ int test_ESVM_ModelMemoryParamCheck()
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
-int proc_ReadDataFiles()
+int proc_readDataFiles()
 {
     #if PROC_READ_DATA_FILES
 
@@ -4321,11 +4321,12 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 
     // load probe samples from pre-generated files for testing (samples in files are pre-normalized)
     logger << "Loading probe samples from files..." << std::endl;
+    /* /////////////////////////////////////////////////////// ORIGINAL ==> TO REAPPLY AFTER TESTING ////////////////////
     for (size_t p = 0; p < nPatches; ++p)
         for (size_t pos = 0; pos < nPositives; pos++)
             ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + sampleFileExt,
                                      probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
-    
+    */
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
     //#define INCLUDE_HARD_CASES 0;
     //#define INCLUDE_MEDIUM_CASES 0;
@@ -4357,43 +4358,59 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     //                                        #endif
     //                                        };*/
     //// THIRD TEST (FaceRecog+LocalSearchROI)
-    //std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_LOCAL_SEARCH/";
-    //std::vector<std::string> positivesDirs = { "0003", "0005", "0006", "0010", "0024" };
-    //
-    //for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
-    //{
-    //    if (bfs::is_directory(*itPersDir)) {
-    //        logger << "[DEBUG] dir: " << *itPersDir << std::endl;
-    //        for (bfs::directory_iterator itPrb(*itPersDir); itPrb != endDir; ++itPrb)  // probes in 'person' dir
-    //        {
-    //            logger << "[DEBUG] img: " << *itPrb << std::endl;
-    //            if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
-    //            {
-    //                std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
-    //                for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
-    //                    for (size_t p = 0; p < nPatches; ++p) {
-    //                        probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
-    //                    }
-    //                    bool isPos = positivesDirs[pos] == itPersDir->path().stem().string();
-    //                    logger << "[DEBUG] GT: " << itPersDir->path().stem().string() << " =?= " << positivesDirs[pos] << " | " << isPos << std::endl;
-    //                    probeGroundTruths[pos].push_back(isPos ? 1 : -1);
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
-    //double actualMin, actualMax, realMin = DBL_MAX, realMax = -DBL_MAX;
-    //for (size_t pos = 0; pos < nPositives; ++pos)
-    //    for (size_t p = 0; p < nPatches; ++p) {            
-    //        findNormParamsOverAll(MIN_MAX, probeSamples[p][pos], actualMin, actualMax);
-    //        logger << "[DEBUG] (pos,p): " << pos << "," << p << " MIN: " << actualMin << " <? REFMIN " << hogRefMin << " " << (actualMin < hogRefMin) 
-    //               << " | MAX: " << actualMax << " >? REFMAX " << hogRefMax << " " << (actualMax > hogRefMax) << std::endl;  
-    //        if (realMin > actualMin)
-    //            realMin = actualMin;
-    //        if (realMax < actualMax)
-    //            realMax = actualMax;
-    //    }
-    //logger << "REAL MIN: " << realMin << " REAL MAX: " << realMax << std::endl;
+    std::string fastDTProbePath = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/ExemplarSVM-LIBSVM/bld/FAST_DT_IMAGES_LOCAL_SEARCH_P1E_S1_C1/";
+    std::vector<std::string> positivesDirs = { "0003", "0005", "0006", "0010", "0024" };
+    bfs::directory_iterator endDir;
+    #define SKIP_EXTRA_PERSON_DIR 1
+    #define SKIP_TRACK_PERSON_DIR 1
+    for (bfs::directory_iterator itPersDir(fastDTProbePath); itPersDir != endDir; ++itPersDir)  // 'persons' dirs
+    {
+        if (bfs::is_directory(*itPersDir)) 
+        {
+            logger << "[DEBUG] dir: " << *itPersDir << std::endl;
+            #if SKIP_EXTRA_PERSON_DIR
+            if (*itPersDir == "extra") {
+                logger << "[DEBUG] 'extra' person dir skipped..." << std::endl;
+                continue;
+            }
+            #endif/*SKIP_EXTRA_PERSON_DIR*/
+            #if SKIP_TRACK_PERSON_DIR
+            if (*itPersDir == "persons") {
+                logger << "[DEBUG] 'person_#' track dirs skipped..." << std::endl;
+                continue;
+            }
+            #endif/*SKIP_TRACK_PERSON_DIR*/
+
+            for (bfs::directory_iterator itPrb(*itPersDir); itPrb != endDir; ++itPrb)  // probes in 'person' dir
+            {
+                logger << "[DEBUG] img: " << *itPrb << std::endl;
+                if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
+                {
+                    std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+                    for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
+                        for (size_t p = 0; p < nPatches; ++p) {
+                            probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
+                        }
+                        bool isPos = positivesDirs[pos] == itPersDir->path().stem().string();
+                        logger << "[DEBUG] GT: " << itPersDir->path().stem().string() << " =?= " << positivesDirs[pos] << " | " << isPos << std::endl;
+                        probeGroundTruths[pos].push_back(isPos ? 1 : -1);
+                    }
+                }
+            }
+        }
+    }
+    double actualMin, actualMax, realMin = DBL_MAX, realMax = -DBL_MAX;
+    for (size_t pos = 0; pos < nPositives; ++pos)
+        for (size_t p = 0; p < nPatches; ++p) {            
+            findNormParamsOverAll(MIN_MAX, probeSamples[p][pos], actualMin, actualMax);
+            logger << "[DEBUG] (pos,p): " << pos << "," << p << " MIN: " << actualMin << " <? REFMIN " << hogRefMin << " " << (actualMin < hogRefMin) 
+                   << " | MAX: " << actualMax << " >? REFMAX " << hogRefMax << " " << (actualMax > hogRefMax) << std::endl;  
+            if (realMin > actualMin)
+                realMin = actualMin;
+            if (realMax < actualMax)
+                realMax = actualMax;
+        }
+    logger << "REAL MIN: " << realMin << " REAL MAX: " << realMax << std::endl;
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
@@ -4552,14 +4569,14 @@ void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
     ASSERT_LOG(nTargets == probeGroundTruths.size(), "Number of target IDs must match number of ground truths (1st dimension)");
 
     // evaluate results    
-    int steps = 100;
+    size_t steps = 100;
     size_t dimsSummary[2]{ nTargets, 4 };                   
     size_t dimsThresholds[2]{ nTargets, steps + 1 };        
     xstd::mvector<2, double> summaryResults(dimsSummary);   // [target][0: AUC | 1: pAUC(10%) | 2: pAUC(20%) | 3: AUPR](double)
     xstd::mvector<2, ConfusionMatrix> CM(dimsThresholds);   // [target][threshold](ConfusionMatrix)
     for (size_t pos = 0; pos < nTargets; pos++)
     {
-        for (int i = 0; i <= steps; i++)
+        for (size_t i = 0; i <= steps; i++)
         {
             ConfusionMatrix cm;
             double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement

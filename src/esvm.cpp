@@ -986,7 +986,7 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     logstream logger(LOGGER_FILE);
 
     svm_problem prob;
-    prob.l = samples.size();    // number of training data        
+    prob.l = (int)samples.size();   // number of training data        
     
     // convert and assign training vectors and corresponding target values for classification 
     prob.y = new double[prob.l];
@@ -1218,7 +1218,7 @@ FeatureVector ESVM::getFeatureVector(svm_node* features)
 */
 svm_node* ESVM::getFeatureNodes(FeatureVector features)
 {
-    return getFeatureNodes(&features[0], features.size());
+    return getFeatureNodes(&features[0], (int)features.size());
 }
 
 /*

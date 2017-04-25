@@ -4,30 +4,49 @@
 namespace bfs = boost::filesystem;
 using namespace std;
 
-void load_pgm_images_from_directory(std::string dir, xstd::mvector<2, cv::Mat>& imgVector){
+xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension)
+{
     size_t nPatches = 9;
     cv::Size imageSize = cv::Size(48, 48);
     cv::Size patchCounts = cv::Size(3, 3);
     bfs::directory_iterator endDir;
+    xstd::mvector<2, cv::Mat> processedImagePatches;
 
-    if (bfs::is_directory(dir))
+    if (bfs::is_directory(dirPath))
     {
-        for (bfs::directory_iterator itDir(dir); itDir != endDir; ++itDir)
+        for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
         {
-            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".png")
+            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == imageExtension)
             {
-                size_t neg = imgVector.size();
-                imgVector.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+                size_t neg = processedImagePatches.size();
+                processedImagePatches.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
                 for (size_t p = 0; p < nPatches; p++)
-                    imgVector[neg][p] = patches[p];
+                    processedImagePatches[neg][p] = patches[p];
             }                  
         }
     }
+    return processedImagePatches;
 }
 
-int create_negatives()
+int proc_generateImageTypes()
+{
+    #if PROC_ESVM_GENERATE_CONVERTED_IMAGES
+
+    std::string parentDir = "C:/Users/Francis/Programs/DEVELOPMENT/Face Recognition/Face Databases/ChokePoint Dataset/Cropped_Faces/P1E_S1_C1/";
+    std::string outputDir = parentDir + "tif/";
+    std::string imgExt_To = ".tif";
+    std::string imgExt_From = ".pgm";
+    imConvert(parentDir, imgExt_To, imgExt_From, outputDir);
+
+    #else/*!PROC_ESVM_GENERATE_CONVERTED_IMAGES*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*PROC_ESVM_GENERATE_CONVERTED_IMAGES*/
+    return passThroughDisplayTestStatus(__func__, PASSED);
+}
+
+int proc_createNegativesSampleFiles()
 {
     #if PROC_ESVM_GENERATE_SAMPLE_FILES
 
@@ -136,7 +155,7 @@ int create_negatives()
                                 cv::imshow(windowNameOriginal, img);
                                 cv::waitKey(1);
                                 roi = imCropByRatio(img, ESVM_ROI_CROP_RATIO);
-                            #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_MODE*/
+                            #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
                             std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION,
                                                                         windowNameROI, cv::IMREAD_GRAYSCALE);
@@ -289,14 +308,14 @@ int create_negatives()
                     << "histEqual:        " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
                     << "feat norm clip:   " << ESVM_FEATURE_NORMALIZATION_CLIP << std::endl
                     << "generation mode:  " << ESVM_ROI_PREPROCESS_MODE << std::endl
-                    #if PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 1       // using LBP improved localized ROI refinement
+                    #if ESVM_ROI_PREPROCESS_MODE == 1                   // using LBP improved localized ROI refinement
                     << "scaleFactor:      " << scaleFactor << std::endl
                     << "nmsThreshold:     " << nmsThreshold << std::endl
                     << "CC minSize:       " << minSize << std::endl
                     << "CC maxSize:       " << maxSize << std::endl
-                    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 2     // using pre-cropped ROI refinement
+                    #elif ESVM_ROI_PREPROCESS_MODE == 2                 // using pre-cropped ROI refinement
                     << "pre-crop ratio:   " << ESVM_ROI_CROP_RATIO << std::endl
-                    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_MODE*/
+                    #endif/*ESVM_ROI_PREPROCESS_MODE*/
                     << "imageSize:        " << imageSize << std::endl
                     << "nPatches:         " << nPatches << std::endl
                     << "patchCounts:      " << patchCounts << std::endl
@@ -328,13 +347,13 @@ int create_negatives()
                     << tab << "stdDevAllROI: " << stdDevAllROIPerFeat << std::endl
                     << "all Neg IDs:      " << negativeSamplesID << std::endl;
 
-    #else/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
+    #else/*!PROC_ESVM_GENERATE_SAMPLE_FILES*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES*/
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
-int create_probes(std::string positives, std::string negatives)
+int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string negativesImageDirPath)
 {
     logstream logger("probes-output.txt");
 
@@ -361,10 +380,10 @@ int create_probes(std::string positives, std::string negatives)
     std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
 
     // Add ROI to corresponding sample vectors according to individual IDs
-    logger << "Loading probe images for sequence " << positives << "...: " << std::endl;
-    load_pgm_images_from_directory(positives, matPositiveSamples);
-    logger << "Loading probe images for sequence " << negatives << "...: " << std::endl;
-    load_pgm_images_from_directory(negatives, matNegativeSamples);
+    logger << "Loading probe images from '" << positivesImageDirPath << "'...: " << std::endl;
+    matPositiveSamples = loadAndProcessImages(positivesImageDirPath, ".png");
+    logger << "Loading probe images from '" << negativesImageDirPath << "'...: " << std::endl;
+    matNegativeSamples = loadAndProcessImages(negativesImageDirPath, ".png");
 
     size_t nPositives = matPositiveSamples.size();
     size_t nNegatives = matNegativeSamples.size();

@@ -9,6 +9,11 @@ Image operations
 // Reads an image from file and displays it in a small window at the same time
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE);
 
+// Converts the specified image to desired image extension format (if `path` is an image file)
+// Converts all found images in a directory with specified extension from one format to another (if `path` is a directory, `fromExtension` required)
+// Optionally outputs the converted image(s) to the `toDirectory`
+bool imConvert(std::string path, std::string toExtension, std::string fromExtension = "", std::string toDirectory = "");
+
 // Translation of an image with XY pixel offset
 cv::Mat imTranslate(const cv::Mat& image, cv::Point offset);
 

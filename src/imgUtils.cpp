@@ -4,6 +4,9 @@ Image operations
 #include "imgUtils.h"
 #include "generic.h"
 
+#include <boost\filesystem.hpp>
+namespace bfs = boost::filesystem;
+
 cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::ImreadModes readMode)
 {    
     cv::Mat img = cv::imread(imagePath, readMode);
@@ -13,6 +16,52 @@ cv::Mat imReadAndDisplay(std::string imagePath, std::string windowName, cv::Imre
         cv::waitKey(1); // allow window redraw
     }
     return img;
+}
+
+bool imConvert(std::string path, std::string toExtension, std::string fromExtension, std::string toDirectory)
+{
+    // file path specified
+    if (bfs::is_regular_file(path))
+    {
+        std::string writePath;
+        if (toDirectory != "") {
+            bfs::path tmpPath = toDirectory;
+            bfs::path imgPath = path;
+            tmpPath = tmpPath / imgPath.stem();
+            writePath = tmpPath.string() + toExtension;
+        }
+        else {
+            bfs::path imgPath = path;
+            imgPath = imgPath.parent_path() / imgPath.stem();
+            writePath = imgPath.string() + toExtension;
+        }
+
+        bfs::path parentDir = writePath;
+        parentDir = parentDir.parent_path();
+        bfs::create_directories(parentDir);
+
+        cv::Mat img = cv::imread(path);
+        return cv::imwrite(writePath, img);
+    }
+    // directory path specified
+    else if (bfs::is_directory(path))
+    {
+        bfs::directory_iterator endDir;
+        for (bfs::directory_iterator it(path); it != endDir; ++it) {
+            std::string subPath = it->path().string(); 
+            // sub-path is also a directory
+            if (bfs::is_directory(subPath) && subPath != toDirectory) {
+                bfs::path subOutDir = bfs::path(toDirectory) / it->path().filename();
+                imConvert(subPath, toExtension, fromExtension, subOutDir.string());
+            }
+            // sub-path is a file of specified extension
+            else if (it->path().extension() == fromExtension)
+                if (!imConvert(subPath, toExtension, fromExtension, toDirectory)) return false;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 cv::Mat imTranslate(const cv::Mat& image, cv::Point offset)
@@ -92,7 +141,7 @@ std::vector<cv::Mat> imSyntheticGenerationScaleAndTranslation(const cv::Mat imag
     for(double scale = 1; scale > minScale; scale -= scaleJumps)
     {
         cv::Mat resizedImage;
-        int newSize = (int)initSize*scale;
+        int newSize = (int)(initSize * scale);
         cv::Rect newRect(0, 0, newSize, newSize);
         int totalPixelDifference = initSize - newSize;
         int startingPoint = (totalPixelDifference % 2) / 2;

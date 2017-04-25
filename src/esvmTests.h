@@ -38,7 +38,7 @@ bool checkPathEndSlash(std::string path);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
-int passThroughDisplayTestStatus(std::string testName, int error = PASSED);
+int passThroughDisplayTestStatus(std::string testName, int error = TestStatus::PASSED);
 void displayHeader();
 void displayOptions();
 
@@ -64,7 +64,7 @@ int test_ESVM_ModelMemoryOperations();
 int test_ESVM_ModelMemoryParamCheck();
 
 /* Procedures */
-int proc_ReadDataFiles();
+int proc_readDataFiles();
 int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();

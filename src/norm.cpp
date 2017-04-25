@@ -89,13 +89,13 @@ void findNormParamsAcrossFeatures(NormType norm, const FeatureVector& featureVec
         {
             min = featureVector[f];
             if (posMax != nullptr)
-                *posMin = f;
+                *posMin = (int)f;
         }
         else if (featureVector[f] > max)
         {
             max = featureVector[f];
             if (posMax != nullptr)
-                *posMax = f;
+                *posMax = (int)f;
         }
     }
 }
