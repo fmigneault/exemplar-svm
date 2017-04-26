@@ -891,8 +891,8 @@ int test_performanceEvaluationFunctions()
     std::vector<double> FPR = { 0.000, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
     std::vector<double> TPR = { 0.900, 0.950, 0.975, 0.990, 0.990, 0.990, 0.990, 0.990, 0.990, 0.995, 1.000 };
     double AUC_valid = 0.98100;         // AUC [0,1] of values
-    double pAUC20_valid = 0.18875;      // pAUC(20%) of values, lands perfectly on an existing FPR           
-    double pAUC35_valid = 0.33650;      // pAUC(35%) of values, lands between existing FPRs, interpolation applied   
+    double pAUC20_valid = 0.18875/0.20; // pAUC(20%) of values, lands perfectly on an existing FPR           
+    double pAUC35_valid = 0.33650/0.35; // pAUC(35%) of values, lands between existing FPRs, interpolation applied   
     double AUC_result = calcAUC(FPR, TPR);
     double pAUC20_result = calcAUC(FPR, TPR, 0.20);
     double pAUC35_result = calcAUC(FPR, TPR, 0.35);
@@ -4530,23 +4530,334 @@ TEST DEFINITION
 ///
 int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
 {
+    #if PROC_ESVM_FULL_GENERATION_TESTING
 
+    // Extra/External Samples
+    std::string samplePath_EX = "./FAST_DT_IMAGES_LOCAL_SEARCH_P1E_S1_C1/";
+    ASSERT_LOG(bfs::is_directory(samplePath_EX), "Samples required for test");
+    ASSERT_LOG(checkPathEndSlash(samplePath_EX), "Missing ending directory separator");
+    logstream logger(LOGGER_FILE);
     
+    /* -----------------------
+        SAMPLES CATEGORIES
+    ----------------------- */
+    /* Training Targets:        single high quality still image for enrollment */    
+    std::vector<std::string> positivesID = { "0003", "0005", "0006", "0010", "0024" };
+    /* Training Non-Targets:    as many video negatives as possible */    
+    std::vector<std::string> negativesID = { "0001", "0002", "0007", "0009", "0011",
+                                             "0013", "0014", "0016", "0017", "0018",
+                                             "0019", "0020", "0021", "0022", "0025" };
+    /* Testing Probes:          some video positives and negatives */    
+    std::vector<std::string> probesID = { "0003", "0004", "0005", "0006", "0010",
+                                          "0012", "0015", "0023", "0024", "0028" };
+
+    /* -------------------------
+        NORMALIZATION VALUES
+    ------------------------- */
+    double hogRefMin = 0;
+    double hogRefMax = 0.701021; //0.675058;
+    double scoreRefMin = -5.94396; //-1.578030;
+    double scoreRefMax = -0.261951; //-0.478968;
+
+    try {
+
+    /* --------------------------
+        FEATURE EXTRACTOR HOG
+    -------------------------- */
+    logger << "Feature extractor HOG..." << std::endl;
+    size_t nPatches = 9;    
+    cv::Size imageSize(48, 48);
+    cv::Size patchSize(16, 16);
+    cv::Size patchCounts(3, 3);
+    cv::Size blockSize(2, 2);
+    cv::Size blockStride(2, 2);
+    cv::Size cellSize(2, 2);
+    int nBins = 3;
+    FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
+
+    /* ------------------------------
+        FEATURE VECTOR CONTAINERS
+    ------------------------------ */
+    logger << "Feature vector containers..." << std::endl;
+    size_t nPositives = positivesID.size();
+    size_t dimsGroundTruth[2]{ nPositives, 0 };
+    size_t dimsPositives[2]{ nPositives, nPatches };
+    xstd::mvector<2, FeatureVector> fvPositiveSamples(dimsPositives);       // [positive][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvNegativeSamples;                      // [negative][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvProbeSamples_S1;                      // [probe][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvProbeSamples_S3;                      // [probe][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvProbeSamples_EX;                      // [probe][patch](FeatureVector)
+    xstd::mvector<2, int> probeGroundTruth_S1(dimsGroundTruth);             // [positive][probe](int)
+    xstd::mvector<2, int> probeGroundTruth_S3(dimsGroundTruth);             // [positive][probe](int)
+    xstd::mvector<2, int> probeGroundTruth_EX(dimsGroundTruth);             // [positive][probe](int)
+    std::vector<std::string> negativeSamplesID;                             // [negative](string)
+    std::vector<std::string> probeSamplesID_S1;                             // [probe](string)
+    std::vector<std::string> probeSamplesID_S3;                             // [probe](string)
+    std::vector<std::string> probeSamplesID_EX;                             // [probe](string)
+
+    /* --------------------------
+        LOAD SAMPLES FROM ROI
+    -------------------------- */
+    logger << "Load samples from ROI..." << std::endl;
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
-    std::string seq;
     cv::namedWindow(WINDOW_NAME);
+
+    // load positives
+    for (size_t pos = 0; pos < nPositives; ++pos) {
+        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, 
+                                                    patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME);
+        for (size_t p = 0; p < nPatches; ++p)
+            fvPositiveSamples[pos][p] = hog.compute(patches[p]);
+    }
     
-    int sn = 1; // only first sequence for training
+    // load negatives / probes from ChokePoint
+    int s1 = 1, s3 = 3;
     for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
     for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
     {  
+        // for each individual in S1 (negatives + probes)
+        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
+            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, s1, cn, id) + "/";
+            if (bfs::is_directory(dirPath)) {
+                for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir) {
+                    if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm") {
+                        std::string strID = buildChokePointIndividualID(id);
+                        // negatives
+                        if (contains(negativesID, strID)) {
+                            size_t neg = fvNegativeSamples.size();
+                            fvNegativeSamples.push_back(xstd::mvector<1, FeatureVector>(nPatches));
+                            std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME);
+                            for (size_t p = 0; p < nPatches; ++p)
+                                fvNegativeSamples[neg][p] = hog.compute(patches[p]);
+                            negativeSamplesID.push_back(strID);
+                        }
+                        // probes
+                        else if (contains(probesID, strID)) {
+                            size_t prb = fvProbeSamples_S1.size();
+                            fvProbeSamples_S1.push_back(xstd::mvector<1, FeatureVector>(nPatches));
+                            std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME);
+                            for (size_t p = 0; p < nPatches; ++p)
+                                fvProbeSamples_S1[prb][p] = hog.compute(patches[p]);
+                            probeSamplesID_S1.push_back(strID);
+                            for (size_t pos = 0; pos < nPositives; ++pos)
+                                probeGroundTruth_S1[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
+        } } } } }   // end for each individual in S1
 
+        // for each individual in S3 (only other probes)
+        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
+            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, s3, cn, id) + "/";
+            if (bfs::is_directory(dirPath)) {
+                for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir) {
+                    if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm") {
+                        std::string strID = buildChokePointIndividualID(id);
+                        // probes
+                        if (contains(probesID, strID)) {
+                            size_t prb = fvProbeSamples_S3.size();
+                            fvProbeSamples_S3.push_back(xstd::mvector<1, FeatureVector>(nPatches));
+                            std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME);
+                            for (size_t p = 0; p < nPatches; ++p)
+                                fvProbeSamples_S3[prb][p] = hog.compute(patches[p]);
+                            probeSamplesID_S3.push_back(strID);
+                            for (size_t pos = 0; pos < nPositives; ++pos)
+                                probeGroundTruth_S3[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
+        } } } } }   // end for each individual in S3
 
     } } }   // end chokepoint loops
+    
+    // for each individual in extra/external samples (extra probes)
+    for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
+        std::string strID = buildChokePointIndividualID(id, false);
+        bfs::path idDir(samplePath_EX + strID);
+        // probes
+        if (bfs::is_directory(idDir) && contains(probesID, strID)) {
+            for (bfs::directory_iterator itDir(idDir); itDir != endDir; ++itDir) {
+                if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".png") {
+                    size_t prb = fvProbeSamples_EX.size();
+                    fvProbeSamples_EX.push_back(xstd::mvector<1, FeatureVector>(nPatches));
+                    std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME);
+                    for (size_t p = 0; p < nPatches; ++p)
+                        fvProbeSamples_EX[prb][p] = hog.compute(patches[p]);
+                    probeSamplesID_EX.push_back(strID);
+                    for (size_t pos = 0; pos < nPositives; ++pos)
+                        probeGroundTruth_EX[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
+    } } } }   // end for each individual in extra/external samples
+    cv::destroyWindow(WINDOW_NAME);
 
-    return -1;
+    size_t nNegatives = fvNegativeSamples.size();
+    size_t nProbes_S1 = fvProbeSamples_S1.size();
+    size_t nProbes_S3 = fvProbeSamples_S3.size();
+    size_t nProbes_EX = fvProbeSamples_EX.size();
+
+    // obtain min/max features (not normalized)
+    double minFeatS1 = DBL_MAX, maxFeatS1 = -DBL_MAX, minFeatS3 = DBL_MAX, maxFeatS3 = -DBL_MAX, minFeatEX = DBL_MAX, maxFeatEX = -DBL_MAX;  
+    for (size_t f = 0; f < hog.getFeatureCount(); ++f) {
+        for (size_t p = 0; p < nPatches; ++p) {
+            for (size_t prb = 0; prb < nProbes_S1; ++prb) {
+                if (minFeatS1 > fvProbeSamples_S1[prb][p][f])
+                    minFeatS1 = fvProbeSamples_S1[prb][p][f];
+                if (maxFeatS1 < fvProbeSamples_S1[prb][p][f])
+                    maxFeatS1 = fvProbeSamples_S1[prb][p][f];
+            }
+            for (size_t prb = 0; prb < nProbes_S3; ++prb) {
+                if (minFeatS3 > fvProbeSamples_S3[prb][p][f])
+                    minFeatS3 = fvProbeSamples_S3[prb][p][f];
+                if (maxFeatS3 < fvProbeSamples_S3[prb][p][f])
+                    maxFeatS3 = fvProbeSamples_S3[prb][p][f];
+            }
+            for (size_t prb = 0; prb < nProbes_EX; ++prb) {
+                if (minFeatEX > fvProbeSamples_EX[prb][p][f])
+                    minFeatEX = fvProbeSamples_EX[prb][p][f];
+                if (maxFeatEX < fvProbeSamples_EX[prb][p][f])
+                    maxFeatEX = fvProbeSamples_EX[prb][p][f];
+            }
+        }
+    }
+
+    /* ------------------------------
+        NORMALIZE FEATURE VECTORS 
+    ------------------------------ */
+    logger << "Normalize feature vectors..." << std::endl;
+    size_t dimsPosNorm[2]{ nPatches, nPositives };
+    size_t dimsNegNorm[2]{ nPatches, nNegatives };
+    size_t dimsPrbNorm_S1[2]{ nPatches, nProbes_S1 };
+    size_t dimsPrbNorm_S3[2]{ nPatches, nProbes_S3 };
+    size_t dimsPrbNorm_EX[2]{ nPatches, nProbes_EX };
+    xstd::mvector<2, FeatureVector> fvPosNorm(dimsPosNorm);                     // [positive][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvNegNorm(dimsNegNorm);                     // [negative][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvPrbNorm_S1(dimsPrbNorm_S1);               // [probe][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvPrbNorm_S3(dimsPrbNorm_S3);               // [probe][patch](FeatureVector)
+    xstd::mvector<2, FeatureVector> fvPrbNorm_EX(dimsPrbNorm_EX);               // [probe][patch](FeatureVector)
+    
+    for (size_t p = 0; p < nPatches; ++p) {             // flip [patch] <==> [pos|neg|prb] order
+        for (size_t pos = 0; pos < nPositives; ++pos)
+            fvPosNorm[p][pos] = normalizeOverAll(MIN_MAX, fvPositiveSamples[pos][p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        for (size_t neg = 0; neg < nNegatives; ++neg)
+            fvNegNorm[p][neg] = normalizeOverAll(MIN_MAX, fvNegativeSamples[neg][p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        for (size_t prb = 0; prb < nProbes_S1; ++prb)
+            fvPrbNorm_S1[p][prb] = normalizeOverAll(MIN_MAX, fvProbeSamples_S1[prb][p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        for (size_t prb = 0; prb < nProbes_S3; ++prb)
+            fvPrbNorm_S3[p][prb] = normalizeOverAll(MIN_MAX, fvProbeSamples_S3[prb][p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        for (size_t prb = 0; prb < nProbes_EX; ++prb)
+            fvPrbNorm_EX[p][prb] = normalizeOverAll(MIN_MAX, fvProbeSamples_EX[prb][p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+    }
+
+    /* ------------------
+        ESVM TRAINING
+    ------------------ */
+    logger << "ESVM training..." << std::endl;
+    size_t dimsESVM[2]{ nPositives, nPatches };
+    xstd::mvector<2, ESVM> esvmModels(dimsESVM);        // [target][patch](ESVM)
+
+    for (size_t pos = 0; pos < nPositives; ++pos)
+        for (size_t p = 0; p < nPatches; ++p)
+            esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegNorm[p], positivesID[pos] + "-patch" + std::to_string(p));
+
+    /* -----------------
+        ESVM TESTING 
+    ----------------- */
+    logger << "ESVM testing..." << std::endl;
+    size_t dimsPrbPatchScores_S1[3]{ nPositives, nPatches, nProbes_S1 };
+    size_t dimsPrbPatchScores_S3[3]{ nPositives, nPatches, nProbes_S3 };
+    size_t dimsPrbPatchScores_EX[3]{ nPositives, nPatches, nProbes_EX };
+    size_t dimsPrbScores_S1[2]{ nPositives, nProbes_S1 };
+    size_t dimsPrbScores_S3[2]{ nPositives, nProbes_S3 };
+    size_t dimsPrbScores_EX[2]{ nPositives, nProbes_EX };
+    xstd::mvector<3, double> prbPatchScores_S1(dimsPrbPatchScores_S1);          // [positive][patch][probe]
+    xstd::mvector<3, double> prbPatchScores_S3(dimsPrbPatchScores_S3);          // [positive][patch][probe]
+    xstd::mvector<3, double> prbPatchScores_EX(dimsPrbPatchScores_EX);          // [positive][patch][probe]
+    xstd::mvector<2, double> prbScores_S1(dimsPrbScores_S1, 0);                 // [positive][patch][probe]
+    xstd::mvector<2, double> prbScores_S3(dimsPrbScores_S3, 0);                 // [positive][patch][probe]
+    xstd::mvector<2, double> prbScores_EX(dimsPrbScores_EX, 0);                 // [positive][patch][probe]
+    
+    // predict scores    
+    for (size_t pos = 0; pos < nPositives; ++pos) {
+        for (size_t p = 0; p < nPatches; ++p) {
+            prbPatchScores_S1[pos][p] = esvmModels[pos][p].predict(fvPrbNorm_S1[p]);
+            prbPatchScores_S3[pos][p] = esvmModels[pos][p].predict(fvPrbNorm_S3[p]);
+            prbPatchScores_EX[pos][p] = esvmModels[pos][p].predict(fvPrbNorm_EX[p]);            
+        }
+    }
+
+    // obtain min/max scores (not normalized)
+    double minS1 = DBL_MAX, maxS1 = -DBL_MAX, minS3 = DBL_MAX, maxS3 = -DBL_MAX, minEX = DBL_MAX, maxEX = -DBL_MAX;
+    for (size_t pos = 0; pos < nPositives; ++pos) {
+        for (size_t p = 0; p < nPatches; ++p) {
+            for (size_t prb = 0; prb < nProbes_S1; ++prb) {
+                if (minS1 > prbPatchScores_S1[pos][p][prb])
+                    minS1 = prbPatchScores_S1[pos][p][prb];
+                if (maxS1 < prbPatchScores_S1[pos][p][prb])
+                    maxS1 = prbPatchScores_S1[pos][p][prb];
+            }
+            for (size_t prb = 0; prb < nProbes_S3; ++prb) {
+                if (minS3 > prbPatchScores_S3[pos][p][prb])
+                    minS3 = prbPatchScores_S3[pos][p][prb];
+                if (maxS3 < prbPatchScores_S3[pos][p][prb])
+                    maxS3 = prbPatchScores_S3[pos][p][prb];
+            }
+            for (size_t prb = 0; prb < nProbes_EX; ++prb) {
+                if (minEX > prbPatchScores_EX[pos][p][prb])
+                    minEX = prbPatchScores_EX[pos][p][prb];
+                if (maxEX < prbPatchScores_EX[pos][p][prb])
+                    maxEX = prbPatchScores_EX[pos][p][prb];
+            }
+        }
+    }
+
+    // score normalization and patches fusion
+    for (size_t pos = 0; pos < nPositives; ++pos) {
+        for (size_t p = 0; p < nPatches; ++p) {
+            for (size_t prb = 0; prb < nProbes_S1; ++prb)
+                prbScores_S1[pos][prb] += normalize(MIN_MAX, prbPatchScores_S1[pos][p][prb], scoreRefMin, scoreRefMax, ESVM_SCORE_NORMALIZATION_CLIP);
+            for (size_t prb = 0; prb < nProbes_S3; ++prb)
+                prbScores_S3[pos][prb] += normalize(MIN_MAX, prbPatchScores_S3[pos][p][prb], scoreRefMin, scoreRefMax, ESVM_SCORE_NORMALIZATION_CLIP);
+            for (size_t prb = 0; prb < nProbes_EX; ++prb)
+                prbScores_EX[pos][prb] += normalize(MIN_MAX, prbPatchScores_EX[pos][p][prb], scoreRefMin, scoreRefMax, ESVM_SCORE_NORMALIZATION_CLIP);
+        }
+        for (size_t prb = 0; prb < nProbes_S1; ++prb)
+            prbScores_S1[pos][prb] /= (double)nPatches;
+        for (size_t prb = 0; prb < nProbes_S3; ++prb)
+            prbScores_S3[pos][prb] /= (double)nPatches;
+        for (size_t prb = 0; prb < nProbes_EX; ++prb)
+            prbScores_EX[pos][prb] /= (double)nPatches;
+    }
+
+    // display results
+    logger << "NORMALIZATION VALUES SPECIFIED:" << std::endl
+        << "  hogRefMin:    " << hogRefMin << std::endl
+        << "  hogRefMax:    " << hogRefMax << std::endl
+        << "  scoreRefMin:  " << scoreRefMin << std::endl
+        << "  scoreRefMax:  " << scoreRefMax << std::endl;
+    logger << "FEATURES NORMALIZATION VALUES FOUND" << std::endl
+        << "  S1 - Min/Max: " << minFeatS1 << "/" << maxFeatS1 << std::endl
+        << "  S3 - Min/Max: " << minFeatS3 << "/" << maxFeatS3 << std::endl
+        << "  EX - Min/Max: " << minFeatEX << "/" << maxFeatEX << std::endl;
+    logger << "SCORES NORMALIZATION VALUES FOUND" << std::endl
+        << "  S1 - Min/Max: " << minS1 << "/" << maxS1 << std::endl
+        << "  S3 - Min/Max: " << minS3 << "/" << maxS3 << std::endl
+        << "  EX - Min/Max: " << minEX << "/" << maxEX << std::endl;
+    logger << "Results for samples from ChokePoint S1:" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, prbScores_S1, probeGroundTruth_S1);
+    logger << "Results for samples from ChokePoint S3:" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, prbScores_S3, probeGroundTruth_S3);
+    logger << "Results for samples from Fast-DT (extra/external):" << std::endl;
+    eval_PerformanceClassificationSummary(positivesID, prbScores_EX, probeGroundTruth_EX);
+
+    } // end try
+    catch (std::exception& ex) {
+        logger << ex.what() << std::endl;
+        return passThroughDisplayTestStatus(__func__, -1);
+    }
+
+    #else/*PROC_ESVM_FULL_GENERATION_TESTING*/
+    return passThroughDisplayTestStatus(__func__, SKIPPED);
+    #endif/*PROC_ESVM_FULL_GENERATION_TESTING*/
+    return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
 /*

@@ -73,6 +73,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking();
+int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);

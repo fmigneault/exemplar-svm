@@ -53,12 +53,13 @@ double calcACC(int TP, int TN, int FP, int FN) { return (double)(TP + TN) / (dou
 double calcACC(ConfusionMatrix cm) { return calcACC(cm.TP, cm.TN, cm.FP, cm.FN); }
 
 // Area or partial area under ROC curve (AUC or pAUC)
-// Partial area is obtained from zero FPR up to pFPR
-// The function assumes that (FPR,TPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..p] or [0..1])
+// Partial area is obtained from zero FPR up to pFPR (defaults to 1.0 for AUC)
+// The result is divided by the corresponding maximum possible area (full or partial) to obtain a percentage in [0,1] range
+// The function assumes that (FPR,TPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..pFPR] or [0..1])
 double calcAUC(std::vector<double> FPR, std::vector<double> TPR, double pFPR)
 {
     ASSERT_LOG(TPR.size() == FPR.size(), "Number of TPR and FPR values must match");
-    ASSERT_LOG(pFPR > 0 && pFPR <= 1, "Partial FPR value must be in ]0,1] interval");
+    ASSERT_LOG(pFPR > 0.0 && pFPR <= 1.0, "Partial FPR value must be in ]0,1] interval");
 
     // find sorted value indexes in ascending order
     size_t nPoints = TPR.size() - 1;
@@ -82,7 +83,7 @@ double calcAUC(std::vector<double> FPR, std::vector<double> TPR, double pFPR)
         // accumulate partial trapezoidal area
         pAUC += (nextTPR + currTPR) * std::abs(nextFPR - currFPR) / 2;        
     }
-    return pAUC;
+    return pAUC / pFPR;
 }
 
 double calcAUC(std::vector<ConfusionMatrix> cm, double pFPR)

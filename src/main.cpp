@@ -47,7 +47,8 @@ int main(int argc, char* argv[])
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size(48, 48), cv::Size(3, 3), true));
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN());
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking());
-        
+        RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess());
+
         /* ------------------------------
           procedure for file generation
         ------------------------------ */

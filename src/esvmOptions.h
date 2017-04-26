@@ -173,7 +173,7 @@
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define PROC_ESVM_SIMPLIFIED_WORKING 1
+#define PROC_ESVM_SIMPLIFIED_WORKING 0
 // Generate some differnt image types for convenience
 #define PROC_ESVM_GENERATE_CONVERTED_IMAGES 0
 // Generate sample files using various enabled parameters
@@ -182,6 +182,8 @@
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
 // Request libsvm format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
+// Generate from scratch multiple training/testing samples and evaluate them
+#define PROC_ESVM_FULL_GENERATION_TESTING 1
 
 /* ------------------------------------------------------------
    Image paths
