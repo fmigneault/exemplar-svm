@@ -192,7 +192,7 @@ std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Si
                                   std::string windowName, cv::ImreadModes readMode, cv::InterpolationFlags resizeMode)
 {
     cv::Mat img = imReadAndDisplay(imagePath, windowName, readMode);
-    return imPreprocess(img, imSize, patchCounts, useHistEqual, windowName, readMode, resizeMode);
+    return imPreprocess(img, imSize, patchCounts, useHistEqual, "", readMode, resizeMode);  // avoid displaying again
 }
 
 std::vector<cv::Mat> imPreprocess(cv::Mat img, cv::Size imSize, cv::Size patchCounts, bool useHistEqual,
