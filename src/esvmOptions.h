@@ -10,7 +10,7 @@
 
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
-#define ESVM_USE_HISTOGRAM_EQUALIZATION 1
+#define ESVM_USE_HISTOGRAM_EQUALIZATION 0   //1
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -25,7 +25,7 @@
         1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
         2: apply specific pre-cropping of 'cropped_faces' ROI with ROI ratio defined by 'ESVM_ROI_CROP_RATIO'
 */
-#define ESVM_ROI_PREPROCESS_MODE 2
+#define ESVM_ROI_PREPROCESS_MODE 0  //2
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused
@@ -47,7 +47,7 @@
         7: normalization min-max per feature, for each patch
         8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORMALIZATION_MODE 7
+#define ESVM_FEATURE_NORMALIZATION_MODE 1   //7
 // Specify if normalized features need to be clipped if outside of [0,1]
 #define ESVM_FEATURE_NORMALIZATION_CLIP 1
 /*
@@ -71,9 +71,13 @@
    Test options - Enable/Disable a specific test execution
 ------------------------------------------------------------ */
 
-// Specify how the training samples are regrouped into training sequences
-//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
-//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+/*
+  Specify how the training samples are regrouped into training sequences
+    
+    TEST_CHOKEPOINT_SEQUENCES_MODE:    
+        0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
+        1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+*/
 #define TEST_CHOKEPOINT_SEQUENCES_MODE 0
 // Employ synthetic image generation to increase the positive samples quantity for ESVM training
 #define TEST_USE_SYNTHETIC_GENERATION 0
@@ -169,11 +173,11 @@
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define PROC_ESVM_SIMPLIFIED_WORKING 0
+#define PROC_ESVM_SIMPLIFIED_WORKING 1
 // Generate some differnt image types for convenience
 #define PROC_ESVM_GENERATE_CONVERTED_IMAGES 0
 // Generate sample files using various enabled parameters
-#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 0
 // Request binary format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
 // Request libsvm format sample file generation

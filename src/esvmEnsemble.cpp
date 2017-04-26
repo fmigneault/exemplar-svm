@@ -103,8 +103,8 @@ void esvmEnsemble::setConstants(std::string negativesDir)
 
     #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max overall normalization across patches
         // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
-        ///hogRefMin = 0;
-        ///hogRefMax = 0.675058;
+        hogRefMin = 0;
+        hogRefMax = 0.675058;
 
         // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
         // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
@@ -114,8 +114,8 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (11344 samples)
         // uses the 'LBP improved' localized face ROI refinement for more focused face details / less background noise
         // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 1)
-        hogRefMin = 0;
-        hogRefMax = 0.695519;
+        ///hogRefMin = 0;
+        ///hogRefMax = 0.695519;
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score overall normalization across patches
 
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 3  // Min-Max per feature normalization across patches
@@ -138,21 +138,21 @@ void esvmEnsemble::setConstants(std::string negativesDir)
 
     #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max normalization
         // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-        ///scoreRefMin = -1.578030;
-        ///scoreRefMax = -0.478968;
+        scoreRefMin = -1.578030;
+        scoreRefMax = -0.478968;
     
         // found min/max using FAST-DT live test 
-        scoreRefMin = 0.085;         // Testing
+        ///scoreRefMin = 0.085;         // Testing
         ///scoreRefMin = -0.638025;
-        scoreRefMax =  0.513050;
+        ///scoreRefMax =  0.513050;
 
         // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
         /* found from test */
         //scoreRefMin = -4.69201; 
         //scoreRefMax = 1.46431;
         /* experimental adjustment */
-        scoreRefMin = -2.929948; 
-        scoreRefMax = -0.731181;
+        ///scoreRefMin = -2.929948; 
+        ///scoreRefMax = -0.731181;
     #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score normalization
         // found using FAST-DT live test 
         ///scoreRefMean = -1.26193;

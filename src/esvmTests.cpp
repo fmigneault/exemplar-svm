@@ -211,11 +211,20 @@ void displayOptions()
            << tab << "ESVM:" << std::endl
            << tab << tab << "ESVM_USE_HOG:                                  " << ESVM_USE_HOG << std::endl
            << tab << tab << "ESVM_USE_LBP:                                  " << ESVM_USE_LBP << std::endl
+           << tab << tab << "ESVM_USE_HISTOGRAM_EQUALIZATION:               " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
            << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:                  " << ESVM_USE_PREDICT_PROBABILITY << std::endl
            << tab << tab << "ESVM_POSITIVE_CLASS:                           " << ESVM_POSITIVE_CLASS << std::endl
            << tab << tab << "ESVM_NEGATIVE_CLASS:                           " << ESVM_NEGATIVE_CLASS << std::endl
+           << tab << tab << "ESVM_BINARY_HEADER_MODEL:                      " << ESVM_BINARY_HEADER_MODEL << std::endl
+           << tab << tab << "ESVM_BINARY_HEADER_SAMPLES:                    " << ESVM_BINARY_HEADER_SAMPLES << std::endl
+           << tab << tab << "ESVM_ROI_CROP_RATIO:                           " << ESVM_ROI_CROP_RATIO << std::endl
+           << tab << tab << "ESVM_ROI_PREPROCESS_MODE:                      " << ESVM_ROI_PREPROCESS_MODE << std::endl
            << tab << tab << "ESVM_WEIGHTS_MODE:                             " << ESVM_WEIGHTS_MODE << std::endl
+           << tab << tab << "ESVM_FEATURE_NORMALIZATION_MODE:               " << ESVM_FEATURE_NORMALIZATION_MODE << std::endl
+           << tab << tab << "ESVM_FEATURE_NORMALIZATION_CLIP:               " << ESVM_FEATURE_NORMALIZATION_CLIP << std::endl
            << tab << tab << "ESVM_SCORE_NORMALIZATION_MODE:                 " << ESVM_SCORE_NORMALIZATION_MODE << std::endl
+           << tab << tab << "ESVM_SCORE_NORMALIZATION_CLIP:                 " << ESVM_SCORE_NORMALIZATION_CLIP << std::endl
+           << tab << tab << "ESVM_READ_LIBSVM_PARSER_MODE:                  " << ESVM_READ_LIBSVM_PARSER_MODE << std::endl
            << tab << "TEST:" << std::endl
            << tab << tab << "TEST_CHOKEPOINT_SEQUENCES_MODE:                " << TEST_CHOKEPOINT_SEQUENCES_MODE << std::endl
            << tab << tab << "TEST_USE_SYNTHETIC_GENERATION:                 " << TEST_USE_SYNTHETIC_GENERATION << std::endl
@@ -229,6 +238,7 @@ void displayOptions()
            << tab << tab << "TEST_NORMALIZATION:                            " << TEST_NORMALIZATION << std::endl
            << tab << tab << "TEST_PERF_EVAL_FUNCTIONS:                      " << TEST_PERF_EVAL_FUNCTIONS << std::endl
            << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:                 " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
+           << tab << tab << "TEST_ESVM_BASIC_CLASSIFICATION:                " << TEST_ESVM_BASIC_CLASSIFICATION << std::endl
            << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:                   " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
            << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_TIMING:            " << TEST_ESVM_READ_SAMPLES_FILE_TIMING << std::endl
            << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY:     " << TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY << std::endl
@@ -238,13 +248,19 @@ void displayOptions()
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY:  " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY << std::endl
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM:  " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM << std::endl
            << tab << tab << "TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE: " << TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE << std::endl
+           << tab << tab << "TEST_ESVM_MODEL_STRUCT_SVM_PARAMS:             " << TEST_ESVM_MODEL_STRUCT_SVM_PARAMS << std::endl
+           << tab << tab << "TEST_ESVM_MODEL_MEMORY_OPERATIONS:             " << TEST_ESVM_MODEL_MEMORY_OPERATIONS << std::endl
+           << tab << tab << "TEST_ESVM_MODEL_MEMORY_PARAM_CHECK:            " << TEST_ESVM_MODEL_MEMORY_PARAM_CHECK << std::endl
            << tab << "PROCEDURES:" << std::endl
            << tab << tab << "PROC_READ_DATA_FILES:                          " << PROC_READ_DATA_FILES << std::endl
            << tab << tab << "PROC_WRITE_DATA_FILES:                         " << PROC_WRITE_DATA_FILES << std::endl
            << tab << tab << "PROC_ESVM_TITAN:                               " << PROC_ESVM_TITAN << std::endl
            << tab << tab << "PROC_ESVM_SAMAN:                               " << PROC_ESVM_SAMAN << std::endl
            << tab << tab << "PROC_ESVM_SIMPLIFIED_WORKING:                  " << PROC_ESVM_SIMPLIFIED_WORKING << std::endl
-           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl;
+           << tab << tab << "PROC_ESVM_GENERATE_CONVERTED_IMAGES:           " << PROC_ESVM_GENERATE_CONVERTED_IMAGES << std::endl
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl;
 }
 
 int test_paths()
@@ -315,7 +331,7 @@ int test_imagePatchExtraction(void)
         return passThroughDisplayTestStatus(__func__, -1);
     }
     // check patch dimensions
-    for (int p = 0; p < 6; p++)
+    for (int p = 0; p < 6; ++p)
     {
         if (testPatches[p].size() != cv::Size(2, 2))
         {
@@ -380,13 +396,13 @@ int test_imagePreprocessing()
     int nPatches = patchCount.area();
     std::vector<cv::Mat> refImgPatches = imSplitPatches(refImg, patchCount);
     ASSERT_LOG(refImgPatches.size() == nPatches, "Reference image should have been split to expected number of patches");
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
         ASSERT_LOG(refImgPatches[p].size() == cv::Size(16,16), "Reference image should have been split to expected patches dimensions");
 
     std::vector<FeatureVector> hogPatches(nPatches);
     FeatureExtractorHOG hog;
     hog.initialize(refImgPatches[0].size(), cv::Size(2, 2), cv::Size(2, 2), cv::Size(2, 2), 3);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatches[p] = hog.compute(refImgPatches[p]);
         logger << refImgName << " hog588-impl-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatches[p]) << std::endl;
@@ -400,7 +416,7 @@ int test_imagePreprocessing()
     double* hogParams = new double[5]{ 3, 2, 2, 0, 0.2 };
     size_t nFeatures = hogPatches[0].size();
     double *features = new double[nFeatures];
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         for (int y = 0; y < patchSide; y++)
             for (int x = 0; x < patchSide; x++)                            
@@ -412,7 +428,7 @@ int test_imagePreprocessing()
 
     // enforced double v2
     std::vector<FeatureVector> hogPatchesDbl2(nPatches);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         for (int y = 0; y < patchSide; y++)
             for (int x = 0; x < patchSide; x++)                
@@ -424,7 +440,7 @@ int test_imagePreprocessing()
 
     // access (NOW PROPERLY ACCESSED DIRECTLY IN HOG_IMPL?)     ---  VALIDATED with fix of issue #2 in 'FeatureExtractorHOG' repo
     std::vector<FeatureVector> hogPatchesAccess(nPatches);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatchesAccess[p] = hog.compute(refImgPatches[p]);
         logger << refImgName << " hog588-impl-Access-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesAccess[p]) << std::endl;
@@ -486,7 +502,7 @@ int test_imagePreprocessing()
     ///refImgData.convertTo(refImgData, CV_32F, 1.0 / 256.0, 0);
     std::vector<cv::Mat> refImgDataPatches = imSplitPatches(refImgData, patchCount);
     std::vector<FeatureVector> hogPatchesData(nPatches);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatchesData[p] = hog.compute(refImgDataPatches[p]);
         logger << "roiID0003.txt hog588-impl-data-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesData[p]) << std::endl;
@@ -496,7 +512,7 @@ int test_imagePreprocessing()
     std::vector<FeatureVector> hogPatchesDblData(nPatches);
     int patchRow = 0;
     int patchCol = 0;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         for (int y = 0; y < patchSide; y++)
             for (int x = 0; x < patchSide; x++)
@@ -566,7 +582,7 @@ int test_imagePreprocessing()
     cv::Mat refImgDataPermute = cv::Mat(refImgSide, refImgSide, CV_32F, refImgRawDataPermute);
     std::vector<cv::Mat> refImgDataPermutePatches = imSplitPatches(refImgDataPermute, patchCount);
     std::vector<FeatureVector> hogPatchesDataPermute(nPatches);
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatchesDataPermute[p] = hog.compute(refImgDataPermutePatches[p]);
         logger << "roiID0003.txt hog588-impl-data-permute-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDataPermute[p]) << std::endl;
@@ -576,7 +592,7 @@ int test_imagePreprocessing()
     std::vector<FeatureVector> hogPatchesDblDataPermute(nPatches);
     patchRow = 0;
     patchCol = 0;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         for (int y = 0; y < patchSide; y++)
             for (int x = 0; x < patchSide; x++)
@@ -1013,13 +1029,13 @@ int test_ESVM_BasicFunctionalities(void)
     cell.Set(mtrx);
     // Full conversion for Exemplar-SVM
     logger << "Converting positive training samples..." << std::endl;
-    for (int i = 0; i < NB_POSITIVE_IMAGES; i++)
+    for (int i = 0; i < NB_POSITIVE_IMAGES; ++i)
         mwPositiveSamples.Get(1, i + 1).Set(convertCvToMatlabMat(matPositiveSamples[i]));
     logger << "Converting negative training samples..." << std::endl;
-    for (int i = 0; i < NB_NEGATIVE_IMAGES; i++)
+    for (int i = 0; i < NB_NEGATIVE_IMAGES; ++i)
         mwNegativeSamples.Get(1, i + 1).Set(convertCvToMatlabMat(matNegativeSamples[i]));
     logger << "Converting probe testing samples..." << std::endl;
-    for (int i = 0; i < NB_PROBE_IMAGES; i++)
+    for (int i = 0; i < NB_PROBE_IMAGES; ++i)
         mwProbeSamples.Get(1, i + 1).Set(convertCvToMatlabMat(matProbeSamples[i]));
 
     // ------------------------------------------------------------------------------------------------------------------------
@@ -1067,7 +1083,7 @@ int test_ESVM_BasicClassification(void)
     std::vector<FeatureVector> positives(20);
     std::vector<FeatureVector> negatives(20);  
     std::srand(std::time(0));
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; ++i)
     {
         int i1 = 2 * i;
         int i2 = 2 * i + 1;
@@ -1420,7 +1436,7 @@ int test_ESVM_ReadSampleFile_compare()
     size_t nPatches = 9;
     size_t nPositives = positivesID.size();
 
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
         std::vector<FeatureVector> samples_libsvm, samples_binary;
         std::vector<int> targetOutputs_libsvm, targetOutputs_binary;
@@ -1440,7 +1456,7 @@ int test_ESVM_ReadSampleFile_compare()
         ASSERT_LOG(nNegatives == samples_binary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentNegativePatch);
         ASSERT_LOG(nNegatives == targetOutputs_libsvm.size(), "Inconsistent LIBSVM target outputs count" + currentNegativePatch);
         ASSERT_LOG(nNegatives == targetOutputs_binary.size(), "Inconsistent BINARY target outputs count" + currentNegativePatch);
-        for (size_t neg = 0; neg < nNegatives; neg++)
+        for (size_t neg = 0; neg < nNegatives; ++neg)
         {            
             currentNegativePatch = " (negative " + std::to_string(neg) + ", patch " + strPatch + ")";
             ASSERT_LOG(nNegativeFeatures == samples_binary[neg].size(), "Inconsistent LIBSVM and BINARY features count" + currentNegativePatch);
@@ -1452,7 +1468,7 @@ int test_ESVM_ReadSampleFile_compare()
             }
         }
                 
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
         {
             // load probe samples and target ouputs from BINARY/LIBSVM formatted files
             std::string probeSamplesPatchFile = testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + strPatch;
@@ -1469,7 +1485,7 @@ int test_ESVM_ReadSampleFile_compare()
             ASSERT_LOG(nProbes == samples_binary.size(), "Inconsistent LIBSVM and BINARY samples count" + currentProbePatch);
             ASSERT_LOG(nProbes == targetOutputs_libsvm.size(), "Inconsistent LIBSVM target outputs count" + currentProbePatch);
             ASSERT_LOG(nProbes == targetOutputs_binary.size(), "Inconsistent BINARY target outputs count" + currentProbePatch);
-            for (size_t prb = 0; prb < nProbes; prb++)
+            for (size_t prb = 0; prb < nProbes; ++prb)
             {
                 currentProbePatch = " (positive " + positivesID[pos] + ", probe " + std::to_string(prb) + ", patch " + strPatch + ")";
                 ASSERT_LOG(nProbeFeatures == samples_binary[prb].size(), "Inconsistent LIBSVM and BINARY features count" + currentProbePatch);
@@ -2514,7 +2530,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     imSize.height *= patchCounts.height;
     // Get still reference images (color high quality neutral faces) 
     // filename format: "roi<ID#>.jpg"
-    for (int i = 0; i < NB_ENROLLMENT; i++)    
+    for (int i = 0; i < NB_ENROLLMENT; ++i)    
         matPositiveSamples[i] = imPreprocess(refStillImagesPath + "roi" + targetName[i] + ".JPG", imSize, patchCounts, WINDOW_NAME, cv::IMREAD_COLOR);
     
     /* Testing probe samples */
@@ -2530,7 +2546,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[4]  = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_7/000270.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[5]  = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_7/000272.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[6]  = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_7/000275.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 0; i <= 6; i++) probeGroundThruth[i] = "ID0013";
+    for (int i = 0; i <= 6; ++i) probeGroundThruth[i] = "ID0013";
     /* --- ID0012 --- */
     matProbeSamples[7]  = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_13/000320.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[8]  = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_13/000325.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2541,7 +2557,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[13] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_13/000350.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[14] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_13/000355.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[15] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_13/000360.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 7; i <= 15; i++) probeGroundThruth[i] = "ID0012";
+    for (int i = 7; i <= 15; ++i) probeGroundThruth[i] = "ID0012";
     /* --- ID0011 --- */
     matProbeSamples[16] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_15/000350.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[17] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_15/000355.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2553,7 +2569,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[23] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_15/000380.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[24] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_15/000385.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[25] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_15/000390.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 16; i <= 25; i++) probeGroundThruth[i] = "ID0011";
+    for (int i = 16; i <= 25; ++i) probeGroundThruth[i] = "ID0011";
     /* --- ID0029 --- */
     matProbeSamples[26] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_18/000365.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[27] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_18/000370.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2567,7 +2583,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[35] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_18/000401.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[36] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_18/000425.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[37] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_18/000430.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 26; i <= 37; i++) probeGroundThruth[i] = "ID0029";
+    for (int i = 26; i <= 37; ++i) probeGroundThruth[i] = "ID0029";
     /* --- ID0016 --- */
     matProbeSamples[38] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_19/000400.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[39] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_19/000405.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2584,7 +2600,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[50] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_19/000455.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[51] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_19/000460.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[52] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_19/000465.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 38; i <= 52; i++) probeGroundThruth[i] = "ID0016";
+    for (int i = 38; i <= 52; ++i) probeGroundThruth[i] = "ID0016";
     /* --- ID0009 --- */
     matProbeSamples[53] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_20/000410.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[54] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_20/000415.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2593,7 +2609,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[57] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_25/000441.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[58] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_25/000445.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[59] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_25/000450.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 53; i <= 59; i++) probeGroundThruth[i] = "ID0009";
+    for (int i = 53; i <= 59; ++i) probeGroundThruth[i] = "ID0009";
     /* --- ID0004 --- */
     matProbeSamples[60] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_26/000447.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[61] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_26/000450.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2604,7 +2620,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[66] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_26/000475.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[67] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_26/000480.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[68] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_26/000485.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 60; i <= 68; i++) probeGroundThruth[i] = "ID0004";
+    for (int i = 60; i <= 68; ++i) probeGroundThruth[i] = "ID0004";
     /* --- ID0020 --- */
     matProbeSamples[69] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_36/000540.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[70] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_36/000545.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2617,7 +2633,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[77] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_36/000565.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[78] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_36/000566.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[79] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_36/000570.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 69; i <= 79; i++) probeGroundThruth[i] = "ID0020";
+    for (int i = 69; i <= 79; ++i) probeGroundThruth[i] = "ID0020";
     /* --- ID0023 --- */
     matProbeSamples[80] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_37/000541.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[81] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_37/000545.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2626,7 +2642,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[84] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_37/000561.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[85] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_37/000565.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[86] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_37/000570.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 80; i <= 86; i++) probeGroundThruth[i] = "ID0023";
+    for (int i = 80; i <= 86; ++i) probeGroundThruth[i] = "ID0023";
     /* --- ID0026 --- */
     matProbeSamples[87] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_39/000566.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[88] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_39/000570.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
@@ -2637,7 +2653,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     matProbeSamples[93] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_39/000590.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[94] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_39/000595.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
     matProbeSamples[95] = imSplitPatches(imReadAndDisplay(roiVideoImagesPath + "person_39/000600.png", WINDOW_NAME, cv::IMREAD_GRAYSCALE), patchCounts);
-    for (int i = 87; i <= 95; i++) probeGroundThruth[i] = "ID0026";
+    for (int i = 87; i <= 95; ++i) probeGroundThruth[i] = "ID0026";
 
     // Destroy viewing window not required anymore
     cv::destroyWindow(WINDOW_NAME);
@@ -2654,14 +2670,14 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     int NB_POSITIVE_DUPLICATION = 1; 
     std::vector< std::vector<mwArray> > mwPositiveSamples(NB_ENROLLMENT);
     // Conversion for Exemplar-SVM
-    for (int p = 0; p < nPatches; p++)
+    for (int p = 0; p < nPatches; ++p)
     {
         logger << "Converting patches at index " << p << "..." << std::endl;
         mwNegativeSamples[p] = mwArray(NB_NEGATIVE_IMAGES, 1, mxCELL_CLASS);
         mwProbeSamples[p]    = mwArray(NB_PROBE_IMAGES, 1, mxCELL_CLASS);
 
         logger << "Converting positive training samples..." << std::endl;        
-        for (int i = 0; i < NB_ENROLLMENT; i++)
+        for (int i = 0; i < NB_ENROLLMENT; ++i)
         {        
             // Initialize vertor only on first patch for future calls
             if (p == 0) 
@@ -2670,16 +2686,16 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
             // Duplicate unique positive to generate a pool samples           
             mwPositiveSamples[i][p] = mwArray(NB_POSITIVE_DUPLICATION, 1, mxCELL_CLASS);
             mwArray dupPositive = convertCvToMatlabMat(matPositiveSamples[i][p]);
-            for (int j = 0; j < NB_POSITIVE_DUPLICATION; j++)
+            for (int j = 0; j < NB_POSITIVE_DUPLICATION; ++j)
                 mwPositiveSamples[i][p].Get(1, j + 1).Set(dupPositive);
         }
         
         logger << "Converting negative training samples..." << std::endl;
-        for (int i = 0; i < NB_NEGATIVE_IMAGES; i++)
+        for (int i = 0; i < NB_NEGATIVE_IMAGES; ++i)
             mwNegativeSamples[p].Get(1, i + 1).Set(convertCvToMatlabMat(matNegativeSamples[i][p]));
         
         logger << "Converting probe testing samples..." << std::endl;
-        for (int i = 0; i < NB_PROBE_IMAGES; i++)
+        for (int i = 0; i < NB_PROBE_IMAGES; ++i)
             mwProbeSamples[p].Get(1, i + 1).Set(convertCvToMatlabMat(matProbeSamples[i][p]));
     }
 
@@ -2688,7 +2704,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     cv::cvtColor(img, img, CV_BGR2GRAY);
     cv::resize(img, img, imSize, 0, 0, cv::INTER_CUBIC);    
     cv::imwrite(refStillImagesPath + "roi" + targetName[0] + "_resized.JPG", img);    
-    for (int p = 0; p < nPatches; p++)
+    for (int p = 0; p < nPatches; ++p)
     {
         std::string name = refStillImagesPath + "roi" + targetName[0] + "_patch" + std::to_string(p) + ".jpg";        
         cv::imwrite(name, matPositiveSamples[0][p]);
@@ -2710,7 +2726,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
                << "Dims nb positive: " << mwPositiveSamples[0].GetDimensions().ToString() << std::endl
                << "Data:" << std::endl        
                << mwPositiveSamples[0].ToString() << std::endl;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; ++i)
         {
             logger << "Data detail " << i << ":" << std::endl;
             logger << mwPositiveSamples[0].Get(1,i+1).ToString() << std::endl;
@@ -2734,7 +2750,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
         UINT8 data[size];
         mwPositiveSamples[0].Get(1, 1).GetData(data, size);
         std::string outData = "";
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; ++i)
         {
             outData += data[i];
             outData += +" ";
@@ -2748,11 +2764,11 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
         */
         //################################################################################ DEBUG
 
-        for (int i = 0; i < NB_ENROLLMENT; i++)
+        for (int i = 0; i < NB_ENROLLMENT; ++i)
         {            
             logger << "Starting for individual " << i << ": " + targetName[i] << std::endl;
             double scoreFusion[NB_PROBE_IMAGES] = { 0 };
-            for (int p = 0; p < nPatches; p++)
+            for (int p = 0; p < nPatches; ++p)
             {                
                 logger << "Running Exemplar-SVM training..." << std::endl;
                 esvm_train_individual(1, models[p], mwPositiveSamples[i][p], mwNegativeSamples[p], mwArray(targetName[i].c_str()));
@@ -2760,7 +2776,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
                 esvm_test_individual(1, mwScores[p], models[p], mwProbeSamples[p]);
                 double scores[NB_PROBE_IMAGES];
                 mwScores[p].GetData(scores, NB_PROBE_IMAGES);
-                for (int j = 0; j < NB_PROBE_IMAGES; j++)
+                for (int j = 0; j < NB_PROBE_IMAGES; ++j)
                 {
                     // score accumulation from patches with normalization
                     double normPatchScore = normalizeClassScoreToSimilarity(scores[j]);
@@ -2769,7 +2785,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
                     logger << "Score for patch " << p << " of probe " << j << " (" << probeGT << "): " << normPatchScore << std::endl;
                 }
             }
-            for (int j = 0; j < NB_PROBE_IMAGES; j++)
+            for (int j = 0; j < NB_PROBE_IMAGES; ++j)
             {
                 // average of score accumulation for fusion
                 std::string probeGT = (probeGroundThruth[j] == targetName[i] ? "positive" : "negative");
@@ -2905,7 +2921,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
     // Add samples to containers
     logger << "Loading positives image for all test sequences..." << std::endl;
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {        
         // Add additional positive representations as requested
         #if TEST_USE_SYNTHETIC_GENERATION
@@ -2921,20 +2937,18 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             matPositiveSamples[pos] = xstd::mvector<2, cv::Mat>(dimsRepresentation);
 
             /// ############################################# #pragma omp parallel for
-            for (size_t r = 0; r < nRepresentations; r++)
+            for (size_t r = 0; r < nRepresentations; ++r)
             {
                 std::vector<cv::Mat> patches = imSplitPatches(representations[r], patchCounts);
-                for (size_t p = 0; p < nPatches; p++)
+                for (size_t p = 0; p < nPatches; ++p)
                     matPositiveSamples[pos][r][p] = patches[p];
             }
         
         // Only original representation otherwise (no synthetic images)
         #else/*!TEST_USE_SYNTHETIC_GENERATION*/
 
-            std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
-                                                        ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-            for (size_t p = 0; p < nPatches; p++)
-                matPositiveSamples[pos][0][p] = patches[p];
+            matPositiveSamples[pos][0] = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
+                                                      ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
         
         #endif/*TEST_USE_SYNTHETIC_GENERATION*/
     }
@@ -2942,11 +2956,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
     /// ################################################################################ DEBUG DISPLAY POSITIVES (+SYNTH)
     /*
     logger << "SHOWING DEBUG POSITIVE SAMPLES" << std::endl;
-    for (int i = 0; i < nPositives; i++)
+    for (int i = 0; i < nPositives; ++i)
     {
-        for (int j = 0; j < matPositiveSamples[i].size(); j++)
+        for (int j = 0; j < matPositiveSamples[i].size(); ++j)
         {
-            for (int k = 0; k < matPositiveSamples[i][j].size(); k++)
+            for (int k = 0; k < matPositiveSamples[i][j].size(); ++k)
             {
                 cv::imshow(WINDOW_NAME, matPositiveSamples[i][j][k]);
                 cv::waitKey(500);
@@ -2976,15 +2990,15 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
     // Convert unique positive samples (or with synthetic representations)
     /// ################################################## #pragma omp parallel for    
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {                
         /// ################################################## #pragma omp parallel for
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
         {
-            for (size_t d = 0; d < nDescriptors; d++)
+            for (size_t d = 0; d < nDescriptors; ++d)
             {                
                 /// ################################################## #pragma omp parallel for
-                for (int r = 0; r < nRepresentations; r++)
+                for (int r = 0; r < nRepresentations; ++r)
                 {
                     // switch to (i,p,d,r) order for (patch,feature)-based training of sample representations
                     #if ESVM_USE_HOG
@@ -3008,52 +3022,52 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 // DUPLICATE EVEN MORE REPRESENTATIONS TO HELP LIBSVM PROBABILITY ESTIMATES CROSS-VALIDATION
                 // Add x-times the number of representations
                 if (nDuplications > 1)
-                    for (size_t r = 0; r < nRepresentations; r++)
-                        for (size_t dup = 1; dup < nDuplications; dup++)
+                    for (size_t r = 0; r < nRepresentations; ++r)
+                        for (size_t dup = 1; dup < nDuplications; ++dup)
                             fvPositiveSamples[pos][p][d].push_back(fvPositiveSamples[pos][p][d][r]);
             }
         }
     }
     if (nDuplications > 1)
         nRepresentations *= nDuplications;
-    for (size_t d = 0; d < nDescriptors; d++)
+    for (size_t d = 0; d < nDescriptors; ++d)
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
     // Tests divided per sequence information according to selected mode
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
     std::string seq;
-    for (int sn = 1; sn <= SESSION_QUANTITY; sn++)
+    for (int sn = 1; sn <= SESSION_QUANTITY; ++sn)                  // session number
     {
-        #if TEST_CHOKEPOINT_SEQUENCES_MODE == 0
+        #if TEST_CHOKEPOINT_SEQUENCES_MODE == 0                     // regroup all by sequence
         cv::namedWindow(WINDOW_NAME);
         #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
-        for (int pn = 1; pn <= PORTAL_QUANTITY; pn++) {
-        for (auto it = types.begin(); it != types.end(); ++it) {
-        for (int cn = 1; cn <= CAMERA_QUANTITY; cn++)
-        {     
-            #if TEST_CHOKEPOINT_SEQUENCES_MODE == 1
+        for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+        for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
+        for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+        {
+            #if TEST_CHOKEPOINT_SEQUENCES_MODE == 1                 // slipt all per sequence/portal/camera
             cv::namedWindow(WINDOW_NAME);
             // Reset vectors for next test sequences                    
             matNegativeSamples.clear();
             matProbeSamples.clear();
             negativeSamplesID.clear();
             probeSamplesID.clear();            
-            for (size_t pos = 0; pos < nPositives; pos++)
+            for (size_t pos = 0; pos < nPositives; ++pos)
                 probeGroundTruth[pos].clear();
             #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
-            seq = buildChokePointSequenceString(pn, *it, sn, cn);
+            seq = buildChokePointSequenceString(pn, *pt, sn, cn);
             logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
             #if TEST_CHOKEPOINT_SEQUENCES_MODE == 0
             seq = "S" + std::to_string(sn);
             #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
             // Add ROI to corresponding sample vectors according to individual IDs            
-            for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
+            for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
             {
-                std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *it, sn, cn, id) + "/";
+                std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
                 if (bfs::is_directory(dirPath))
                 {
                     for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
@@ -3067,7 +3081,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
                                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-                                for (size_t p = 0; p < nPatches; p++)
+                                for (size_t p = 0; p < nPatches; ++p)
                                     matNegativeSamples[neg][p] = patches[p];
 
                                 negativeSamplesID.push_back(strID);
@@ -3078,11 +3092,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                 matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                                 std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
                                                                             ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-                                for (size_t p = 0; p < nPatches; p++)
+                                for (size_t p = 0; p < nPatches; ++p)
                                     matProbeSamples[prb][p] = patches[p];
 
                                 probeSamplesID.push_back(strID);
-                                for (size_t pos = 0; pos < nPositives; pos++)
+                                for (size_t pos = 0; pos < nPositives; ++pos)
                                     probeGroundTruth[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);                                
                             } 
                         }                  
@@ -3103,11 +3117,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             size_t nNegatives = matNegativeSamples.size();
             ASSERT_LOG(negativeSamplesID.size() == nNegatives, "Mismatch between negative samples count and IDs");
             ASSERT_LOG(probeSamplesID.size() == nProbes, "Mismatch between probe samples count and IDs");
-            for (int pos = 0; pos < nPositives; pos++)
+            for (int pos = 0; pos < nPositives; ++pos)
                 ASSERT_LOG(!contains(negativeSamplesID, positivesID[pos]), "Positive ID found within negative samples ID");  
-            for (int neg = 0; neg < negativesID.size(); neg++)
+            for (int neg = 0; neg < negativesID.size(); ++neg)
                 ASSERT_LOG(!contains(probeSamplesID, negativesID[neg]), "Negative ID found within probe samples ID");            
-            for (int prb = 0; prb < probesID.size(); prb++)
+            for (int prb = 0; prb < probesID.size(); ++prb)
                 ASSERT_LOG(!contains(negativeSamplesID, probesID[prb]), "Probe ID found within negative samples ID");
 
             // Feature extraction of negatives and probes
@@ -3122,13 +3136,13 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             fvProbeSamples = xstd::mvector<3, FeatureVector>(dimsProbes);
 
             // Populate feature vector containers according to number of found negative/probe sample images
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {    
-                for (size_t d = 0; d < nDescriptors; d++)
+                for (size_t d = 0; d < nDescriptors; ++d)
                 {
                     // switch to (p,d,i) order for patch-based training
                     /// ############################################# #pragma omp parallel for
-                    for (size_t neg = 0; neg < nNegatives; neg++)
+                    for (size_t neg = 0; neg < nNegatives; ++neg)
                     {
                         #if ESVM_USE_HOG
                         if (descriptorNames[d] == descriptorHOG)
@@ -3140,7 +3154,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         #endif/*ESVM_USE_LBP*/
                     }
                     /// ############################################# #pragma omp parallel for
-                    for (size_t prb = 0; prb < nProbes; prb++)
+                    for (size_t prb = 0; prb < nProbes; ++prb)
                     {
                         #if ESVM_USE_HOG
                         if (descriptorNames[d] == descriptorHOG)
@@ -3182,17 +3196,17 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
 
             // Accumulate all positive/negative/probes samples to find min/max features according to normalization mode
-            for (size_t d = 0; d < nDescriptors; d++)
+            for (size_t d = 0; d < nDescriptors; ++d)
             {                
-                for (size_t p = 0; p < nPatches; p++)
+                for (size_t p = 0; p < nPatches; ++p)
                 {
                     size_t s = 0;  // Sample index
-                    for (size_t pos = 0; pos < nPositives; pos++)
-                        for (size_t r = 0; r < nRepresentations; r++)
+                    for (size_t pos = 0; pos < nPositives; ++pos)
+                        for (size_t r = 0; r < nRepresentations; ++r)
                             allFeatureVectors[p][d][s++] = fvPositiveSamples[pos][p][d][r];
-                    for (size_t neg = 0; neg < nNegatives; neg++)
+                    for (size_t neg = 0; neg < nNegatives; ++neg)
                         allFeatureVectors[p][d][s++] = fvNegativeSamples[p][d][neg];
-                    for (size_t prb = 0; prb < nProbes; prb++)
+                    for (size_t prb = 0; prb < nProbes; ++prb)
                         allFeatureVectors[p][d][s++] = fvProbeSamples[p][d][prb];
                     
                     // Find min/max features according to normalization mode
@@ -3228,9 +3242,9 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             logger << "Applying features normalization (across feature, across patches)..." << std::endl;
             #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
             FeatureVector minNorm, maxNorm;
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {    
-                for (size_t d = 0; d < nDescriptors; d++)
+                for (size_t d = 0; d < nDescriptors; ++d)
                 {
                     #if TEST_FEATURES_NORMALIZATION_MODE == 1   // Per feature and per patch normalization
                     minNorm = minFeaturesCumul[d][p];
@@ -3244,12 +3258,12 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                     maxNorm = FeatureVector(nFeatures, maxFeatures[d]);
                     #endif/*ESVM_USE_FEATURES_NORMALIZATION == (1|2|3)*/
 
-                    for (size_t pos = 0; pos < nPositives; pos++)
-                        for (size_t r = 0; r < nRepresentations; r++)
+                    for (size_t pos = 0; pos < nPositives; ++pos)
+                        for (size_t r = 0; r < nRepresentations; ++r)
                             fvPositiveSamples[pos][p][d][r] = normalizePerFeature(MIN_MAX, fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
-                    for (size_t neg = 0; neg < nNegatives; neg++)
+                    for (size_t neg = 0; neg < nNegatives; ++neg)
                         fvNegativeSamples[p][d][neg] = normalizePerFeature(MIN_MAX, fvNegativeSamples[p][d][neg], minNorm, maxNorm);
-                    for (size_t prb = 0; prb < nProbes; prb++)
+                    for (size_t prb = 0; prb < nProbes; ++prb)
                         fvProbeSamples[p][d][prb] = normalizePerFeature(MIN_MAX, fvProbeSamples[p][d][prb], minNorm, maxNorm);
                 }
             }
@@ -3257,12 +3271,12 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             // ESVM samples files for each (sequence,positive,feature-extraction,train/test,patch) combination
             #if PROC_WRITE_DATA_FILES
             logger << "Writing ESVM train/test samples files..." << std::endl;
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {
                 std::string strPatch = std::to_string(p);
-                for (size_t d = 0; d < nDescriptors; d++)
+                for (size_t d = 0; d < nDescriptors; ++d)
                 {
-                    for (size_t pos = 0; pos < nPositives; pos++)
+                    for (size_t pos = 0; pos < nPositives; ++pos)
                     {        
                         std::string fileTemplate = "chokepoint-" + seq + "-id" + positivesID[pos] + "-" + descriptorNames[d] + "-patch" + strPatch;
                         std::string trainFileName = fileTemplate + "-train.data";
@@ -3276,20 +3290,20 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                         
                         #if TEST_USE_OTHER_POSITIVES_AS_NEGATIVES
                         // Add other gallery positives than the current one as additional negative representations (counter examples)
-                        for (size_t galleryPos = 0; galleryPos < nPositives; galleryPos++)
-                            for (size_t r = 0; r < nRepresentations; r++)
+                        for (size_t galleryPos = 0; galleryPos < nPositives; ++galleryPos)
+                            for (size_t r = 0; r < nRepresentations; ++r)
                         {
                             int gt = (pos == galleryPos ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
                             trainFile << featuresToSvmString(fvPositiveSamples[galleryPos][p][d][r], gt) << std::endl;
                         }
                         #else/*TEST_USE_OTHER_POSITIVES_AS_NEGATIVES*/
                         // Add only corresponding positive representations
-                        for (size_t r = 0; r < nRepresentations; r++)
+                        for (size_t r = 0; r < nRepresentations; ++r)
                             trainFile << featuresToSvmString(fvPositiveSamples[pos][p][d][r], ESVM_POSITIVE_CLASS) << std::endl;
                         #endif/*TEST_USE_OTHER_POSITIVES_AS_NEGATIVES*/
-                        for (size_t neg = 0; neg < nNegatives; neg++)
+                        for (size_t neg = 0; neg < nNegatives; ++neg)
                             trainFile << featuresToSvmString(fvNegativeSamples[p][d][neg], ESVM_NEGATIVE_CLASS) << std::endl;
-                        for (size_t prb = 0; prb < nProbes; prb++)
+                        for (size_t prb = 0; prb < nProbes; ++prb)
                             testFile << featuresToSvmString(fvProbeSamples[p][d][prb], probeGroundTruth[pos][prb]) << std::endl;
                     }
                 }
@@ -3298,16 +3312,16 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
             
             // Classifiers training and testing
             logger << "Starting classification training/testing..." << std::endl;
-            for (size_t pos = 0; pos < nPositives; pos++)
+            for (size_t pos = 0; pos < nPositives; ++pos)
             {                        
                 logger << "Starting for individual " << pos << ": " + positivesID[pos] << std::endl;
                 std::vector<double> fusionScores(nProbes, 0.0); 
                 std::vector<double> combinedScores(nProbes, 0.0);
                 std::vector<double> combinedScoresRaw(nProbes, 0.0);
-                for (size_t d = 0; d < nDescriptors; d++)
+                for (size_t d = 0; d < nDescriptors; ++d)
                 {     
                     std::vector<double> descriptorScores(nProbes, 0.0);
-                    for (size_t p = 0; p < nPatches; p++)
+                    for (size_t p = 0; p < nPatches; ++p)
                     {                        
                         try
                         {
@@ -3337,7 +3351,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         logger << "Running Exemplar-SVM testing..." << std::endl;
                         std::vector<double> patchScores(nProbes, 0.0);
                         // test probes per patch and normalize scores
-                        for (size_t prb = 0; prb < nProbes; prb++)
+                        for (size_t prb = 0; prb < nProbes; ++prb)
                             patchScores[prb] = esvmModels[pos][p][d].predict(fvProbeSamples[p][d][prb]);
                         std::vector<double> patchScoresNorm = normalizeClassScores(MIN_MAX, patchScores);
 
@@ -3347,7 +3361,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         logger << "PATCH " + strPatch + " SCORES NORM: " << featuresToVectorString(patchScoresNorm) << std::endl;
                         /*########################################### DEBUG */                    
                     
-                        for (size_t prb = 0; prb < nProbes; prb++)
+                        for (size_t prb = 0; prb < nProbes; ++prb)
                         {                            
                             descriptorScores[prb] += patchScoresNorm[prb];  // accumulation with normalized scores for patch-based score fusion
                             combinedScores[prb] += patchScoresNorm[prb];    // accumulation of scores for (patch,descriptor)-based score fusion
@@ -3358,7 +3372,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                                    << probeGT << "): " << patchScoresNorm[prb] << std::endl;
                         }
                     }
-                    for (size_t prb = 0; prb < nProbes; prb++)
+                    for (size_t prb = 0; prb < nProbes; ++prb)
                     {
                         // average of score accumulation for fusion per patch
                         descriptorScores[prb] /= (double)nPatches;
@@ -3373,7 +3387,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }
 
                 size_t nCombined = nDescriptors * nPatches;
-                for (size_t prb = 0; prb < nProbes; prb++)
+                for (size_t prb = 0; prb < nProbes; ++prb)
                 {
                     // average of score accumulation for fusion per descriptor
                     std::string probeGT = (probeGroundTruth[pos][prb] > 0 ? "positive" : "negative");
@@ -3463,7 +3477,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
         std::vector<int> probeGroundTruths;
         std::vector<double> scores = esvm.predict(testFileName, &probeGroundTruths);
         std::vector<double> normScores = normalizeClassScores(MIN_MAX, scores);
-        for (int prb = 0; prb < scores.size(); prb++)
+        for (int prb = 0; prb < scores.size(); ++prb)
         {
             std::string probeGT = (probeGroundTruths[prb] > 0 ? "positive" : "negative");
             logger << "Score for probe " << prb << " (" << probeGT << "): " << scores[prb] << " | normalized: " << normScores[prb] << std::endl;
@@ -3519,7 +3533,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         std::vector<double> combinedFusionScores(nProbes, 0.0);         // simultaneous score fusion over patches and descriptors
         for (auto d = descriptorNames.begin(); d != descriptorNames.end(); ++d)
         {            
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {    
                 std::string strPatch = std::to_string(p);
                 std::string trainFileName = dataFileDir + "chokepoint-S1-id0011-" + *d + "-patch" + strPatch + "-train.data";
@@ -3540,7 +3554,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
                     if (d == descriptorNames.begin())
                         descriptorFusionScores = std::vector<double>(nProbes, 0.0);
                 }
-                for (size_t prb = 0; prb < nProbes; prb++)
+                for (size_t prb = 0; prb < nProbes; ++prb)
                 {
                     patchFusionScores[prb] += normScores[prb];          // Accumulation of patch-based scores
                     combinedFusionScores[prb] += normScores[prb];       // Accumulation of (patch,descriptor)-based scores
@@ -3551,7 +3565,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
                 }
             }
             
-            for (size_t prb = 0; prb < nProbes; prb++)
+            for (size_t prb = 0; prb < nProbes; ++prb)
             {
                 patchFusionScores[prb] /= (double)nPatches;             // Average of accumulated patch-based scores
                 descriptorFusionScores[prb] += patchFusionScores[prb];  // Accumulation of feature-based scores
@@ -3563,7 +3577,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_DescriptorAndPatchBased(
         }
         
         size_t nCombined = nDescriptors * nPatches;
-        for (size_t prb = 0; prb < nProbes; prb++)
+        for (size_t prb = 0; prb < nProbes; ++prb)
         {
             descriptorFusionScores[prb] /= (double)nDescriptors;        // Average of accumulated patch-based scores
             combinedFusionScores[prb] /= (double)nCombined;             // Average of accumulated (patch,descriptor)-based scores
@@ -3645,11 +3659,11 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 
     // Load positive stills and extract features
     logger << "Loading positive enroll image stills..." << std::endl;
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {
         std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".tif";
         std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
     }
 
@@ -3659,17 +3673,17 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     bfs::directory_iterator endDir;
     std::string seq;    
     int sn = 1;                                                 // session number
-    for (int pn = 1; pn <= PORTAL_QUANTITY; pn++)               // portal number
-    for (auto it = types.begin(); it != types.end(); ++it)      // portal type
-    for (int cn = 1; cn <= CAMERA_QUANTITY; cn++)               // camera number
+    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn)               // portal number
+    for (auto pt = types.begin(); pt != types.end(); ++pt)      // portal type
+    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
     {
-        seq = buildChokePointSequenceString(pn, *it, sn, cn);
+        seq = buildChokePointSequenceString(pn, *pt, sn, cn);
         logger << "Loading probe images and extracting features from sequence " << seq << "..." << std::endl;
 
         // Add ROI to corresponding sample vectors according to individual IDs            
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
+        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
         {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *it, sn, cn, id) + "/";
+            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
             if (bfs::is_directory(dirPath))
             {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
@@ -3680,7 +3694,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
                         {                            
                             std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
                                                                         false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-                            for (size_t p = 0; p < nPatches; p++)
+                            for (size_t p = 0; p < nPatches; ++p)
                                 fvProbeLoadedSamples[p].push_back(hog.compute(patches[p]));
 
                             probesLoadedID.push_back(buildChokePointIndividualID(id, true));
@@ -3696,7 +3710,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     // load negatives from pre-generated files
     size_t dimsNegatives[2]{ nPatches, 0 };                             // dynamically fill patches from file loading
     xstd::mvector<2, FeatureVector> fvNegativeSamples(dimsNegatives);   // [patch][negative](FeatureVector)
-    for (int p = 0; p < nPatches; p++)
+    for (int p = 0; p < nPatches; ++p)
     {
         std::string strPatch = std::to_string(p);
         std::string negativeTrainFile = negativesDir + "negatives-patch" + strPatch + ".data";
@@ -3715,24 +3729,24 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     double hardcodedFoundMin = 0;               // Min found using 'FullChokePoint' test
     double hardcodedFoundMax = 0.675058;        // Max found using 'FullChokePoint' test
     size_t nProbesLoaded = fvProbeLoadedSamples[0].size();
-    for (int p = 0; p < nPatches; p++)
+    for (int p = 0; p < nPatches; ++p)
     {
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
             fvPositiveSamples[pos][p] = normalizeOverAll(MIN_MAX, fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
-        for (size_t prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t prb = 0; prb < nProbesLoaded; ++prb)
             fvProbeLoadedSamples[p][prb] = normalizeOverAll(MIN_MAX, fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
     }
     #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
 
     // train and test ESVM
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {        
         std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
         xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
         std::string posID = buildChokePointIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
         {
             // train with positive extracted features and negative loaded features
             std::string strPatch = std::to_string(p);
@@ -3758,21 +3772,21 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 
         logger << "Starting score fusion and normalization for '" << posID << "'..." << std::endl;
         
-        /* ----------------------------------------------
+        /* ---------------------------------------------------
            (16|128) use feature extraction on probe images
-        ---------------------------------------------- */
+        --------------------------------------------------- */
         #if PROC_READ_DATA_FILES & 0b10010000
 
         // accumulated sum of scores for score fusion
         size_t nProbesLoaded = probePatchScoresLoaded[0].size();
         probeFusionScoresLoaded = std::vector<double>(nProbesLoaded, 0.0);
-        for (size_t p = 0; p < nPatches; p++)
-            for (size_t prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t p = 0; p < nPatches; ++p)
+            for (size_t prb = 0; prb < nProbesLoaded; ++prb)
                 probeFusionScoresLoaded[prb] += probePatchScoresLoaded[p][prb];
 
         // average accumulated scores and execute post-fusion normalization
         // also find ground truths of feature vectors
-        for (size_t prb = 0; prb < nProbesLoaded; prb++)
+        for (size_t prb = 0; prb < nProbesLoaded; ++prb)
         {
             probeGroundTruthsLoaded.push_back(probesLoadedID[prb] == posID ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
             probeFusionScoresLoaded[prb] /= (double)nPatches;
@@ -3793,12 +3807,12 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         // accumulated sum of scores for score fusion
         size_t nProbesPreGen = probePatchScoresPreGen[0].size();
         probeFusionScoresPreGen = std::vector<double>(nProbesPreGen, 0.0);
-        for (size_t p = 0; p < nPatches; p++)
-            for (size_t prb = 0; prb < nProbesPreGen; prb++)
+        for (size_t p = 0; p < nPatches; ++p)
+            for (size_t prb = 0; prb < nProbesPreGen; ++prb)
                 probeFusionScoresPreGen[prb] += probePatchScoresPreGen[p][prb];
         
         // average accumulated scores and execute post-fusion normalization
-        for (size_t prb = 0; prb < nProbesPreGen; prb++)
+        for (size_t prb = 0; prb < nProbesPreGen; ++prb)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
         probeFusionScoresPreGen = normalizeClassScores(MIN_MAX, probeFusionScoresPreGen);
         
@@ -3936,7 +3950,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
 
     // Add samples to containers
     logger << "Loading positives image for all test sequences..." << std::endl;
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {        
         // Add additional positive representations as requested
         if (useSyntheticPositives)
@@ -3952,10 +3966,10 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
             matPositiveSamples[pos] = xstd::mvector<2, cv::Mat>(dimsRepresentation);
 
             /// ############################################# #pragma omp parallel for
-            for (size_t r = 0; r < nRepresentations; r++)
+            for (size_t r = 0; r < nRepresentations; ++r)
             {
                 std::vector<cv::Mat> patches = imSplitPatches(representations[r], patchCounts);
-                for (size_t p = 0; p < nPatches; p++)
+                for (size_t p = 0; p < nPatches; ++p)
                     matPositiveSamples[pos][r][p] = patches[p];
             }
         }
@@ -3965,7 +3979,7 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
             //// matPositiveSamples[pos] = std::vector< std::vector< cv::Mat> >(1);
             std::vector<cv::Mat> patches = imPreprocess(positiveImageStills[pos].Path, imageSize, patchCounts,
                                                         ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_COLOR);
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
                 matPositiveSamples[pos][0][p] = patches[p];
         }
     }
@@ -3973,11 +3987,11 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
     /// ################################################################################ DEBUG DISPLAY POSITIVES (+SYNTH)
     /*
     logger << "SHOWING DEBUG POSITIVE SAMPLES" << std::endl;
-    for (int i = 0; i < nPositives; i++)
+    for (int i = 0; i < nPositives; ++i)
     {
-        for (int j = 0; j < matPositiveSamples[i].size(); j++)
+        for (int j = 0; j < matPositiveSamples[i].size(); ++j)
         {
-            for (int k = 0; k < matPositiveSamples[i][j].size(); k++)
+            for (int k = 0; k < matPositiveSamples[i][j].size(); ++k)
             {
                 cv::imshow(WINDOW_NAME, matPositiveSamples[i][j][k]);
                 cv::waitKey(500);
@@ -4007,15 +4021,15 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
 
     // Convert unique positive samples (or with synthetic representations)
     /// ################################################## #pragma omp parallel for    
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {                
         /// ################################################## #pragma omp parallel for
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
         {
-            for (size_t d = 0; d < nDescriptors; d++)
+            for (size_t d = 0; d < nDescriptors; ++d)
             {                
                 /// ################################################## #pragma omp parallel for
-                for (int r = 0; r < nRepresentations; r++)
+                for (int r = 0; r < nRepresentations; ++r)
                 {
                     // switch to (i,p,fe,r) order for (patch,feature)-based training of sample representations
                     #if ESVM_USE_HOG
@@ -4032,45 +4046,43 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
                 // DUPLICATE EVEN MORE REPRESENTATIONS TO HELP LIBSVM PROBABILITY ESTIMATES CROSS-VALIDATION
                 // Add x-times the number of representations
                 if (nDuplications > 1)
-                    for (size_t r = 0; r < nRepresentations; r++)
-                        for (size_t dup = 1; dup < nDuplications; dup++)
+                    for (size_t r = 0; r < nRepresentations; ++r)
+                        for (size_t dup = 1; dup < nDuplications; ++dup)
                             fvPositiveSamples[pos][p][d].push_back(fvPositiveSamples[pos][p][d][r]);
             }
         }
     }
     nRepresentations *= nDuplications;
-    for (size_t d = 0; d < nDescriptors; d++)
+    for (size_t d = 0; d < nDescriptors; ++d)
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
     // Load negative samples from ChokePoint dataset
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
-    int sn = 1;     // session number    
-    for (int pn = 1; pn <= PORTAL_QUANTITY; pn++)
+    int sn = 1;                                                 // session number    
+    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
+    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
     {
-        for (auto it = types.begin(); it != types.end(); ++it)
-        {
-            for (int cn = 1; cn <= CAMERA_QUANTITY; cn++)
-            {
-                std::string seq = buildChokePointSequenceString(pn, *it, sn, cn);
-                logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
+        std::string seq = buildChokePointSequenceString(pn, *pt, sn, cn);
+        logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
 
-                // Add ROI to corresponding sample vectors
-                for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
+        // Add ROI to corresponding sample vectors
+        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
+        {
+            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+            if (bfs::is_directory(dirPath))
+            {
+                for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
                 {
-                    std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *it, sn, cn, id) + "/";
-                    if (bfs::is_directory(dirPath))
-                    {
-                        for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
-                        {
-                            if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
-                            {                                
-                                size_t neg = matNegativeSamples.size();
-                                matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-                                for (size_t p = 0; p < nPatches; p++)
-                                    matNegativeSamples[neg][p] = patches[p];
+                    if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
+                    {                                
+                        size_t neg = matNegativeSamples.size();
+                        matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+                        std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
+                                                                    ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                        for (size_t p = 0; p < nPatches; ++p)
+                            matNegativeSamples[neg][p] = patches[p];
     } } } } } } }   // End of negatives loading
 
     // Load probe samples
@@ -4081,11 +4093,11 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
         std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts, 
                                                     ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
             matProbeSamples[prb][p] = patches[p];
 
         probeID.push_back(strID);
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
             probeGroundTruth[pos].push_back(strID == positivesID[pos] ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
     }
     */
@@ -4129,7 +4141,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     xstd::mvector<2, ESVM> esvm(dimsESVM);          // [positive][patch](ESVM)
 
     logstream logger(LOGGER_FILE);
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {
         std::string posID = positivesID[pos];
         logger << "Starting for '" << posID << "'..." << std::endl;
@@ -4142,7 +4154,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         std::vector<double> probeFusionScoresNormGradualPostNorm;   // post-fusion normalization of scores obtained from gradual normalization
         std::vector<double> probeFusionScoresNormFinalPostNorm;     // post-fusion normalization of scores obtained from final normalization
         std::vector<double> probeFusionScoresNormSkippedPostNorm;   // post-fusion normalization of scores obtained from skipped normalization
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
         {
             // run training / testing from files            
             std::vector<double> probePatchScores;
@@ -4174,7 +4186,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
             if (probeFusionScoresNormGradual.size() == 0)
                 probeFusionScoresNormGradual = normPatchScores;                 // initialize in case of first run
             else
-                for (size_t prb = 0; prb < nProbes; prb++)
+                for (size_t prb = 0; prb < nProbes; ++prb)
                     probeFusionScoresNormGradual[prb] += normPatchScores[prb];  // gradually accumulate normalized scores       
         } 
 
@@ -4183,18 +4195,18 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
         // score fusion of patches
         probeFusionScoresNormFinal = std::vector<double>(nProbes);
         probeFusionScoresNormSkipped = std::vector<double>(nProbes);
-        for (size_t prb = 0; prb < nProbes; prb++)
+        for (size_t prb = 0; prb < nProbes; ++prb)
         {
             probeFusionScoresNormGradual[prb] /= (double)nProbes;               // average of gradually accumulated and normalized patch scores
             double probeScoresSum = 0, probeNormScoresSum = 0;
             std::vector<double> tmpProbeScores;
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {
                 tmpProbeScores.push_back(probeFusionScoresCumul[p][prb]);
                 probeScoresSum += probeFusionScoresCumul[p][prb];               // accumulate across patch scores of corresponding probe 
             }
             std::vector<double> normProbeScores = normalizeClassScores(MIN_MAX, tmpProbeScores);
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
                 probeNormScoresSum += normProbeScores[p];                       // accumulate across normalized patch scores of corresponding probe 
             probeFusionScoresNormFinal[prb] = probeNormScoresSum / (double)nPatches;
             probeFusionScoresNormSkipped[prb] = probeScoresSum / (double)nPatches;
@@ -4306,9 +4318,10 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     
     // load positive target still images, extract features and normalize
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
-    for (size_t pos = 0; pos < nPositives; pos++)
-    {        
-        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+    for (size_t pos = 0; pos < nPositives; ++pos)
+    {
+        std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", 
+                                                    imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
         for (size_t p = 0; p < nPatches; ++p)
             positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);
     }
@@ -4323,7 +4336,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     logger << "Loading probe samples from files..." << std::endl;
     /* /////////////////////////////////////////////////////// ORIGINAL ==> TO REAPPLY AFTER TESTING ////////////////////
     for (size_t p = 0; p < nPatches; ++p)
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
             ESVM::readSampleDataFile(testingSamplesDir + positivesID[pos] + "-probes-hog-patch" + std::to_string(p) + sampleFileExt,
                                      probeSamples[p][pos], probeGroundTruths[pos], sampleFileFormat);                      
     */
@@ -4369,13 +4382,13 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
         {
             logger << "[DEBUG] dir: " << *itPersDir << std::endl;
             #if SKIP_EXTRA_PERSON_DIR
-            if (*itPersDir == "extra") {
+            if (itPersDir->path().filename() == "extra") {
                 logger << "[DEBUG] 'extra' person dir skipped..." << std::endl;
                 continue;
             }
             #endif/*SKIP_EXTRA_PERSON_DIR*/
             #if SKIP_TRACK_PERSON_DIR
-            if (*itPersDir == "persons") {
+            if (itPersDir->path().filename() == "persons") {
                 logger << "[DEBUG] 'person_#' track dirs skipped..." << std::endl;
                 continue;
             }
@@ -4386,13 +4399,14 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
                 logger << "[DEBUG] img: " << *itPrb << std::endl;
                 if (bfs::is_regular_file(*itPrb) && itPrb->path().extension() == ".png")
                 {
-                    std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+                    std::vector<cv::Mat> patches = imPreprocess(itPrb->path().string(), imageSize, patchCounts, 
+                                                                false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
                     for (size_t pos = 0; pos < nPositives; ++pos) {  // duplicate only to avoid full refactoring
-                        for (size_t p = 0; p < nPatches; ++p) {
-                            probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));                            
-                        }
-                        bool isPos = positivesDirs[pos] == itPersDir->path().stem().string();
-                        logger << "[DEBUG] GT: " << itPersDir->path().stem().string() << " =?= " << positivesDirs[pos] << " | " << isPos << std::endl;
+                        for (size_t p = 0; p < nPatches; ++p)
+                            probeSamples[p][pos].push_back(normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false));
+                        std::string prbId = itPersDir->path().stem().string();
+                        bool isPos = positivesDirs[pos] == prbId;
+                        logger << "[DEBUG] GT: " << prbId << " =?= " << positivesDirs[pos] << " | " << isPos << std::endl;
                         probeGroundTruths[pos].push_back(isPos ? 1 : -1);
                     }
                 }
@@ -4415,8 +4429,8 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
-    for (size_t p = 0; p < nPatches; p++)
-        for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t p = 0; p < nPatches; ++p)
+        for (size_t pos = 0; pos < nPositives; ++pos)
             esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
 
     // testing, score fusion, normalization
@@ -4424,15 +4438,15 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     double minScore = DBL_MAX, maxScore = -DBL_MAX, meanScore = 0, stddevScore = 0, varScore = 0;
     std::vector<double> meanScorePerPatch(nPatches, 0.0), stddevScorePerPatch(nPatches, 0.0), varScorePerPatch(nPatches, 0.0);
     std::vector<size_t> nProbesPerPositive(nPositives, 0);
-    for (size_t pos = 0; pos < nPositives; pos++) 
+    for (size_t pos = 0; pos < nPositives; ++pos) 
     {
         nProbesPerPositive[pos] = probeSamples[0][pos].size();   // variable number of probes according to tested positive
         classificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         minmaxClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         zscoreClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
-        for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
+        for (size_t prb = 0; prb < nProbesPerPositive[pos]; ++prb)
         {            
-            for (size_t p = 0; p < nPatches; p++)
+            for (size_t p = 0; p < nPatches; ++p)
             {                
                 scores[p][pos].push_back( esvm[p][pos].predict(probeSamples[p][pos][prb]) );
                 classificationScores[pos][prb] += scores[p][pos][prb];                          // score accumulation
@@ -4450,11 +4464,11 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // mean / stddev evaluation
     std::vector<size_t> nTotalPatch(nPatches, 0);
     size_t nTotal = 0;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {        
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
         {
-            for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
+            for (size_t prb = 0; prb < nProbesPerPositive[pos]; ++prb)
             {
                 meanScore += scores[p][pos][prb];
                 meanScorePerPatch[p] += scores[p][pos][prb];
@@ -4465,11 +4479,11 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
         meanScorePerPatch[p] /= (double)nTotalPatch[p];
     }    
     meanScore /= (double)nTotal;
-    for (size_t p = 0; p < nPatches; p++)
+    for (size_t p = 0; p < nPatches; ++p)
     {
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
         {
-            for (size_t prb = 0; prb < nProbesPerPositive[pos]; prb++)
+            for (size_t prb = 0; prb < nProbesPerPositive[pos]; ++prb)
             {
                 varScore += (scores[p][pos][prb] - meanScore) * (scores[p][pos][prb] - meanScore);
                 varScorePerPatch[p] += (scores[p][pos][prb] - meanScorePerPatch[p]) * (scores[p][pos][prb] - meanScorePerPatch[p]);
@@ -4488,7 +4502,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     logger << "Found var classification scores per patch across all probes:    " << featuresToVectorString(varScorePerPatch) << std::endl;
 
     // performance evaluation
-    for (size_t pos = 0; pos < nPositives; pos++)
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {
         logger << "Performance evaluation results (min-max normalization) for target " << positivesID[pos] << ":" << std::endl;
         eval_PerformanceClassificationScores(minmaxClassificationScores[pos], probeGroundTruths[pos]);
@@ -4504,6 +4518,35 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     return passThroughDisplayTestStatus(__func__, SKIPPED);
     #endif/*PROC_ESVM_SIMPLIFIED_WORKING*/
     return passThroughDisplayTestStatus(__func__, PASSED);
+}
+
+/**************************************************************************************************************************
+TEST DEFINITION
+
+
+**************************************************************************************************************************/
+/// TO VALIDATE
+/// This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated negative samples files from the ChokePoint dataset(Sequence 1).
+///
+int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
+{
+
+    
+    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    bfs::directory_iterator endDir;
+    std::string seq;
+    cv::namedWindow(WINDOW_NAME);
+    
+    int sn = 1; // only first sequence for training
+    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
+    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+    {  
+
+
+    } } }   // end chokepoint loops
+
+    return -1;
 }
 
 /*
@@ -4543,7 +4586,7 @@ void eval_PerformanceClassificationScores(std::vector<double> normScores, std::v
     double AUC = calcAUC(FPR, TPR);
     double pAUC10 = calcAUC(FPR, TPR, 0.10);
     double pAUC20 = calcAUC(FPR, TPR, 0.20);
-    for (size_t i = 0; i < FPR.size(); i++)
+    for (size_t i = 0; i < FPR.size(); ++i)
         logger << "(FPR,TPR,PPV)[" << i << "] = " << FPR[i] << "," << TPR[i] << "," << PPV[i] << " | T = " << thresholds[i] << std::endl;
     logger << "AUC = " << AUC << std::endl              // Area Under ROC Curve
            << "pAUC(10%) = " << pAUC10 << std::endl     // Partial Area Under ROC Curve (FPR=10%)
@@ -4574,9 +4617,9 @@ void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
     size_t dimsThresholds[2]{ nTargets, steps + 1 };        
     xstd::mvector<2, double> summaryResults(dimsSummary);   // [target][0: AUC | 1: pAUC(10%) | 2: pAUC(20%) | 3: AUPR](double)
     xstd::mvector<2, ConfusionMatrix> CM(dimsThresholds);   // [target][threshold](ConfusionMatrix)
-    for (size_t pos = 0; pos < nTargets; pos++)
+    for (size_t pos = 0; pos < nTargets; ++pos)
     {
-        for (size_t i = 0; i <= steps; i++)
+        for (size_t i = 0; i <= steps; ++i)
         {
             ConfusionMatrix cm;
             double T = (double)(steps - i) / (double)steps; // Go in reverse threshold order to respect 'calcAUC' requirement
@@ -4594,17 +4637,17 @@ void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
     std::string header = "Target IDs";
     std::vector<std::string> cols = { "      AUC      ", "   pAUC(10%)   ", "   pAUC(20%)   ", "      AUPR     " };
     size_t targetLen = header.size();    
-    for (size_t pos = 0; pos < nTargets; pos++)
+    for (size_t pos = 0; pos < nTargets; ++pos)
         targetLen = std::max(positivesID[pos].size(), targetLen);
     targetLen++;
     header += std::string(targetLen - header.size(), ' ');
-    for (size_t c = 0; c < cols.size(); c++)
+    for (size_t c = 0; c < cols.size(); ++c)
         header += "|" + cols[c];
     logger << header << std::endl << std::string(header.size(), '-') << std::endl;    
-    for (size_t pos = 0; pos < nTargets; pos++)
+    for (size_t pos = 0; pos < nTargets; ++pos)
     {
         logger << positivesID[pos] << std::string(targetLen - positivesID[pos].size() - 1, ' ');
-        for (size_t c = 0; c < cols.size(); c++)
+        for (size_t c = 0; c < cols.size(); ++c)
             logger << " |" << std::setw(cols[c].size() - 1) << summaryResults[pos][c];        
         logger << std::endl;
     }
