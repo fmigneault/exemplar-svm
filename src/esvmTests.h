@@ -39,6 +39,8 @@ void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>&
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
 int passThroughDisplayTestStatus(std::string testName, int error = TestStatus::PASSED);
+template <const int BIT_SIZE>
+std::string displayAsBinary(const int option, bool displayNumeric = true);
 void displayHeader();
 void displayOptions();
 

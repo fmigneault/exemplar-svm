@@ -98,7 +98,7 @@
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
-#define TEST_IMAGE_PREPROCESSING 0
+#define TEST_IMAGE_PREPROCESSING 1
 // Test functionality of 'mvector' generation, dimensions and general behaviour
 #define TEST_MULTI_LEVEL_VECTORS 1
 // Test functionality of all vector normalization functions
@@ -109,8 +109,6 @@
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test classification results with simple XOR data
 #define TEST_ESVM_BASIC_CLASSIFICATION 0
-// Test alternative MATLAB procedure (obsolete)
-#define TEST_ESVM_BASIC_STILL2VIDEO 0
 // Evaluate timing performance for writing/reading and parsing LIBSVM/BINARY samples file
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
@@ -156,6 +154,8 @@
 #define PROC_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
 #define PROC_WRITE_DATA_FILES 1
+// Test alternative MATLAB procedure (obsolete)
+#define PROC_ESVM_BASIC_STILL2VIDEO 0
 // Test training and testing using TITAN reference images against ChokePoint negatives
 #define PROC_ESVM_TITAN 0
 /*

@@ -10,9 +10,14 @@
 #include "generic.h"
 
 #include <iomanip>
+#include <bitset>
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
+
+/* ======================
+    UTILITY FUNCTIONS
+====================== */
 
 // Builds the string as "P#T_S#_C#", if the individual is non-zero, it adds the sub folder as "P#T_S#_C#/ID#"
 std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id)
@@ -196,6 +201,16 @@ int passThroughDisplayTestStatus(std::string testName, int error)
     return error;
 }
 
+template <const int BIT_SIZE>
+std::string displayAsBinary(const int option, bool displayNumeric)
+{
+    std::stringstream ss;
+    std::bitset<BIT_SIZE> binOption(option);
+    ss << binOption;
+    if (displayNumeric) ss << " (" << option << ")";
+    return ss.str();
+}
+
 void displayHeader()
 {
     logstream logger(LOGGER_FILE);
@@ -207,6 +222,7 @@ void displayOptions()
 {
     logstream logger(LOGGER_FILE);
     std::string tab = "   "; 
+
     logger << "Options:" << std::endl
            << tab << "ESVM:" << std::endl
            << tab << tab << "ESVM_USE_HOG:                                  " << ESVM_USE_HOG << std::endl
@@ -239,7 +255,6 @@ void displayOptions()
            << tab << tab << "TEST_PERF_EVAL_FUNCTIONS:                      " << TEST_PERF_EVAL_FUNCTIONS << std::endl
            << tab << tab << "TEST_ESVM_BASIC_FUNCTIONALITY:                 " << TEST_ESVM_BASIC_FUNCTIONALITY << std::endl
            << tab << tab << "TEST_ESVM_BASIC_CLASSIFICATION:                " << TEST_ESVM_BASIC_CLASSIFICATION << std::endl
-           << tab << tab << "TEST_ESVM_BASIC_STILL2VIDEO:                   " << TEST_ESVM_BASIC_STILL2VIDEO << std::endl
            << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_TIMING:            " << TEST_ESVM_READ_SAMPLES_FILE_TIMING << std::endl
            << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY:     " << TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY << std::endl
            << tab << tab << "TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM:     " << TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM << std::endl
@@ -252,20 +267,28 @@ void displayOptions()
            << tab << tab << "TEST_ESVM_MODEL_MEMORY_OPERATIONS:             " << TEST_ESVM_MODEL_MEMORY_OPERATIONS << std::endl
            << tab << tab << "TEST_ESVM_MODEL_MEMORY_PARAM_CHECK:            " << TEST_ESVM_MODEL_MEMORY_PARAM_CHECK << std::endl
            << tab << "PROCEDURES:" << std::endl
-           << tab << tab << "PROC_READ_DATA_FILES:                          " << PROC_READ_DATA_FILES << std::endl
+           << tab << tab << "PROC_READ_DATA_FILES:                          " << displayAsBinary<8>(PROC_READ_DATA_FILES) << std::endl
            << tab << tab << "PROC_WRITE_DATA_FILES:                         " << PROC_WRITE_DATA_FILES << std::endl
+           << tab << tab << "PROC_ESVM_BASIC_STILL2VIDEO:                   " << PROC_ESVM_BASIC_STILL2VIDEO << std::endl
            << tab << tab << "PROC_ESVM_TITAN:                               " << PROC_ESVM_TITAN << std::endl
            << tab << tab << "PROC_ESVM_SAMAN:                               " << PROC_ESVM_SAMAN << std::endl
            << tab << tab << "PROC_ESVM_SIMPLIFIED_WORKING:                  " << PROC_ESVM_SIMPLIFIED_WORKING << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_CONVERTED_IMAGES:           " << PROC_ESVM_GENERATE_CONVERTED_IMAGES << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
-           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl;
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
+           << tab << tab << "PROC_ESVM_FULL_GENERATION_TESTING:             " << PROC_ESVM_FULL_GENERATION_TESTING << std::endl;
 }
+
+/* ==========
+    TESTS
+========== */
 
 int test_paths()
 {
     #if TEST_PATHS
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
@@ -318,9 +341,9 @@ int test_paths()
 int test_imagePatchExtraction(void)
 {
     #if TEST_IMAGE_PATCH_EXTRACTION
-
     logstream logger(LOGGER_FILE);
-    logger << "Testing image patch extraction..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+
     int rawData[24] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24 };
     cv::Mat testImg(4, 6, CV_32S, rawData);                                         // 6x4 image with above data filled line by line
     std::vector<cv::Mat> testPatches = imSplitPatches(testImg, cv::Size(3, 2));     // 6 patches of 2x2    
@@ -381,8 +404,9 @@ int test_imagePatchExtraction(void)
 int test_imagePreprocessing()
 {
     #if TEST_IMAGE_PREPROCESSING
-
     logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+    
     std::string refImgName = "roiID0003.tif";
     std::string refImgPath = refStillImagesPath + refImgName;
     ASSERT_LOG(bfs::is_regular_file(refImgPath), "Reference image employed for preprocessing test was not found");
@@ -617,6 +641,8 @@ int test_imagePreprocessing()
 int test_multiLevelVectors()
 {
     #if TEST_MULTI_LEVEL_VECTORS
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     size_t vdim = 6;
     FeatureVector v1{  1,  2,  3,  4,  5,  6 };
@@ -721,6 +747,8 @@ int test_multiLevelVectors()
 int test_normalizationFunctions()
 {
     #if TEST_NORMALIZATION
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // testing values
     FeatureVector v1 { -1, 2, 3, 4, 5, 14 };
@@ -731,7 +759,9 @@ int test_normalizationFunctions()
     FeatureVector v2_norm = { 1, 0.5, 0.5, 0.125, 0.25, 0 };
     std::vector<FeatureVector> v = { v1, v2 };
 
-    // normal operation
+    /* ---------------------
+        normal operation 
+    --------------------- */
 
     ASSERT_LOG(normalize(MIN_MAX, 0.50, -1.0, 1.0) == 0.75,  "Value should have been normalized with min-max rule");
     ASSERT_LOG(normalize(MIN_MAX, 1.00, -1.0, 1.0) == 1.00,  "Value should have been normalized with min-max rule");
@@ -812,10 +842,11 @@ int test_normalizationFunctions()
     ASSERT_LOG(s0mid == 0.5, "Indifferent class score should be normalized as middle similarity");
     ASSERT_LOG(sprob == 0.75, "Half-probable positive class score should be normalized as 3/4 simiarity");
 
-    // exception cases
+    /* --------------------
+        exception cases 
+    -------------------- */
 
     double dummyValue;
-    logstream logger(LOGGER_FILE);
     FeatureVector vEmpty;
     try { 
         normalize(MIN_MAX, 1.0, 1.0, -1.0);
@@ -878,6 +909,8 @@ int test_normalizationFunctions()
 int test_performanceEvaluationFunctions()
 {
     #if TEST_PERF_EVAL_FUNCTIONS
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // test basic confusion matrix operations
     ASSERT_LOG(calcTPR(2250, 250) == 0.9,  "Invalid calculation result for TPR");
@@ -907,7 +940,6 @@ int test_performanceEvaluationFunctions()
         ---------------------------------------------------------------------------
         TEST       |             1 |           0.1 |           0.2 |           0.8
     */
-    logstream logger(LOGGER_FILE);
     xstd::mvector<2, double> scores;
     xstd::mvector<2, int> groundTruths;
     std::vector<std::string> targets = { "TEST" };
@@ -927,13 +959,10 @@ int test_performanceEvaluationFunctions()
 int test_ESVM_BasicFunctionalities(void)
 {
     #if TEST_ESVM_BASIC_FUNCTIONALITY
-
-    // ------------------------------------------------------------------------------------------------------------------------
-    // window to display loaded images and stream for console+file output
-    // ------------------------------------------------------------------------------------------------------------------------    
-    cv::namedWindow(WINDOW_NAME);
     logstream logger(LOGGER_FILE);
-    logger << "Starting basic Exemplar-SVM functionality test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+  
+    cv::namedWindow(WINDOW_NAME);
 
     // ------------------------------------------------------------------------------------------------------------------------
     // C++ parameters
@@ -1069,12 +1098,8 @@ int test_ESVM_BasicFunctionalities(void)
 int test_ESVM_BasicClassification(void)
 {
     #if TEST_ESVM_BASIC_CLASSIFICATION
-
-    // ------------------------------------------------------------------------------------------------------------------------
-    // stream for console+file output
-    // ------------------------------------------------------------------------------------------------------------------------        
     logstream logger(LOGGER_FILE);
-    logger << "Starting basic Exemplar-SVM classification test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // ------------------------------------------------------------------------------------------------------------------------
     // training ESVM with samples (XOR)
@@ -1134,9 +1159,8 @@ int test_ESVM_BasicClassification(void)
 int test_ESVM_ReadSampleFile_libsvm()
 {
     #if TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM
-
     logstream logger(LOGGER_FILE);
-    logger << "Starting Exemplar-SVM LIBSVM sample file reading test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-file/";
@@ -1350,9 +1374,8 @@ int test_ESVM_ReadSampleFile_libsvm()
 int test_ESVM_ReadSampleFile_binary()
 {  
     #if TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY
-
     logstream logger(LOGGER_FILE);
-    logger << "Starting Exemplar-SVM BINARY sample file reading test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // create test sample files inside test directory
     std::string testDir = "test_sample-read-binary-file/";
@@ -1430,8 +1453,9 @@ int test_ESVM_ReadSampleFile_binary()
 int test_ESVM_ReadSampleFile_compare()
 {    
     #if TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE
-
     logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };    
     size_t nPatches = 9;
     size_t nPositives = positivesID.size();
@@ -1510,12 +1534,13 @@ int test_ESVM_ReadSampleFile_compare()
 int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
 { 
     #if TEST_ESVM_READ_SAMPLES_FILE_TIMING
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
     ASSERT_LOG(nFeatures > 0, "Number of features must be greater than zero");
     
     // generate test samples file 
-    logstream logger(LOGGER_FILE);
     logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
     std::string timingSampleFileName_libsvm = "test_timing-read-samples.data";
     std::string timingSampleFileName_binary = "test_timing-read-samples.bin";
@@ -1556,6 +1581,8 @@ int test_ESVM_ReadSampleFile_timing(size_t nSamples, size_t nFeatures)
 int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
 {
     #if TEST_ESVM_WRITE_SAMPLES_FILE_TIMING
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     ASSERT_LOG(nSamples > 0, "Number of samples must be greater than zero");
     ASSERT_LOG(nFeatures > 0, "Number of features must be greater than zero");
@@ -1568,7 +1595,6 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
         // generate dummy data        
         std::vector<FeatureVector> samples;
         std::vector<int> targetOutputs;
-        logstream logger(LOGGER_FILE);
         logger << "Generating dummy test samples file for timing evaluation..." << std::endl;
         generateDummySamples(samples, targetOutputs, nSamples, nFeatures);
 
@@ -1603,9 +1629,10 @@ int test_ESVM_WriteSampleFile_timing(size_t nSamples, size_t nFeatures)
 int test_ESVM_SaveLoadModelFile_libsvm()
 {    
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_LIBSVM
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // create test model files inside test directory
-    logstream logger(LOGGER_FILE);
     std::string testDir = "test_model-read-libsvm-file/";
     bfs::create_directory(testDir);
     std::string validModelFileName = testDir + "test_valid-model-libsvm.model";
@@ -1658,9 +1685,10 @@ int test_ESVM_SaveLoadModelFile_libsvm()
 int test_ESVM_SaveLoadModelFile_binary()
 {
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_PARSER_BINARY
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // create test model files inside test directory
-    logstream logger(LOGGER_FILE);
     std::string testDir = "test_model-read-binary-file/";
     bfs::create_directory(testDir);
     std::string validModelFileName = testDir + "test_valid-model-binary.model";
@@ -1750,6 +1778,8 @@ int test_ESVM_SaveLoadModelFile_binary()
 int test_ESVM_SaveLoadModelFile_compare()
 {
     #if TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // create test model files inside test directory and create testing data
     std::string testDir = "test_model-read-compare-file/";
@@ -1821,9 +1851,10 @@ int test_ESVM_SaveLoadModelFile_compare()
 int test_ESVM_ModelFromStructSVM()
 {
     #if TEST_ESVM_MODEL_STRUCT_SVM_PARAMS
-    
     logstream logger(LOGGER_FILE);
-    logger << "Starting ESVM model resetting evaluation using predefined 'svm_model' struct..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+
+    logger << "Testing ESVM model resetting evaluation using predefined 'svm_model' struct..." << std::endl;
     try
     {
         // verify valid model setting
@@ -1968,11 +1999,11 @@ int test_ESVM_ModelFromStructSVM()
 int test_ESVM_ModelMemoryOperations()
 {
     #if TEST_ESVM_MODEL_MEMORY_OPERATIONS
-
     logstream logger(LOGGER_FILE);
-    logger << "Starting ESVM model memory operations evaluation (ctor, copy, move, operator=, reset, dtor)..." << std::endl;
-    std::string modelFileName = "test_model-memory-operations.model";
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
+    logger << "Testing ESVM model memory operations evaluation (ctor, copy, move, operator=, reset, dtor)..." << std::endl;
+    std::string modelFileName = "test_model-memory-operations.model";
     svm_model* model;
     try {   // scope to call ESVM destructors before actual end of test
         try
@@ -2089,11 +2120,11 @@ int test_ESVM_ModelMemoryOperations()
 int test_ESVM_ModelMemoryParamCheck()
 {
     #if TEST_ESVM_MODEL_MEMORY_PARAM_CHECK
-
     logstream logger(LOGGER_FILE);
-    logger << "Starting ESVM model resetting evaluation and validation of updated parameters..." << std::endl;
-    std::string modelFileName = "test_model2-memory-param-reset.model";
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
+    logger << "Testing ESVM model resetting evaluation and validation of updated parameters..." << std::endl;
+    std::string modelFileName = "test_model2-memory-param-reset.model";
     try {   // scope to call ESVM destructors before actual end of test
 
         svm_model *model1, *model2;
@@ -2216,11 +2247,15 @@ int test_ESVM_ModelMemoryParamCheck()
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
+/* ===============
+    PROCEDURES
+=============== */
+
 int proc_readDataFiles()
 {
     #if PROC_READ_DATA_FILES
-
-    int err = PASSED;
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test ['PROC_READ_DATA_FILES'=" << displayAsBinary<8>(PROC_READ_DATA_FILES) << "]..." << std::endl;
 
     #if PROC_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -2304,14 +2339,14 @@ TEST DEFINITION (individual IDs & corresponding 'person' ROIs)
 ******************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
 {
-    #if TEST_ESVM_BASIC_STILL2VIDEO
+    #if PROC_ESVM_BASIC_STILL2VIDEO
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // ------------------------------------------------------------------------------------------------------------------------
-    // window to display loaded images and stream for console+file output
+    // window to display loaded images and initialization
     // ------------------------------------------------------------------------------------------------------------------------    
     cv::namedWindow(WINDOW_NAME);
-    logstream logger(LOGGER_FILE);
-    logger << "Starting single sample per person still-to-video test..." << std::endl;
     int nPatches = patchCounts.width*patchCounts.height;
     if (nPatches == 0) nPatches = 1;
 
@@ -2806,9 +2841,9 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
         return passThroughDisplayTestStatus(__func__, -2);
     }
 
-    #else/*TEST_ESVM_BASIC_STILL2VIDEO*/
+    #else/*!PROC_ESVM_BASIC_STILL2VIDEO*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
-    #endif/*TEST_ESVM_BASIC_STILL2VIDEO*/
+    #endif/*PROC_ESVM_BASIC_STILL2VIDEO*/
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
@@ -2821,6 +2856,9 @@ TEST DEFINITION
 **************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+
     /* Training Targets:        single high quality still image for enrollment */    
     /*std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };*/  // same as Saman paper
     /// change to fit same positives as in SAMAN code
@@ -2844,7 +2882,6 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
-    logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;        
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
@@ -3449,6 +3486,7 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage()
 {
     logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     std::vector< std::vector< std::string > > filenames;    // list if { TRAIN/TEST/ID }   
     std::string dataFileDir = "data_ChokePoint_64x64_HOG-LBP-descriptors_whole-image/";
@@ -3603,10 +3641,10 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtraction_PatchBased()
 {
     #if PROC_READ_DATA_FILES & 0b11110000
-
-    // Paths and logging
     logstream logger(LOGGER_FILE);
-        
+    logger << "Running '" << __func__ << "' test..." << std::endl;
+
+    // Set paths
     ASSERT_LOG(!(PROC_READ_DATA_FILES & 0b10000000) != !(PROC_READ_DATA_FILES & 0b01110000),
                "Invalid 'PROC_READ_DATA_FILES' options flag (128) cannot be used simultaneously with [(16),(32),(64)]"); 
     const std::string hogTypeFilesPreGen = (PROC_READ_DATA_FILES & 0b10000000) ? "-C++" : "-MATLAB";
@@ -3839,6 +3877,8 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives)
 {    
     #if PROC_ESVM_TITAN
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     /* Training Targets: single high quality still image for enrollment */
     std::vector<std::string> positivesID = 
@@ -3881,7 +3921,6 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
 
     // Display and output
     cv::namedWindow(WINDOW_NAME);
-    logstream logger(LOGGER_FILE);
     size_t nPatches = patchCounts.width * patchCounts.height;
     if (nPatches == 0) nPatches = 1;
     logger << "Starting single sample per person still-to-video full ChokePoint test..." << std::endl
@@ -4118,6 +4157,8 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 {    
     #if PROC_ESVM_SAMAN
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     std::vector<std::string> positivesID = { "ID0003", "ID0005", "ID0006", "ID0010", "ID0024" };
     size_t nPositives = positivesID.size();
@@ -4140,7 +4181,6 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
     size_t dimsESVM[2] = { nPositives, nPatches };
     xstd::mvector<2, ESVM> esvm(dimsESVM);          // [positive][patch](ESVM)
 
-    logstream logger(LOGGER_FILE);
     for (size_t pos = 0; pos < nPositives; ++pos)
     {
         std::string posID = positivesID[pos];
@@ -4259,8 +4299,8 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 {
     #if PROC_ESVM_SIMPLIFIED_WORKING
-
     logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     #if PROC_ESVM_SIMPLIFIED_WORKING == 1
     std::string sampleFileExt = ".data";
@@ -4532,12 +4572,13 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
 {
     #if PROC_ESVM_FULL_GENERATION_TESTING
+    logstream logger(LOGGER_FILE);
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     // Extra/External Samples
     std::string samplePath_EX = "./FAST_DT_IMAGES_LOCAL_SEARCH_P1E_S1_C1/";
     ASSERT_LOG(bfs::is_directory(samplePath_EX), "Samples required for test");
     ASSERT_LOG(checkPathEndSlash(samplePath_EX), "Missing ending directory separator");
-    logstream logger(LOGGER_FILE);
     
     /* -----------------------
         SAMPLES CATEGORIES
@@ -4575,6 +4616,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     cv::Size cellSize(2, 2);
     int nBins = 3;
     FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
+
+    logstream POSI("id0003.txt");
+    std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID0003.tif", cv::Size(48, 48), cv::Size(3, 3), false);
+    for (size_t p = 0; p < patches.size(); ++p)
+        POSI << featuresToVectorString(hog.compute(patches[p])) << std::endl;
 
     /* ------------------------------
         FEATURE VECTOR CONTAINERS
@@ -4753,11 +4799,24 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     ------------------ */
     logger << "ESVM training..." << std::endl;
     size_t dimsESVM[2]{ nPositives, nPatches };
-    xstd::mvector<2, ESVM> esvmModels(dimsESVM);        // [target][patch](ESVM)
+    xstd::mvector<2, ESVM> esvmModels(dimsESVM);                                // [target][patch](ESVM)
+    //for (size_t pos = 0; pos < nPositives; ++pos)
+    //    for (size_t p = 0; p < nPatches; ++p)
+    //        esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegNorm[p], positivesID[pos] + "-patch" + std::to_string(p));
 
+    //////////////////////////////////////////////////////
+    // sample files produce different min/max score values
+    scoreRefMin = -0.802784;
+    scoreRefMax = 1.03869;
+    // load files and train ESVM with them
+    size_t dimsNegSampleFromFile[2]{ nPatches, 0 };
+    xstd::mvector<2, FeatureVector> fvNegFromFile(dimsNegSampleFromFile);       // [patch][negative](FeatureVector)
+    for (size_t p = 0; p < nPatches; ++p)                                       // "pre-genrated & normalized negative samples
+        ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", fvNegFromFile[p], BINARY);
     for (size_t pos = 0; pos < nPositives; ++pos)
         for (size_t p = 0; p < nPatches; ++p)
-            esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegNorm[p], positivesID[pos] + "-patch" + std::to_string(p));
+            esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegFromFile[p], positivesID[pos] + "-patch" + std::to_string(p));
+    ///////////////////////////////////////////////////////
 
     /* -----------------
         ESVM TESTING 
@@ -4860,6 +4919,10 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     #endif/*PROC_ESVM_FULL_GENERATION_TESTING*/
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
+
+/* ===========================
+    PERFORMANCE EVALUATION
+=========================== */
 
 /*
     Evaluates various performance mesures of classification scores according to ground truths
