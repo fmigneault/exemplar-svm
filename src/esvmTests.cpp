@@ -424,8 +424,7 @@ int test_imagePreprocessing()
         ASSERT_LOG(refImgPatches[p].size() == cv::Size(16,16), "Reference image should have been split to expected patches dimensions");
 
     std::vector<FeatureVector> hogPatches(nPatches);
-    FeatureExtractorHOG hog;
-    hog.initialize(refImgPatches[0].size(), cv::Size(2, 2), cv::Size(2, 2), cv::Size(2, 2), 3);
+    FeatureExtractorHOG hog(refImgPatches[0].size(), cv::Size(2, 2), cv::Size(2, 2), cv::Size(2, 2), 3);
     for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatches[p] = hog.compute(refImgPatches[p]);
@@ -456,20 +455,19 @@ int test_imagePreprocessing()
     {
         for (int y = 0; y < patchSide; y++)
             for (int x = 0; x < patchSide; x++)                
-                patchData[x + y * patchSide] = (double)refImgPatches[p].at<uchar>(x, y);    // !!!!!!!!!!!!!!!!!!!!! VERY SIMILAR
+                patchData[x + y * patchSide] = (double)refImgPatches[p].at<uchar>(x, y);
         HOG(patchData, hogParams, patchSize, features, 1);
         hogPatchesDbl2[p] = std::vector<double>(features, features + nFeatures);
         logger << refImgName << " hog588-impl-DBL2-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesDbl2[p]) << std::endl;
     }
 
-    // access (NOW PROPERLY ACCESSED DIRECTLY IN HOG_IMPL?)     ---  VALIDATED with fix of issue #2 in 'FeatureExtractorHOG' repo
+    // access
     std::vector<FeatureVector> hogPatchesAccess(nPatches);
     for (size_t p = 0; p < nPatches; ++p)
     {
         hogPatchesAccess[p] = hog.compute(refImgPatches[p]);
         logger << refImgName << " hog588-impl-Access-patch" << std::to_string(p) << ": " << featuresToVectorString(hogPatchesAccess[p]) << std::endl;
     }
-
 
     // employ 'text' image data without image reading            
     double *refImgRawData = new double[refImgSide*refImgSide]{
@@ -4597,9 +4595,9 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
         NORMALIZATION VALUES
     ------------------------- */
     double hogRefMin = 0;
-    double hogRefMax = 0.701021; //0.675058;
-    double scoreRefMin = -5.94396; //-1.578030;
-    double scoreRefMax = -0.261951; //-0.478968;
+    double hogRefMax = 0.704711;  //0.701021; //0.675058;
+    double scoreRefMin = -3.97721; //-5.94396; //-1.578030;
+    double scoreRefMax = 0.675273; //-0.261951; //-0.478968;
 
     try {
 
@@ -4800,22 +4798,22 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     logger << "ESVM training..." << std::endl;
     size_t dimsESVM[2]{ nPositives, nPatches };
     xstd::mvector<2, ESVM> esvmModels(dimsESVM);                                // [target][patch](ESVM)
-    //for (size_t pos = 0; pos < nPositives; ++pos)
-    //    for (size_t p = 0; p < nPatches; ++p)
-    //        esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegNorm[p], positivesID[pos] + "-patch" + std::to_string(p));
-
-    //////////////////////////////////////////////////////
-    // sample files produce different min/max score values
-    scoreRefMin = -0.802784;
-    scoreRefMax = 1.03869;
-    // load files and train ESVM with them
-    size_t dimsNegSampleFromFile[2]{ nPatches, 0 };
-    xstd::mvector<2, FeatureVector> fvNegFromFile(dimsNegSampleFromFile);       // [patch][negative](FeatureVector)
-    for (size_t p = 0; p < nPatches; ++p)                                       // "pre-genrated & normalized negative samples
-        ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", fvNegFromFile[p], BINARY);
     for (size_t pos = 0; pos < nPositives; ++pos)
         for (size_t p = 0; p < nPatches; ++p)
-            esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegFromFile[p], positivesID[pos] + "-patch" + std::to_string(p));
+            esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegNorm[p], positivesID[pos] + "-patch" + std::to_string(p));
+
+    //////////////////////////////////////////////////////
+    //// sample files produce different min/max score values
+    //scoreRefMin = -0.802784;
+    //scoreRefMax = 1.03869;
+    //// load files and train ESVM with them
+    //size_t dimsNegSampleFromFile[2]{ nPatches, 0 };
+    //xstd::mvector<2, FeatureVector> fvNegFromFile(dimsNegSampleFromFile);       // [patch][negative](FeatureVector)
+    //for (size_t p = 0; p < nPatches; ++p)                                       // "pre-genrated & normalized negative samples
+    //    ESVM::readSampleDataFile(negativeSamplesDir + "negatives-hog-patch" + std::to_string(p) + ".bin", fvNegFromFile[p], BINARY);
+    //for (size_t pos = 0; pos < nPositives; ++pos)
+    //    for (size_t p = 0; p < nPatches; ++p)
+    //        esvmModels[pos][p] = ESVM({ fvPosNorm[p][pos] }, fvNegFromFile[p], positivesID[pos] + "-patch" + std::to_string(p));
     ///////////////////////////////////////////////////////
 
     /* -----------------

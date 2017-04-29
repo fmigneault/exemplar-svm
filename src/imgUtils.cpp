@@ -179,10 +179,21 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts)
         // Define and return image patches
         cv::Size patchSize(image.size().width / patchCounts.width, image.size().height / patchCounts.height);
         std::vector<cv::Mat> patches(patchCounts.width * patchCounts.height);
-        int i = 0;
+        int i = 0; 
+        /* NB
+            Because the patches ROI are only a sub-area of the full cv::Mat (whole image in memory), pixels accessed by index via 
+            the 'cv::Mat::data' pointer still refer to the whole image, even if passing the pointer of the created patch ROI variable.
+
+            Because various methods access the pixel data by index offset from such pointer (ex: 'HOG' function with 'FeatureExtractorHOG::compute'),
+            the data pointer of this image as input causes improperly/unexpected indexes calculation as the whole image data is employed instead of
+            only the patch's data.
+
+            We resolve the issue by forcing a 'copyTo' of the patch data, creating a new and distinct array containing only the patch that can be 
+            accessed by index in memory as expected.
+        */
         for (int r = 0; r < image.rows; r += patchSize.height)
             for (int c = 0; c < image.cols; c += patchSize.width)
-                patches[i++] = image(cv::Range(r, r + patchSize.height), cv::Range(c, c + patchSize.width));
+                image(cv::Range(r, r + patchSize.height), cv::Range(c, c + patchSize.width)).copyTo(patches[i++]);
         return patches;
     }
     return std::vector<cv::Mat>();
