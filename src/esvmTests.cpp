@@ -83,7 +83,7 @@ svm_model* buildDummyExemplarSvmModel(int free_sv)
         #endif/*ESVM_USE_PREDICT_PROBABILITY*/
         
         if (!ESVM::checkModelParameters(model))
-            throw std::runtime_error("Dummy 'svm_model' generation did not respect ESVM requirements");
+            THROW("Dummy 'svm_model' generation did not respect ESVM requirements");
     }
     catch (std::exception& ex)
     {
@@ -3295,11 +3295,14 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
 
                     for (size_t pos = 0; pos < nPositives; ++pos)
                         for (size_t r = 0; r < nRepresentations; ++r)
-                            fvPositiveSamples[pos][p][d][r] = normalizePerFeature(MIN_MAX, fvPositiveSamples[pos][p][d][r], minNorm, maxNorm);
+                            fvPositiveSamples[pos][p][d][r] = normalizePerFeature(MIN_MAX, fvPositiveSamples[pos][p][d][r], 
+                                                                                  minNorm, maxNorm, ESVM_FEATURE_NORMALIZATION_CLIP);
                     for (size_t neg = 0; neg < nNegatives; ++neg)
-                        fvNegativeSamples[p][d][neg] = normalizePerFeature(MIN_MAX, fvNegativeSamples[p][d][neg], minNorm, maxNorm);
+                        fvNegativeSamples[p][d][neg] = normalizePerFeature(MIN_MAX, fvNegativeSamples[p][d][neg],
+                                                                           minNorm, maxNorm, ESVM_FEATURE_NORMALIZATION_CLIP);
                     for (size_t prb = 0; prb < nProbes; ++prb)
-                        fvProbeSamples[p][d][prb] = normalizePerFeature(MIN_MAX, fvProbeSamples[p][d][prb], minNorm, maxNorm);
+                        fvProbeSamples[p][d][prb] = normalizePerFeature(MIN_MAX, fvProbeSamples[p][d][prb], 
+                                                                        minNorm, maxNorm, ESVM_FEATURE_NORMALIZATION_CLIP);
                 }
             }
 
@@ -3388,7 +3391,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                         // test probes per patch and normalize scores
                         for (size_t prb = 0; prb < nProbes; ++prb)
                             patchScores[prb] = esvmModels[pos][p][d].predict(fvProbeSamples[p][d][prb]);
-                        std::vector<double> patchScoresNorm = normalizeClassScores(MIN_MAX, patchScores);
+                        std::vector<double> patchScoresNorm = normalizeClassScores(MIN_MAX, patchScores, ESVM_SCORE_NORMALIZATION_CLIP);
 
                         /*########################################### DEBUG */
                         std::string strPatch = std::to_string(p);
@@ -3435,7 +3438,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 }
 
                 // Normalization of scores post-fusion
-                std::vector<double> combinedScoresNorm = normalizeClassScores(MIN_MAX, combinedScoresRaw);
+                std::vector<double> combinedScoresNorm = normalizeClassScores(MIN_MAX, combinedScoresRaw, ESVM_SCORE_NORMALIZATION_CLIP);
                 logger << "Score fusion (descriptor,patch) with post-fusion normalization for '" << positivesID[pos] << "':" << std::endl
                        << featuresToVectorString(combinedScoresNorm) << std::endl;
 
@@ -3466,8 +3469,8 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
             
     } // End session loop 
-
     logger << "Test complete" << std::endl;
+    
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
@@ -3768,9 +3771,11 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     for (int p = 0; p < nPatches; ++p)
     {
         for (size_t pos = 0; pos < nPositives; ++pos)
-            fvPositiveSamples[pos][p] = normalizeOverAll(MIN_MAX, fvPositiveSamples[pos][p], hardcodedFoundMin, hardcodedFoundMax);
+            fvPositiveSamples[pos][p] = normalizeOverAll(MIN_MAX, fvPositiveSamples[pos][p], 
+                                                         hardcodedFoundMin, hardcodedFoundMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         for (size_t prb = 0; prb < nProbesLoaded; ++prb)
-            fvProbeLoadedSamples[p][prb] = normalizeOverAll(MIN_MAX, fvProbeLoadedSamples[p][prb], hardcodedFoundMin, hardcodedFoundMax);
+            fvProbeLoadedSamples[p][prb] = normalizeOverAll(MIN_MAX, fvProbeLoadedSamples[p][prb], 
+                                                            hardcodedFoundMin, hardcodedFoundMax, ESVM_FEATURE_NORMALIZATION_CLIP);
     }
     #endif/*TEST_FEATURES_NORMALIZATION_MODE == 3*/
 
@@ -3827,7 +3832,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
             probeGroundTruthsLoaded.push_back(probesLoadedID[prb] == posID ? ESVM_POSITIVE_CLASS : ESVM_NEGATIVE_CLASS);
             probeFusionScoresLoaded[prb] /= (double)nPatches;
         }        
-        probeFusionScoresLoaded = normalizeClassScores(MIN_MAX, probeFusionScoresLoaded);
+        probeFusionScoresLoaded = normalizeClassScores(MIN_MAX, probeFusionScoresLoaded, ESVM_SCORE_NORMALIZATION_CLIP);
         
         // evaluate results with fusioned patch scores
         logger << "Performance evaluation for loaded/extracted probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
@@ -3850,7 +3855,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         // average accumulated scores and execute post-fusion normalization
         for (size_t prb = 0; prb < nProbesPreGen; ++prb)
             probeFusionScoresPreGen[prb] /= (double)nPatches;
-        probeFusionScoresPreGen = normalizeClassScores(MIN_MAX, probeFusionScoresPreGen);
+        probeFusionScoresPreGen = normalizeClassScores(MIN_MAX, probeFusionScoresPreGen, ESVM_SCORE_NORMALIZATION_CLIP);
         
         // evaluate results with fusioned patch scores
         logger << "Performance evaluation for pre-generated probes (no pre-norm, post-fusion norm) of '" << posID << "':" << std::endl;
@@ -4307,7 +4312,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     std::string sampleFileExt = ".bin";
     FileFormat sampleFileFormat = BINARY;
     #else
-    throw std::runtime_error("Unknown 'PROC_ESVM_SIMPLIFIED_WORKING' mode");
+    THROW("Unknown 'PROC_ESVM_SIMPLIFIED_WORKING' mode");
     #endif/*PROC_ESVM_SIMPLIFIED_WORKING*/
 
     // image and patch dimensions 

@@ -105,7 +105,10 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
         hogRefMin = 0;
         hogRefMax = 0.675058;
-
+        // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
+        hogRefMin = 0;
+        hogRefMax = 0.704711;
+        
         // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
         // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
         ///hogRefMin = 0;
@@ -116,22 +119,23 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 1)
         ///hogRefMin = 0;
         ///hogRefMax = 0.695519;
-    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score overall normalization across patches
-
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score overall normalization across patches        
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 2)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 3  // Min-Max per feature normalization across patches
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 3)");
         hogRefMin = {};
         hogRefMax = {};
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 4  // Z-Score per feature normalization across patches
-
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 4)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 5  // Min-Max overall normalization for each patch
-
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 5)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 6  // Z-Score overall normalization for each patch
-
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 6)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 7  // Min-Max per feature normalization for each patch
         ESVM::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
         ESVM::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 8  // Z-Score per feature normalization for each patch
-
+        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 8)");
     #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
     /* --- Score 'hardcoded' normalization values for on-line classification --- */
@@ -140,6 +144,9 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
         scoreRefMin = -1.578030;
         scoreRefMax = -0.478968;
+        // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
+        scoreRefMin = -5.15837;
+        scoreRefMax = 0.156316;
     
         // found min/max using FAST-DT live test 
         ///scoreRefMin = 0.085;         // Testing

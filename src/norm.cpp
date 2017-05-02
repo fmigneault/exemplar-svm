@@ -10,7 +10,7 @@ double normalize(NormType norm, double value, double param1, double param2, bool
         return normalizeMinMax(value, param1, param2, clipValue);
     else if (norm == Z_SCORE)
         return normalizeZScore(value, param1, param2, clipValue);
-    throw std::runtime_error("Undefined normalization method");
+    THROW("Undefined normalization method");
 }
 
 double normalizeMinMax(double value, double min, double max, bool clipValue)
@@ -138,7 +138,7 @@ void findNormParamsOverAll(NormType norm, const std::vector<FeatureVector>& feat
         return;
     }
     
-    throw std::runtime_error("Undefined normalization method");
+    THROW("Undefined normalization method");
 }
 
 void findNormParamsPerFeature(NormType norm, const std::vector<FeatureVector>& featureVectors, 
@@ -192,7 +192,7 @@ void findNormParamsPerFeature(NormType norm, const std::vector<FeatureVector>& f
         return;
     }
     
-    throw std::runtime_error("Undefined normalization method");
+    THROW("Undefined normalization method");
 }
 
 void findNormParamsClassScores(NormType norm, const std::vector<double>& scores, OUT_PARAM double& param1, OUT_PARAM double& param2)

@@ -483,7 +483,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     bool checkModel = model->free_sv == FreeModelState::MODEL || model->free_sv == FreeModelState::MULTI;
 
     if (!(checkParam || checkModel))
-        throw std::runtime_error("Unsupported model 'free_sv' mode");
+        THROW("Unsupported model 'free_sv' mode");
 
     if (checkParam)
     {
@@ -536,7 +536,7 @@ bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::stri
     else if (format == BINARY)
         loadModelFile_binary(modelFilePath);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 
     return isModelTrained();
 }
@@ -658,7 +658,7 @@ bool ESVM::saveModelFile(std::string modelFilePath, FileFormat format) const
         return stat(modelFilePath.c_str(), &buffer) != 1;   // quickly checks if a file exists
     }
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
@@ -733,7 +733,7 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
     else if (format == LIBSVM)
         readSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
@@ -827,7 +827,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     #elif ESVM_READ_LIBSVM_PARSER_MODE == 2
                     int target = parse(spart.c_str());
                     #else
-                    throw std::runtime_error("Undefined parser mode");
+                    THROW("Undefined parser mode");
                     #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
 
                     ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS, "Invalid class label specified in file for ESVM");
@@ -850,7 +850,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     index = parse(spart.substr(0, offset).c_str());
                     value = parse(spart.erase(0, offset + offDelim).c_str());
                     #else
-                    throw std::runtime_error("Undefined parser mode");
+                    THROW("Undefined parser mode");
                     #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
 
                     // end reading index:value if termination index found (-1), otherwise check if still valid index
@@ -908,7 +908,7 @@ void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>&
     else if (format == LIBSVM)
         writeSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
