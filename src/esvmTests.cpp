@@ -4620,11 +4620,6 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     int nBins = 3;
     FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
 
-    logstream POSI("id0003.txt");
-    std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roiID0003.tif", cv::Size(48, 48), cv::Size(3, 3), false);
-    for (size_t p = 0; p < patches.size(); ++p)
-        POSI << featuresToVectorString(hog.compute(patches[p])) << std::endl;
-
     /* ------------------------------
         FEATURE VECTOR CONTAINERS
     ------------------------------ */
@@ -4890,7 +4885,24 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
             prbScores_EX[pos][prb] /= (double)nPatches;
     }
 
-    // display results
+    // calculate performance results
+    int nResultType = 3;    // 3x for FPR,TPR,PPV results
+    size_t dimsResults[3]{ nPositives, nResultType, 0 }; 
+    xstd::mvector<3, double> results(dimsResults);
+    for (size_t pos = 0; pos < nPositives; ++pos)
+        eval_PerformanceClassificationScores(prbScores_S1[pos], probeGroundTruth_S1[pos], results[pos][0], results[pos][1], results[pos][2]);
+    size_t nThresholds = results[0][0].size();
+
+    // display results (combined)
+    logger << "Results combined details for all samples/individuals:" << std::endl;
+    for (size_t t = 0; t < nThresholds; ++t) {
+        logger << "(FPR,TPR,PPV)[" << t << "] = ";
+        for (size_t pos = 0; pos < nPositives; ++pos)
+            logger << results[pos][0][t] << ", " << results[pos][1][t] << ", " << results[pos][2][t] << ", ";
+        logger << std::endl;
+    }
+
+    // display results (summary)    
     logger << "NORMALIZATION VALUES SPECIFIED:" << std::endl
         << "  hogRefMin:    " << hogRefMin << std::endl
         << "  hogRefMax:    " << hogRefMax << std::endl
@@ -4904,11 +4916,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
         << "  S1 - Min/Max: " << minS1 << "/" << maxS1 << std::endl
         << "  S3 - Min/Max: " << minS3 << "/" << maxS3 << std::endl
         << "  EX - Min/Max: " << minEX << "/" << maxEX << std::endl;
-    logger << "Results for samples from ChokePoint S1:" << std::endl;
+    logger << "Results summary for samples from ChokePoint S1:" << std::endl;
     eval_PerformanceClassificationSummary(positivesID, prbScores_S1, probeGroundTruth_S1);
-    logger << "Results for samples from ChokePoint S3:" << std::endl;
+    logger << "Results summary for samples from ChokePoint S3:" << std::endl;
     eval_PerformanceClassificationSummary(positivesID, prbScores_S3, probeGroundTruth_S3);
-    logger << "Results for samples from Fast-DT (extra/external):" << std::endl;
+    logger << "Results summary for samples from Fast-DT (extra/external):" << std::endl;
     eval_PerformanceClassificationSummary(positivesID, prbScores_EX, probeGroundTruth_EX);
 
     } // end try

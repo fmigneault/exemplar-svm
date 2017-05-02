@@ -42,10 +42,10 @@ std::vector<cv::Mat> imSplitPatches(cv::Mat image, cv::Size patchCounts = cv::Si
 // Returns a vector of images combining patches splitting and other preprocessing steps (resizing, grayscale, hist.equal., etc.) 
 std::vector<cv::Mat> imPreprocess(std::string imagePath, cv::Size imSize, cv::Size patchCounts, bool useHistEqual = false,
                                   std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE, 
-                                  cv::InterpolationFlags resizeMode = cv::INTER_LINEAR);
+                                  cv::InterpolationFlags resizeMode = cv::INTER_AREA);
 
 std::vector<cv::Mat> imPreprocess(cv::Mat roi, cv::Size imSize, cv::Size patchCounts, bool useHistEqual = false,
                                   std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE, 
-                                  cv::InterpolationFlags resizeMode = cv::INTER_LINEAR);
+                                  cv::InterpolationFlags resizeMode = cv::INTER_AREA);
 
 #endif/*IMG_UTILS_H*/
