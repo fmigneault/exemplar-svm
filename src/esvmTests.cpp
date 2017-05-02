@@ -4596,8 +4596,8 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     ------------------------- */
     double hogRefMin = 0;
     double hogRefMax = 0.704711;  //0.701021; //0.675058;
-    double scoreRefMin = -3.97721; //-5.94396; //-1.578030;
-    double scoreRefMax = 0.675273; //-0.261951; //-0.478968;
+    double scoreRefMin = -5.15837; //-3.97721; //-5.94396; //-1.578030;
+    double scoreRefMax = 0.156316; // 0.675273; //-0.261951; //-0.478968;
 
     try {
 
