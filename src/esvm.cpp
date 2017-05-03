@@ -1,5 +1,7 @@
 #include "esvm.h"
 #include "esvmOptions.h"
+#include "esvmUtils.h"
+
 #include "generic.h"
 
 #include <sys/stat.h>
@@ -1235,42 +1237,4 @@ svm_node* ESVM::getFeatureNodes(double* features, int featureCount)
     }
     fv[featureCount].index = -1;    // Additional feature value must be (-1,?) to end the vector (see LIBSVM README)
     return fv;
-}
-
-std::string svm_type_name(svm_model *model)
-{
-    if (model == nullptr) return "'null'";
-    return svm_type_name(model->param.svm_type);
-}
-
-std::string svm_type_name(int type)
-{
-    switch (type)
-    {
-        case C_SVC:         return "C_SVC";
-        case NU_SVC:        return "NU_SVC";
-        case ONE_CLASS:     return "ONE_CLASS";
-        case EPSILON_SVR:   return "EPSILON_SVR";
-        case NU_SVR:        return "NU_SVR";
-        default:            return "UNDEFINED (" + std::to_string(type) + ")";
-    }
-}
-
-std::string svm_kernel_name(svm_model *model)
-{
-    if (model == nullptr) return "'null'";
-    return svm_kernel_name(model->param.kernel_type);
-}
-
-std::string svm_kernel_name(int type)
-{
-    switch (type)
-    {
-        case LINEAR:        return "LINEAR";
-        case POLY:          return "POLY";
-        case RBF:           return "RBF";
-        case SIGMOID:       return "SIGMOID";
-        case PRECOMPUTED:   return "PRECOMPUTED";
-        default:            return "UNDEFINED (" + std::to_string(type) + ")";
-    }
 }

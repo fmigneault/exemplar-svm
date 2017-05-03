@@ -10,7 +10,7 @@
 
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
-#define ESVM_USE_HISTOGRAM_EQUALIZATION 0   //1
+#define ESVM_USE_HISTOGRAM_EQUALIZATION 1
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -25,7 +25,7 @@
         1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
         2: apply specific pre-cropping of 'cropped_faces' ROI with ROI ratio defined by 'ESVM_ROI_CROP_RATIO'
 */
-#define ESVM_ROI_PREPROCESS_MODE 0  //2
+#define ESVM_ROI_PREPROCESS_MODE 2
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused

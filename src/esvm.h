@@ -65,11 +65,4 @@ private:
     /*std::unique_ptr<svm_model> esvmModel = nullptr;*/
 };
 
-/* libsvm extra utilities */
-
-std::string svm_type_name(svm_model*);
-std::string svm_type_name(int /*svm_type*/);
-std::string svm_kernel_name(svm_model*);
-std::string svm_kernel_name(int /*kernel_type*/);
-
 #endif/*ESVM_LIBSVM_H*/
