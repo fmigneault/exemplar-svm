@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 2.8)
+project(ExemplarSVM-LIBSVM)
+
+if(MSVC)
+  set(CMAKE_USE_RELATIVE_PATHS ON CACHE INTERNAL "" FORCE)
+endif()
+
+# include cmakes
+include(cmake/FindLibSVM.cmake)
+include(cmake/Findmvector.cmake)
+include(cmake/FindFeatureExtractorHOG.cmake)
+
+# set ESVM
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bld" CACHE PATH "Output directory for application")
+set(ESVM_EXECUTABLE "ExemplarSVM-LIBSVM")
+set(ESVM_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+set(ESVM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(INCLUDES ${INCLUDES} ${ESVM_INCLUDE_DIR})
+add_executable(${ESVM_EXECUTABLE} main.cpp)
+
+# find LIBSVM
+find_package(LibSVM REQUIRED)
+set(LIBS ${LIBS} ${LIBSVM_LIBRARIES})
+set(INCLUDES ${INCLUDES} ${LIBSVM_INCLUDE_DIRS})
+
+# find mvector
+find_package(mvector REQUIRED)
+set(INCLUDES ${INCLUDES} ${MVECTOR_INCLUDE_DIR})
+
+# include/linking
+include_directories(${INCLUDES})
+target_link_libraries(${ESVM_EXECUTABLE} ${LIBS})
