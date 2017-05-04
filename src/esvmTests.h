@@ -38,7 +38,9 @@ bool checkPathEndSlash(std::string path);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
-int passThroughDisplayTestStatus(std::string testName, int error = PASSED);
+int passThroughDisplayTestStatus(std::string testName, int error = TestStatus::PASSED);
+template <const int BIT_SIZE>
+std::string displayAsBinary(const int option, bool displayNumeric = true);
 void displayHeader();
 void displayOptions();
 
@@ -64,7 +66,7 @@ int test_ESVM_ModelMemoryOperations();
 int test_ESVM_ModelMemoryParamCheck();
 
 /* Procedures */
-int proc_ReadDataFiles();
+int proc_readDataFiles();
 int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts);
 int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts);
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_WholeImage();
@@ -73,11 +75,12 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size patchCounts, bool useSyntheticPositives);
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN();
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking();
+int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths, 
-                                          std::vector<double>& FPR, std::vector<double>& TPR);
+                                          std::vector<double>& FPR, std::vector<double>& TPR, std::vector<double>& PPV);
 void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
                                            xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 

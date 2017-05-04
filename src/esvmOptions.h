@@ -16,6 +16,16 @@
 #define ESVM_NEGATIVE_CLASS -1
 #define ESVM_BINARY_HEADER_MODEL "ESVM bin model"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM bin samples"
+// Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
+#define ESVM_ROI_CROP_RATIO 0.80
+/* Employ specific ROI pre-processing operation before further feature extraction operations
+    
+    ESVM_ROI_PREPROCESS_MODE:
+        0: 'normal' procedure without additional ROI pre-processing (using ChokePoint 'cropped_faces')
+        1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
+        2: apply specific pre-cropping of 'cropped_faces' ROI with ROI ratio defined by 'ESVM_ROI_CROP_RATIO'
+*/
+#define ESVM_ROI_PREPROCESS_MODE 2
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused
@@ -26,12 +36,29 @@
 */
 #define ESVM_WEIGHTS_MODE 2
 /*
+    ESVM_FEATURE_NORMALIZATION_MODE:
+        0: no normalization
+        1: normalization min-max overall, across patches
+        2: normalization z-score overall, across patches
+        3: normalization min-max per feature, across patches
+        4: normalization z-score per feature, across patches
+        5: normalization min-max overall, for each patch
+        6: normalization z-score overall, for each patch
+        7: normalization min-max per feature, for each patch
+        8: normalization z-score per feature, for each patch
+*/
+#define ESVM_FEATURE_NORMALIZATION_MODE 1   //7
+// Specify if normalized features need to be clipped if outside of [0,1]
+#define ESVM_FEATURE_NORMALIZATION_CLIP 1
+/*
     ESVM_SCORE_NORMALIZATION_MODE:
         0: no normalization
         1: normalization min-max
         2: normalization z-score
 */
 #define ESVM_SCORE_NORMALIZATION_MODE 1
+// Specify if normalized scores need to be clipped if outside of [0,1]
+#define ESVM_SCORE_NORMALIZATION_CLIP 0
 /*
     ESVM_PARSER_MODE:
         0: stringstream
@@ -44,9 +71,13 @@
    Test options - Enable/Disable a specific test execution
 ------------------------------------------------------------ */
 
-// Specify how the training samples are regrouped into training sequences
-//    0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
-//    1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+/*
+  Specify how the training samples are regrouped into training sequences
+    
+    TEST_CHOKEPOINT_SEQUENCES_MODE:    
+        0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
+        1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+*/
 #define TEST_CHOKEPOINT_SEQUENCES_MODE 0
 // Employ synthetic image generation to increase the positive samples quantity for ESVM training
 #define TEST_USE_SYNTHETIC_GENERATION 0
@@ -78,8 +109,6 @@
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test classification results with simple XOR data
 #define TEST_ESVM_BASIC_CLASSIFICATION 0
-// Test alternative MATLAB procedure (obsolete)
-#define TEST_ESVM_BASIC_STILL2VIDEO 0
 // Evaluate timing performance for writing/reading and parsing LIBSVM/BINARY samples file
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
@@ -125,7 +154,8 @@
 #define PROC_READ_DATA_FILES 0b00000000
 // Outputs extracted feature vectors from loaded images to samples files
 #define PROC_WRITE_DATA_FILES 1
-
+// Test alternative MATLAB procedure (obsolete)
+#define PROC_ESVM_BASIC_STILL2VIDEO 0
 // Test training and testing using TITAN reference images against ChokePoint negatives
 #define PROC_ESVM_TITAN 0
 /*
@@ -143,10 +173,17 @@
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define PROC_ESVM_SIMPLIFIED_WORKING 0
-
+#define PROC_ESVM_SIMPLIFIED_WORKING 2
+// Generate some differnt image types for convenience
+#define PROC_ESVM_GENERATE_CONVERTED_IMAGES 0
 // Generate sample files using various enabled parameters
-#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 0
+// Request binary format sample file generation
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
+// Request libsvm format sample file generation
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
+// Generate from scratch multiple training/testing samples and evaluate them
+#define PROC_ESVM_FULL_GENERATION_TESTING 1
 
 /* ------------------------------------------------------------
    Image paths

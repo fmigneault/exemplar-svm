@@ -23,33 +23,59 @@ public:
     inline std::string getPositiveID(int positiveIndex);    
 
 private:
-    void setConstants();    
+    void setConstants(std::string negativesDir);
     std::vector<std::string> enrolledPositiveIDs;
 
     // Constants
     cv::Size imageSize;
     cv::Size patchCounts;
+    cv::Size windowSize;
     cv::Size blockSize;
     cv::Size blockStride;
     cv::Size cellSize;
     int nBins;
     FeatureExtractorHOG hog;
-
-    bool useHistEqual;
     
     xstd::mvector<2, ESVM> EoESVM; 
 
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
 
-    double hogHardcodedFoundMin;
-    double hogHardcodedFoundMax;
+    /* --- Reference 'hardcoded' normalization values --- */
+    
+    #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max features - overall normalization - across patches
+    double hogRefMin;
+    double hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score features - overall normalization - across patches
+    double hogRefMean;
+    double hogRefStdDev;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 3  // Min-Max features - per feature normalization - across patches
+    FeatureVector hogRefMin;
+    FeatureVector hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 4  // Z-Score features - per feature normalization - across patches
+    FeatureVector hogRefMean;
+    FeatureVector hogRefStdDev;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 5  // Min-Max features - overall normalization - for each patch
+    std::vector<double> hogRefMin;
+    std::vector<double> hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 6  // Z-Score features - overall normalization - for each patch
+    std::vector<double> hogRefMean;
+    std::vector<double> hogRefStdDev;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 7  // Min-Max features - per feature normalization - for each patch
+    std::vector<FeatureVector> hogRefMin;
+    std::vector<FeatureVector> hogRefMax;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 8  // Z-Score features - per feature normalization - for each patch
+    std::vector<FeatureVector> hogRefMean;
+    std::vector<FeatureVector> hogRefStdDev;
+    #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
-    double scoresHardcodedFoundMin;
-    double scoresHardcodedFoundMax;
-
-    double scoresHardcodedFoundMean;
-    double scoresHardcodedFoundStdDev;
+    #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max scores normalization
+    double scoreRefMin;
+    double scoreRefMax;
+    #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score scores normalization    
+    double scoreRefMean;
+    double scoreRefStdDev;
+    #endif/*ESVM_SCORE_NORMALIZATION_MODE*/
 };
 
 #endif/*ESVM_ENSEMBLE_H*/

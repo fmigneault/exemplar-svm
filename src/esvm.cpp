@@ -1,5 +1,7 @@
 #include "esvm.h"
 #include "esvmOptions.h"
+#include "esvmUtils.h"
+
 #include "generic.h"
 
 #include <sys/stat.h>
@@ -483,7 +485,7 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     bool checkModel = model->free_sv == FreeModelState::MODEL || model->free_sv == FreeModelState::MULTI;
 
     if (!(checkParam || checkModel))
-        throw std::runtime_error("Unsupported model 'free_sv' mode");
+        THROW("Unsupported model 'free_sv' mode");
 
     if (checkParam)
     {
@@ -536,7 +538,7 @@ bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::stri
     else if (format == BINARY)
         loadModelFile_binary(modelFilePath);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 
     return isModelTrained();
 }
@@ -658,7 +660,7 @@ bool ESVM::saveModelFile(std::string modelFilePath, FileFormat format) const
         return stat(modelFilePath.c_str(), &buffer) != 1;   // quickly checks if a file exists
     }
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
@@ -733,7 +735,7 @@ void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& 
     else if (format == LIBSVM)
         readSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
@@ -827,7 +829,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     #elif ESVM_READ_LIBSVM_PARSER_MODE == 2
                     int target = parse(spart.c_str());
                     #else
-                    throw std::runtime_error("Undefined parser mode");
+                    THROW("Undefined parser mode");
                     #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
 
                     ASSERT_THROW(target == ESVM_POSITIVE_CLASS || target == ESVM_NEGATIVE_CLASS, "Invalid class label specified in file for ESVM");
@@ -850,7 +852,7 @@ void ESVM::readSampleDataFile_libsvm(std::string filePath, std::vector<FeatureVe
                     index = parse(spart.substr(0, offset).c_str());
                     value = parse(spart.erase(0, offset + offDelim).c_str());
                     #else
-                    throw std::runtime_error("Undefined parser mode");
+                    THROW("Undefined parser mode");
                     #endif/*ESVM_READ_LIBSVM_PARSER_MODE*/
 
                     // end reading index:value if termination index found (-1), otherwise check if still valid index
@@ -908,7 +910,7 @@ void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>&
     else if (format == LIBSVM)
         writeSampleDataFile_libsvm(filePath, sampleFeatureVectors, targetOutputs);
     else
-        throw std::runtime_error("Unsupported file format");
+        THROW("Unsupported file format");
 }
 
 /*
@@ -986,7 +988,7 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     logstream logger(LOGGER_FILE);
 
     svm_problem prob;
-    prob.l = samples.size();    // number of training data        
+    prob.l = (int)samples.size();   // number of training data        
     
     // convert and assign training vectors and corresponding target values for classification 
     prob.y = new double[prob.l];
@@ -1218,7 +1220,7 @@ FeatureVector ESVM::getFeatureVector(svm_node* features)
 */
 svm_node* ESVM::getFeatureNodes(FeatureVector features)
 {
-    return getFeatureNodes(&features[0], features.size());
+    return getFeatureNodes(&features[0], (int)features.size());
 }
 
 /*
@@ -1235,42 +1237,4 @@ svm_node* ESVM::getFeatureNodes(double* features, int featureCount)
     }
     fv[featureCount].index = -1;    // Additional feature value must be (-1,?) to end the vector (see LIBSVM README)
     return fv;
-}
-
-std::string svm_type_name(svm_model *model)
-{
-    if (model == nullptr) return "'null'";
-    return svm_type_name(model->param.svm_type);
-}
-
-std::string svm_type_name(int type)
-{
-    switch (type)
-    {
-        case C_SVC:         return "C_SVC";
-        case NU_SVC:        return "NU_SVC";
-        case ONE_CLASS:     return "ONE_CLASS";
-        case EPSILON_SVR:   return "EPSILON_SVR";
-        case NU_SVR:        return "NU_SVR";
-        default:            return "UNDEFINED (" + std::to_string(type) + ")";
-    }
-}
-
-std::string svm_kernel_name(svm_model *model)
-{
-    if (model == nullptr) return "'null'";
-    return svm_kernel_name(model->param.kernel_type);
-}
-
-std::string svm_kernel_name(int type)
-{
-    switch (type)
-    {
-        case LINEAR:        return "LINEAR";
-        case POLY:          return "POLY";
-        case RBF:           return "RBF";
-        case SIGMOID:       return "SIGMOID";
-        case PRECOMPUTED:   return "PRECOMPUTED";
-        default:            return "UNDEFINED (" + std::to_string(type) + ")";
-    }
 }

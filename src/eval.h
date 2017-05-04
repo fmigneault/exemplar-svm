@@ -44,8 +44,9 @@ double calcACC(int TP, int TN, int FP, int FN);
 double calcACC(ConfusionMatrix cm);
 
 // Area or partial area under ROC curve (AUC or pAUC)
-// Partial area is obtained from zero FPR up to pFPR
-// The function assumes that (FPR,TPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..p] or [0..1])
+// Partial area is obtained from zero FPR up to pFPR (defaults to 1.0 for AUC)
+// The result is divided by the corresponding maximum possible area (full or partial) to obtain a percentage in [0,1] range
+// The function assumes that (FPR,TPR) pairs are sorted in ascending order of FPR (ie: FPR from [0..pFPR] or [0..1])
 double calcAUC(std::vector<double> FPR, std::vector<double> TPR, double pFPR = 1.0);
 double calcAUC(std::vector<ConfusionMatrix> cm, double pFPR = 1.0);
 

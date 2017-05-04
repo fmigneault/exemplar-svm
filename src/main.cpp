@@ -42,12 +42,19 @@ int main(int argc, char* argv[])
           procedure tests
         ---------------- */
 
-        RETURN_ERROR(proc_ReadDataFiles());
+        RETURN_ERROR(proc_readDataFiles());
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo(cv::Size(4, 4)));
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size(48, 48), cv::Size(3, 3), true));
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN());
         RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking());
-        RETURN_ERROR(create_negatives());
+        RETURN_ERROR(proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess());
+
+        /* ------------------------------
+          procedure for file generation
+        ------------------------------ */
+
+        RETURN_ERROR(proc_generateConvertedImageTypes());
+        RETURN_ERROR(proc_createNegativesSampleFiles());
     }
     catch(std::exception& ex)
     {
