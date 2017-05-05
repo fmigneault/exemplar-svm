@@ -47,13 +47,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+set(LIBSVM_ROOT_DIR $ENV{LIBSVM_ROOT_DIR})
+
 # set LIBSVM_INCLUDE_DIR
 find_path ( LIBSVM_INCLUDE_DIR
   NAMES
     svm.h
   PATHS
-    ${LIBSVM_ROOT_DIR}/include
+    ${LIBSVM_ROOT_DIR}
   PATH_SUFFIXES
+	include
     libsvm
     libsvm-2.0/libsvm
   DOC

@@ -4,7 +4,10 @@
 #include "esvm.h"
 
 #include "feHOG.h"
+#if ESVM_HAS_FELBP
 #include "feLBP.h"
+#endif/*ESVM_HAS_FELBP*/
+
 #include "norm.h"
 #include "eval.h"
 #include "logger.h"
@@ -4371,7 +4374,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     for (size_t pos = 0; pos < nPositives; ++pos)
     {
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", 
-                                                    imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+                                                    imageSize, patchCounts, false, "", cv::IMREAD_GRAYSCALE, cv::INTER_LINEAR);
         for (size_t p = 0; p < nPatches; ++p)
             positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);
     }
