@@ -96,7 +96,8 @@ endif ()
 # set LIBSVM_LIBRARY
 find_library(LIBSVM_LIBRARY
 			 NAMES	svm
-			 PATHS	${LIBSVM_ROOT_DIR}/lib
+			 PATHS	${LIBSVM_ROOT_DIR}
+             PATH_SUFFIXES lib
 			 DOC 	"LibSVM library location"
 )
 if (WIN32 AND NOT LIBSVM_LIBRARY)
