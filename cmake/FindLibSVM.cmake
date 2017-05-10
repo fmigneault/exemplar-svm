@@ -50,17 +50,14 @@
 set(LIBSVM_ROOT_DIR $ENV{LIBSVM_ROOT_DIR})
 
 # set LIBSVM_INCLUDE_DIR
-find_path ( LIBSVM_INCLUDE_DIR
-  NAMES
-    svm.h
-  PATHS
-    ${LIBSVM_ROOT_DIR}
-  PATH_SUFFIXES
-	include
-    libsvm
-    libsvm-2.0/libsvm
-  DOC
-    "LibSVM include directory"
+find_path(LIBSVM_INCLUDE_DIR
+		  NAMES svm.h
+		  PATHS	${LIBSVM_ROOT_DIR}
+		  PATH_SUFFIXES
+			include
+			libsvm
+			libsvm-2.0/libsvm
+		  DOC 	"LibSVM include directory"
 )
 
 # set LIBSVM_INCLUDE_DIRS
@@ -97,14 +94,18 @@ if ( LibSVM_FIND_VERSION AND LIBSVM_VERSION_STRING )
 endif ()
 
 # set LIBSVM_LIBRARY
-find_library ( LIBSVM_LIBRARY
-  NAMES
-    svm
-  PATHS
-    ${LIBSVM_ROOT_DIR}/lib
-  DOC
-    "LibSVM library location"
+find_library(LIBSVM_LIBRARY
+			 NAMES	svm
+			 PATHS	${LIBSVM_ROOT_DIR}/lib
+			 DOC 	"LibSVM library location"
 )
+if (WIN32 AND NOT LIBSVM_LIBRARY)
+	find_library(LIBSVM_LIBRARY
+				 NAMES 	libsvm
+				 PATHS 	${LIBSVM_ROOT_DIR}/windows
+				 DOC	"LibSVM library location"
+	)
+endif()
 
 # set LIBSVM_LIBRARIES
 set ( LIBSVM_LIBRARIES ${LIBSVM_LIBRARY} )

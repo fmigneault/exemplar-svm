@@ -2,13 +2,15 @@
 #include "esvmOptions.h"
 #include "esvmUtils.h"
 
-#include "generic.h"
+#include "testing.h"
 
-#include <sys/stat.h>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
 #include <algorithm>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <sys/stat.h>
+#include <vector>
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;

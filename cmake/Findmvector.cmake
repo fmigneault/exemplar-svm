@@ -13,11 +13,8 @@
 set(MVECTOR_ROOT_DIR $ENV{MVECTOR_ROOT_DIR})
 
 # set MVECTOR_INCLUDE_DIR
-find_path ( MVECTOR_INCLUDE_DIR
-  NAMES
-    mvector.h
-  PATHS
-    ${MVECTOR_ROOT_DIR}
-  DOC
-    "mvector include directory"
+find_path(MVECTOR_INCLUDE_DIR
+  NAMES mvector.h
+  PATHS ${MVECTOR_ROOT_DIR}
+  DOC 	"mvector include directory"
 )

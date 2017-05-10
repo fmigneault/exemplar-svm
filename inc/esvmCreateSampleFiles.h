@@ -1,5 +1,5 @@
-#ifndef CREATE_NEGATIVES_H
-#define CREATE_NEGATIVES_H
+#ifndef ESVM_CREATE_NEGATIVES_H
+#define ESVM_CREATE_NEGATIVES_H
 
 #include <string>
 #include <stdlib.h>
@@ -25,4 +25,4 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 /* Utilities */
 xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension);
 
-#endif/*CREATE_NEGATIVES_H*/
+#endif/*ESVM_CREATE_NEGATIVES_H*/

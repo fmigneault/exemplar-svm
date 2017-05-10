@@ -94,7 +94,7 @@
 */
 #define TEST_FEATURES_NORMALIZATION_MODE 3
 // Validates image paths found and with expected format
-#define TEST_PATHS 1
+#define TEST_PATHS 0
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
@@ -211,11 +211,17 @@
    Image paths
 ------------------------------------------------------------ */
 
+#ifdef ESVM_ROOT_PATH
+const std::string refPath = ESVM_ROOT_PATH;
+#else
+const std::string refPath = "..";
+#endif
+
 // Local
-const std::string roiVideoImagesPath = "../img/roi/";                               // Person ROI tracks obtained from face detection + tracking
-const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
-const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
-const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
+const std::string roiVideoImagesPath = refPath + "/img/roi/";                           // Person ROI tracks obtained from face detection + tracking
+const std::string refStillImagesPath = refPath + "/img/ref/";                           // Reference high quality still ROIs for enrollment in SSPP
+const std::string negativeSamplesDir = refPath + "/data/negatives/";                    // Pre-generated ChokePoint negative samples files
+const std::string testingSamplesDir  = refPath + "/data/testing/";                      // Pre-generated ChokePoint probe samples files
 // OpenCV
 const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
 // ChokePoint

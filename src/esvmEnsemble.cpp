@@ -1,8 +1,9 @@
 #include "esvmEnsemble.h"
 #include "esvmOptions.h"
-#include "generic.h"
-#include "norm.h"
+
 #include "imgUtils.h"
+#include "logging.h"
+#include "norm.h"
 
 #include <fstream>
 #include <sstream>

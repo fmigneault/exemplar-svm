@@ -1,8 +1,15 @@
-#include "logger.h"
-#include "generic.h"
+/* MAIN */
+
+// ESVM
 #include "esvmOptions.h"
 #include "esvmTests.h"
-#include "createSampleFiles.h"
+#include "esvmCreateSampleFiles.h"
+
+// CommonCpp
+#include "testing.h"
+#include "logging.h"
+#include "generic.h"
+#include "timing.h"
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;

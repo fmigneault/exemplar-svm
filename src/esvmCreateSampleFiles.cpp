@@ -1,4 +1,7 @@
-#include "createSampleFiles.h"
+#include "esvmCreateSampleFiles.h"
+
+#include "datasetChokePoint.h"
+#include "testing.h"
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;

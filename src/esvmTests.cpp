@@ -1,5 +1,6 @@
 ﻿#include "esvmOptions.h"
 #include "esvmTests.h"
+#include "esvmTypes.h"
 #include "esvmUtils.h"
 #include "esvm.h"
 
@@ -8,14 +9,7 @@
 #include "feLBP.h"
 #endif/*ESVM_HAS_FELBP*/
 
-#include "norm.h"
-#include "eval.h"
-#include "logger.h"
-#include "imgUtils.h"
-#include "generic.h"
-
-#include <iomanip>
-#include <bitset>
+#include "CommonCpp.h"
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -23,19 +17,6 @@ namespace bfs = boost::filesystem;
 /* ======================
     UTILITY FUNCTIONS
 ====================== */
-
-// Builds the string as "P#T_S#_C#", if the individual is non-zero, it adds the sub folder as "P#T_S#_C#/ID#"
-std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id)
-{
-    std::string dir = "P" + std::to_string(portal) + (type == ENTER ? "E" : type == LEAVE ? "L" : "") +
-                      "_S" + std::to_string(session) + "_C" + std::to_string(camera);
-    return id > 0 ? dir + "/" + buildChokePointIndividualID(id) : dir;
-}
-
-std::string buildChokePointIndividualID(int id, bool withPrefixID)
-{
-    return (withPrefixID ? "ID" : "") + std::string(id > 9 ? 2 : 3, '0').append(std::to_string(id));
-}
 
 // builds a dummy model with all valid parameters to test read/write procedures
 svm_model* buildDummyExemplarSvmModel(int free_sv)
@@ -152,12 +133,6 @@ void destroyDummyExemplarSvmModelContent(svm_model *model)
 }
 */
 
-bool checkPathEndSlash(std::string path)
-{
-    char end = *path.rbegin();
-    return end == '/' || end == '\\';
-}
-
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures)
 {
     std::srand(0);
@@ -194,26 +169,6 @@ bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_
     generateDummySamples(samples, outputs, nSamples, nFeatures);
     ESVM::writeSampleDataFile(filePath, samples, outputs, BINARY);
     return bfs::is_regular_file(filePath);
-}
-
-int passThroughDisplayTestStatus(std::string testName, int error)
-{
-    logstream logger(LOGGER_FILE);
-    if      (error == SKIPPED)  logger << "Test '" << testName << "' skipped." << std::endl;
-    else if (error == OBSOLETE) logger << "Test '" << testName << "' obsolete." << std::endl;
-    else if (error == PASSED)   logger << "Test '" << testName << "' passed." << std::endl;    
-    else                        logger << "Test '" << testName << "' failed (" << std::to_string(error) << ")." << std::endl;
-    return error;
-}
-
-template <const int BIT_SIZE>
-std::string displayAsBinary(const int option, bool displayNumeric)
-{
-    std::stringstream ss;
-    std::bitset<BIT_SIZE> binOption(option);
-    ss << binOption;
-    if (displayNumeric) ss << " (" << option << ")";
-    return ss.str();
 }
 
 void displayHeader()
@@ -297,6 +252,36 @@ int test_paths()
     #if TEST_PATHS
     logstream logger(LOGGER_FILE);
     logger << "Running '" << __func__ << "' test..." << std::endl;
+    
+    try{
+    logger << "FORCING A 'THROW'" << std::endl;
+    
+    logger << "OK1" << std::endl;    
+    logger << "OK2" << std::endl;
+    //ASSERT_LOG(bfs::is_directory(p), "NOPE1");
+    logger << "OK3" << std::endl;
+    logger << roiVideoImagesPath << std::endl;
+    logger << "-----" << std::endl;
+    bfs::path p(roiVideoImagesPath.c_str());
+    logger << "....." << std::endl;
+    logger << p.string() << std::endl;
+    logger << "=====" << std::endl;
+    ASSERT_LOG(bfs::is_directory(p), "NOPE2");
+    logger << "OK4" << std::endl;
+    ASSERT_LOG(1, "11");
+    ASSERT_LOG(bfs::exists(roiVideoImagesPath), "Cannot find ROI directory");
+    logger << "OKO" << std::endl;
+    boost::system::error_code ec;    
+    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath, ec), "Cannot find ROI directory");
+    ASSERT_LOG(0, "13");
+    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
+    THROW("22");
+    logger << "OK" << std::endl;
+    }
+    catch (std::exception& ex)
+    {
+        logger << "THE HELL?? [" << ex.what() << "]" << std::endl;
+    }
 
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
@@ -2261,7 +2246,7 @@ int proc_readDataFiles()
 {
     #if PROC_READ_DATA_FILES
     logstream logger(LOGGER_FILE);
-    logger << "Running '" << __func__ << "' test ['PROC_READ_DATA_FILES'=" << displayAsBinary<8>(PROC_READ_DATA_FILES) << "]..." << std::endl;
+    logger << "Running '" << __func__ << "' test ['PROC_READ_DATA_FILES'=" << displayAsBinary<8>(PROC_READ_DATA_FILES, true) << "]..." << std::endl;
 
     #if PROC_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -4481,10 +4466,17 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
+    try {
     logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; ++p)
-        for (size_t pos = 0; pos < nPositives; ++pos)
+        for (size_t pos = 0; pos < nPositives; ++pos) {
+            logger << "STRT! p/pos: " << p << "," << pos << std::endl;
             esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
+            logger << "DONE! p/pos: " << p << "," << pos << std::endl;
+        }
+    }
+    catch(std::exception&ex)
+    { logger << "EXCPTION: " << ex.what() << std::endl; }
 
     // testing, score fusion, normalization
     logger << "Testing probe samples against enrolled targets..." << std::endl;
