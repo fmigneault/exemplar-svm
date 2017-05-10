@@ -1,5 +1,5 @@
-# - Find FeatureExtractorHOG
-# HOG feature extraction from image (MATLAB/C++)
+# - Find FeatureExtractorHOG (feHOG)
+# HOG feature extraction from image
 # available at https://bitbucket.org/KenjiKyoTeam//FeatureExtractorHOG/
 #
 # The module defines the following variables:
