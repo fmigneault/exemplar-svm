@@ -109,7 +109,7 @@ if (WIN32 AND NOT LIBSVM_LIBRARY)
 endif()
 
 # set LIBSVM_LIBRARIES
-set ( LIBSVM_LIBRARIES ${LIBSVM_LIBRARY} )
+set ( LIBSVM_LIBRARIES ${LIBSVM_LIBRARY}/libsvm.so.2 )
 
 # link with math library on unix
 if ( UNIX )
