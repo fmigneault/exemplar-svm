@@ -4332,7 +4332,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // classification results    
     size_t dimsResults[2]{ nPositives, 0 };                             // number of probes unknown (loaded from file)
     xstd::mvector<3, double> scores(dimsProbes);                        // [patch][positive][probe](double)
-    xstd::mvector<2, double> classificationScores(dimsResults);         // [positive][probe](double)    
+    std::vector<std::vector<double>> classificationScores(nPositives);         // [positive][probe](double)    
     xstd::mvector<2, double> minmaxClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, double> zscoreClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
@@ -4358,6 +4358,8 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; ++pos)
     {
+        auto path = refStillImagesPath + "roi" + positivesID[pos] + ".tif";
+        auto test = cv::imread(path);
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", 
                                                     imageSize, patchCounts, false, "", cv::IMREAD_GRAYSCALE, cv::INTER_LINEAR);
         for (size_t p = 0; p < nPatches; ++p)
@@ -4486,7 +4488,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     for (size_t pos = 0; pos < nPositives; ++pos) 
     {
         nProbesPerPositive[pos] = probeSamples[0][pos].size();   // variable number of probes according to tested positive
-        classificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
+        classificationScores[pos] = std::vector<double>(nProbesPerPositive[pos], 0.0);
         minmaxClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         zscoreClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         for (size_t prb = 0; prb < nProbesPerPositive[pos]; ++prb)
@@ -4922,7 +4924,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     }
 
     // calculate performance results
-    int nResultType = 3;    // 3x for FPR,TPR,PPV results
+    size_t nResultType = 3;    // 3x for FPR,TPR,PPV results
     size_t dimsResults[3]{ nPositives, nResultType, 0 }; 
     xstd::mvector<3, double> results_S1(dimsResults), results_S3(dimsResults), results_EX(dimsResults);
     for (size_t pos = 0; pos < nPositives; ++pos) {
