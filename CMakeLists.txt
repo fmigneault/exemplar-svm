@@ -89,6 +89,7 @@ add_definitions(-DESVM_ROOT_PATH="${ESVM_ROOT_DIR}")
 
 # find FeatureExtractorHOG (feHOG)
 if (${ESVM_BUILD_HOG})
+    unset(${feHOG_DIR} CACHE) # remove variable set with 'config' mode with link to installed library
     message(STATUS "Trying to find FeatureExtractorHOG (feHOG) to build from source ('ESVM_BUILD_HOG'=ON)")
     find_package(FeatureExtractorHOG REQUIRED MODULE)
     add_subdirectory(${FEHOG_ROOT_DIR} ${ESVM_LIBRARY_DIR})    # will raise error if invalid dir
@@ -98,7 +99,12 @@ if (${ESVM_BUILD_HOG})
         set(ESVM_SOURCES_DIRS ${ESVM_SOURCES_DIRS}  ${FEHOG_SOURCE_DIR})
         set(ESVM_SOURCE_FILES ${ESVM_SOURCE_FILES}  ${FEHOG_SOURCE_FILES})
     endif()
-else()
+else()    
+    # remove variables set by building from source    
+    foreach(var IMPLEMENTATION WITH_OPENMP BUILD_TESTS LIBRARY_TYPE)
+        unset(FEHOG_${var} CACHE)
+    endforeach()    
+    # find feHOG installed config
     find_package(feHOG REQUIRED CONFIG)
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${FEHOG_INCLUDE_DIRS})
     set(ESVM_HEADER_FILES   ${ESVM_HEADER_FILES}    ${FEHOG_HEADER_FILES})
