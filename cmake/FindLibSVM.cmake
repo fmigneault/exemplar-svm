@@ -47,7 +47,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-set(LIBSVM_ROOT_DIR $ENV{LIBSVM_ROOT_DIR})
+set(LIBSVM_ROOT_DIR ${LIBSVM_ROOT_DIR} CACHE PATH "Root directory of LIBSVM")
 
 # set LIBSVM_INCLUDE_DIR
 find_path(LIBSVM_INCLUDE_DIR
