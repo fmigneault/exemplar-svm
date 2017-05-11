@@ -4360,7 +4360,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // classification results    
     size_t dimsResults[2]{ nPositives, 0 };                             // number of probes unknown (loaded from file)
     xstd::mvector<3, double> scores(dimsProbes);                        // [patch][positive][probe](double)
-    std::vector<std::vector<double>> classificationScores(nPositives);         // [positive][probe](double)    
+    xstd::mvector<2, double> classificationScores(dimsResults);         // [positive][probe](double)    
     xstd::mvector<2, double> minmaxClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, double> zscoreClassificationScores(dimsResults);   // [positive][probe](double)
     xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
@@ -4496,32 +4496,22 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
-    try {
     logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; ++p)
         logger << "NEG p=" << p << ": " << negativeSamples[p].size() << std::endl;
 
     for (size_t p = 0; p < nPatches; ++p)
-        for (size_t pos = 0; pos < nPositives; ++pos) {
-            logger << "STRT! p/pos: " << p << "," << pos << std::endl;
+        for (size_t pos = 0; pos < nPositives; ++pos)
+            esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
 
-            auto e = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
-            esvm[p][pos] = e;
-            logger << "DONE! p/pos: " << p << "," << pos << std::endl;
-        }
-    }
-    catch(std::exception&ex)
-    { logger << "EXCPTION: " << ex.what() << std::endl; }
-
-    // testing, score fusion, normalization
-    logger << "Testing probe samples against enrolled targets..." << std::endl;
+    // testing, score fusion, normalizatio    logger << "Testing probe samples against enrolled targets..." << std::endl;
     double minScore = DBL_MAX, maxScore = -DBL_MAX, meanScore = 0, stddevScore = 0, varScore = 0;
     std::vector<double> meanScorePerPatch(nPatches, 0.0), stddevScorePerPatch(nPatches, 0.0), varScorePerPatch(nPatches, 0.0);
     std::vector<size_t> nProbesPerPositive(nPositives, 0);
     for (size_t pos = 0; pos < nPositives; ++pos) 
     {
         nProbesPerPositive[pos] = probeSamples[0][pos].size();   // variable number of probes according to tested positive
-        classificationScores[pos] = std::vector<double>(nProbesPerPositive[pos], 0.0);
+        classificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         minmaxClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         zscoreClassificationScores[pos] = xstd::mvector<1, double>(nProbesPerPositive[pos], 0.0);
         for (size_t prb = 0; prb < nProbesPerPositive[pos]; ++prb)

@@ -16,6 +16,13 @@
 #define ESVM_NEGATIVE_CLASS -1
 #define ESVM_BINARY_HEADER_MODEL "ESVM bin model"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM bin samples"
+/*
+    ESVM_DISPLAY_TRAIN_PARAMS:
+        0: do not display obtained parameters after training
+        1: display abridged parameters after training (no SV)
+        2: display complete parameters after training (all available according to model status, including SV)
+*/
+#define ESVM_DISPLAY_TRAIN_PARAMS 1
 // Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
 #define ESVM_ROI_CROP_RATIO 0.80
 /* Employ specific ROI pre-processing operation before further feature extraction operations

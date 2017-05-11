@@ -96,15 +96,8 @@ ESVM::ESVM()
 // Copy constructor
 ESVM::ESVM(const ESVM& esvm)
 {
-    ///TODO REMOVE
-    ///logstream logger(LOGGER_FILE);
-    ///logger << "COPY_CTOR!" << std::endl;    
-
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
-
-    ///logger << "COPY_CTOR - AFTER OPERATIONS: " << std::endl;
-    ///logModelParameters(true);    
 }
 
 // Move constructor
@@ -138,10 +131,6 @@ ESVM::ESVM(ESVM&& esvm)
 // Copy assigment
 ESVM& ESVM::operator=(const ESVM& esvm)
 {
-    ///TODO REMOVE
-    ///logstream logger(LOGGER_FILE);
-    ///logger << "EQUAL_CTOR!" << std::endl;
-
     // check for self-assignment
     if (&esvm == this)
         return *this;
@@ -149,15 +138,6 @@ ESVM& ESVM::operator=(const ESVM& esvm)
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
     return *this;
-
-    //ESVM e(esvm);
-    //logger << "EQUAL_CTOR - AFTER COPY - BEFORE RETURN (e): " << std::endl;
-    //e.targetID = "E";
-    //esvm.targetID = "ESVM";
-    //e.logModelParameters(true);
-    //logger << "EQUAL_CTOR - AFTER COPY - BEFORE RETURN (esvm): " << std::endl;
-    //esvm.logModelParameters(true);
-    //return ESVM(esvm);
 }
 
 // Builds an 'empty' model ensuring all 'null' references
@@ -183,9 +163,6 @@ svm_model* ESVM::makeEmptyModel()
 svm_model* ESVM::deepCopyModel(svm_model* model)
 {
     if (!model) return nullptr;
-    
-    ///logstream logger(LOGGER_FILE);///TODO REMOVE
-    ///logger << "DEEPCOPY!" << std::endl;///TODO REMOVE
 
     // deep copy of memory
     svm_model* newModel = makeEmptyModel();
@@ -303,7 +280,7 @@ void ESVM::destroyModel(svm_model** model)
 
 // Deallocation of unused support vectors and training parameters, updates parameters accordingly for new model state
 //      free only sample vectors not used as support vectors and update model state
-//      cannot directly free inner x[] 'svm_node' as they are shared with 'model->SV'
+//      cannot directly free inner 'svm_node' 2d-array 'problem->x[]' as they are shared with 'model->SV'
 void ESVM::removeTrainedModelUnusedData(svm_model* model, svm_problem* problem)
 {
     ASSERT_THROW(model != nullptr, "Missing model reference to remove unused sample vectors and training paramters");
@@ -313,12 +290,13 @@ void ESVM::removeTrainedModelUnusedData(svm_model* model, svm_problem* problem)
     ASSERT_THROW(problem->x != nullptr, "Missing problem contained sample references to remove unused sample vectors");
 
     // remove unused sample vectors
-    int i = 0;
-    for (int s = 0; s < problem->l; ++s) {
-        if (model->sv_indices[i] - 1 == s)  // indices are one-based
-            i++;
+    int iSV = 0;
+    for (int sv = 0; sv < problem->l; ++sv) {
+        if (iSV < model->l &&                   // avoid accessing pass the lass 'model->SV' when all visited
+            model->sv_indices[iSV] - 1 == sv)   // indices in 'sv_indices' are one-based
+            iSV++;                              // increment SV indices until all found
         else
-            free(problem->x[s]);
+            free(problem->x[sv]);
     }
 
     // remove unused training paramters
@@ -348,14 +326,7 @@ void ESVM::resetModel(svm_model* model, bool copy)
 // Destructor
 ESVM::~ESVM()
 {
-    try {
-        ///logstream logger(LOGGER_FILE);  ///TODO REMOVE
-        ///logger << "DTOR BEFORE RESET" << std::endl;///TODO REMOVE
-        ///logModelParameters(true);
-        resetModel();
-        ///logger << "DTOR AFTER RESET" << std::endl;///TODO REMOVE
-        ///logModelParameters(true);
-    }
+    try { resetModel(); }
     catch (...) {}
 }
 
@@ -1037,9 +1008,9 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     removeTrainedModelUnusedData(trainedModel, &prob);
     resetModel(trainedModel, false);
 
-    /// ################################################ DEBUG
-    logModelParameters(esvmModel, targetID, false);
-    /// ################################################ DEBUG
+    #if ESVM_DISPLAY_TRAIN_PARAMS
+    logModelParameters(esvmModel, targetID, ESVM_DISPLAY_TRAIN_PARAMS == 2);
+    #endif/*ESVM_DISPLAY_TRAIN_PARAMS*/
 }
 
 bool ESVM::isModelSet() const
@@ -1049,13 +1020,6 @@ bool ESVM::isModelSet() const
 
 bool ESVM::isModelTrained() const
 {
-    ///TODO REMOVE
-    /*logstream logger(LOGGER_FILE);
-    logger << "MODEL TRAINED?!" << std::endl;
-    logModelParameters(true);
-    */
-
-    /// TODO - check multiple parameters or not?   && model->SV != nullptr && model->sv_coef != nullptr && model->
     return (isModelSet() && esvmModel->free_sv);
 }
 
