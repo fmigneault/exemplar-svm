@@ -9,8 +9,8 @@
 #include "mvector.hpp"
 
 /* Test utilities */
-svm_model* buildDummyExemplarSvmModel(int free_sv = FreeModelState::MODEL);
-/*void destroyDummyExemplarSvmModelContent(svm_model *model);*/
+svm_model* buildDummyExemplarSvmModel(FreeModelState free_sv = MODEL);
+void destroyDummyExemplarSvmModelContent(svm_model *model, FreeModelState free_sv);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);

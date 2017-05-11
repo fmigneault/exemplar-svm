@@ -142,6 +142,10 @@ ESVM& ESVM::operator=(const ESVM& esvm)
     ///logstream logger(LOGGER_FILE);
     ///logger << "EQUAL_CTOR!" << std::endl;
 
+    // check for self-assignment
+    if (&esvm == this)
+        return *this;
+
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
     return *this;
@@ -322,7 +326,7 @@ void ESVM::destroyModel(svm_model** model)
         pModel->probA = nullptr;
         pModel->probB = nullptr;
 
-        delete[] pModel;
+        delete pModel;
         *model = nullptr;
     }
 }
@@ -466,9 +470,8 @@ void ESVM::checkModelParameters_assert(svm_model* model)
     ASSERT_THROW(model->param.svm_type == C_SVC, "ESVM model must be a C-SVM classifier");
     ASSERT_THROW(model->param.kernel_type == LINEAR, "ESVM model must have a LINEAR kernel");
     ASSERT_THROW(model->nr_class == 2, "ESVM model must have two classes (positives, negatives)");
-    ASSERT_THROW(model->l > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
-    ASSERT_THROW(model->nSV[0] > 0, "Number of positive ESVM support vector must be greater than zero");
-    ASSERT_THROW(model->nSV[1] > 0, "Number of negative ESVM support vector must be greater than zero");
+    ASSERT_THROW(model->l > 1, "ESVN model number of samples must be greater than one (at least 1 positive and 1 negative)");
+    ASSERT_THROW(model->label != nullptr, "ESVM model label container should be specified");
     ASSERT_THROW((model->label[0] == ESVM_POSITIVE_CLASS && model->label[1] == ESVM_NEGATIVE_CLASS) ||
                  (model->label[1] == ESVM_POSITIVE_CLASS && model->label[0] == ESVM_NEGATIVE_CLASS),
                  "ESVM model labels must be set to expected distinct positive and negative class values");
@@ -507,6 +510,9 @@ void ESVM::checkModelParameters_assert(svm_model* model)
         ASSERT_THROW(model->rho != nullptr, "ESVM model constant for decision function must be specified");
         ASSERT_THROW(model->sv_coef != nullptr, "ESVM model coefficients container for decision functions must be specified");
         ASSERT_THROW(model->sv_coef[0] != nullptr, "ESVM model specific coefficients for unique decision function must be specified");
+        ASSERT_THROW(model->nSV != nullptr, "ESVM model number of support vectors container must be specified");
+        ASSERT_THROW(model->nSV[0] > 0, "Number of positive ESVM support vector must be greater than zero");
+        ASSERT_THROW(model->nSV[1] > 0, "Number of negative ESVM support vector must be greater than zero");
         ASSERT_THROW(model->SV != nullptr, "ESVM model support vector container must be specified");
         for (int sv = 0; sv < model->l; ++sv)
             ASSERT_THROW(model->SV[sv] != nullptr, "ESVM model specific support vectors must be specified");
