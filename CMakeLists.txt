@@ -60,10 +60,10 @@ set_property(CACHE ESVM_LIBRARY_TYPE PROPERTY STRINGS ${ESVM_LIBRARY_STATIC} ${E
 if (${ESVM_BUILD_TESTS})
     set(ESVM_BUILD_LIBRARY "Build from ESVM library")
     set(ESVM_BUILD_SOURCES "Build from ESVM sources")
-    set(ESVM_BUILD_MODE ${ESVM_BUILD_LIBRARY} CACHE STRING "Build executable mode for tests")
-    set_property(CACHE ESVM_BUILD_MODE PROPERTY STRINGS ${ESVM_BUILD_LIBRARY} ${ESVM_BUILD_SOURCES}) 
+    set(ESVM_BUILD_TESTS_MODE ${ESVM_BUILD_LIBRARY} CACHE STRING "Build executable mode for tests")
+    set_property(CACHE ESVM_BUILD_TESTS_MODE PROPERTY STRINGS ${ESVM_BUILD_LIBRARY} ${ESVM_BUILD_SOURCES}) 
 else()
-    unset(ESVM_BUILD_MODE CACHE)
+    unset(ESVM_BUILD_TESTS_MODE CACHE)
 endif()
     
 # find ESVM header/source files
@@ -84,7 +84,7 @@ if (${ESVM_BUILD_TESTS})
 endif()
 
 # ESVM configs
-set(ESVM_INCLUDE_DIR     ${ESVM_INCLUDE_DIRS})
+set(ESVM_INCLUDE_DIR    ${ESVM_INCLUDE_DIRS})
 set(ESVM_LIBRARY        ${ESVM_PROJECT}${CMAKE_${ESVM_LIBRARY_TYPE}_LIBRARY_SUFFIX})
 
 # ESVM root path (esvmOptions)
@@ -133,7 +133,7 @@ if (${CommonCpp_FOUND})
 endif()
 
 # find Boost
-option(Boost_USE_STATIC_LIBS    ON)
+option(Boost_USE_STATIC_LIBS    OFF)
 option(Boost_USE_MULTITHREADED  ON)
 option(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS filesystem system)
@@ -142,13 +142,13 @@ if (${Boost_FOUND})
     set(ESVM_LIBRARIES     ${ESVM_LIBRARIES}    ${Boost_LIBRARIES})
     if (WIN32)
         # disable auto linking 
-        #add_definitions(-DBOOST_ALL_NO_LIB)        
-        remove_definitions(-BOOST_NO_EXCEPTIONS)        
+        add_definitions(-DBOOST_ALL_NO_LIB)
+        remove_definitions(-BOOST_NO_EXCEPTIONS)
     endif()
-    if (NOT ${Boost_USE_STATIC_LIBS})
-        # avoid invalid linking error when using shared libs
-        add_definitions(-DBOOST_ALL_DYN_LINK)
-    endif()
+    # if (NOT ${Boost_USE_STATIC_LIBS})
+        # # avoid invalid linking error when using shared libs
+        # add_definitions(-DBOOST_ALL_DYN_LINK)
+    # endif()    
 endif()
 
 # find OpenMP
@@ -177,21 +177,13 @@ add_library(${ESVM_LIBRARY_NAME} ${ESVM_SOURCE_FILES} ${ESVM_HEADER_FILES})
 if(MSVC)
     set_target_properties(${ESVM_LIBRARY_NAME} PROPERTIES LINKER_LANGUAGE C++)
 endif()
-# if (NOT ${Boost_USE_STATIC_LIBS} AND WIN32)
-    # # add definitions to avoid invalid linking error when using shared libs
-    # target_compile_definitions(${ESVM_LIBRARY_NAME} PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK)
-# endif()
 target_include_directories(${ESVM_LIBRARY_NAME} PUBLIC ${ESVM_INCLUDE_DIRS})
 target_link_libraries(${ESVM_LIBRARY_NAME} ${ESVM_LIBRARIES})
 
 # build tests
 if (${ESVM_BUILD_TESTS})
     set(ESVM_TESTS ${ESVM_PROJECT}_Test)
-    # if (NOT ${Boost_USE_STATIC_LIBS} AND WIN32)
-        # # add definitions to avoid invalid linking error when using shared libs
-        # target_compile_definitions(${ESVM_TESTS} PRIVATE -DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK)
-    # endif()
-    if (${ESVM_BUILD_MODE} STREQUAL ${ESVM_BUILD_LIBRARY})
+    if (${ESVM_BUILD_TESTS_MODE} STREQUAL ${ESVM_BUILD_LIBRARY})
 	    add_definitions(-DFEATURE_EXTRACTOR_HOG_USE_IMPL)	
         add_executable(${ESVM_TESTS} ${ESVM_SOURCE_TESTS} ${ESVM_HEADER_TESTS})
         target_link_libraries(${ESVM_TESTS} ${ESVM_LIBRARIES} ${ESVM_LIBRARY_NAME})
