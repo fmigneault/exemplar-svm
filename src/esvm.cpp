@@ -101,13 +101,11 @@ ESVM::ESVM(const ESVM& esvm)
 }
 
 // Move constructor
-/*
 ESVM::ESVM(ESVM&& esvm)
 {
-    ///TODO REMOVE
-    logstream logger(LOGGER_FILE);
-    logger << "MOVE_CTOR!" << std::endl;
-
+    this->swap(*this, esvm);
+    
+    /*
     targetID = esvm.targetID;
     esvmModel = esvm.esvmModel; // copy parameters and memory references (move)
 
@@ -126,17 +124,25 @@ ESVM::ESVM(ESVM&& esvm)
         esvm.esvmModel->sv_indices = nullptr;
         esvm.esvmModel = nullptr;
     }
-}*/
+    */
+}
 
 // Copy assigment
-ESVM& ESVM::operator=(const ESVM& esvm)
+ESVM& ESVM::operator=(ESVM esvm)
 {
-    // check for self-assignment
-    if (&esvm == this)
-        return *this;
-    
-    targetID = esvm.targetID;
-    esvmModel = deepCopyModel(esvm.esvmModel);
+    ///TODO REMOVE
+    ///logstream logger(LOGGER_FILE);
+    ///logger << "EQUAL_CTOR!" << std::endl;
+
+    //// check for self-assignment
+    //if (&esvm == this)
+    //    return *this;
+    //
+    //targetID = esvm.targetID;
+    //esvmModel = deepCopyModel(esvm.esvmModel);
+    //return *this;
+
+    swap(*this, esvm);
     return *this;
 }
 
@@ -199,8 +205,8 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
                 newModel->sv_coef[c_1][cn] = model->sv_coef[c_1][cn];
         }
 
-        int nFeatures = 0;
-        while (model->SV[0][nFeatures++].index != -1); // count 'svm_nodes'
+        int nFeatures = 0;                              // contains +1 for (-1,?)
+        while (model->SV[0][nFeatures++].index != -1);  // count 'svm_nodes'
 
         newModel->sv_indices = (model->sv_indices) ? Malloc(int, newModel->l) : nullptr;
         newModel->SV = Malloc(svm_node*, newModel->l);

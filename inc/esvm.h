@@ -19,12 +19,11 @@
 
 class ESVM
 {
-public:
+public:    
     ~ESVM();
     ESVM();
     ESVM(const ESVM& esvm);
-    /*ESVM(ESVM&& esvm);*/
-    ESVM& operator=(const ESVM& esvm);
+    /*ESVM(ESVM&& esvm);*/        
     ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
     ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
     ESVM(std::string trainingSamplesFilePath, std::string id = "");
@@ -44,8 +43,16 @@ public:
     bool saveModelFile(std::string modelFilePath, FileFormat format = LIBSVM) const;
     double predict(FeatureVector probeSample) const;
     std::vector<double> predict(std::vector<FeatureVector> probeSamples) const;
-    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr) const;
-    std::string targetID;    
+    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr) const;    
+    std::string targetID;
+
+    ESVM& operator=(ESVM esvm); // copy ctor
+    ESVM(ESVM&& esvm);          // move ctor
+    void swap(ESVM& esvm1, ESVM& esvm2)
+    {
+        using std::swap;
+        swap(esvm1.esvmModel, esvm2.esvmModel);
+    }
 
 private:
     static void logModelParameters(svm_model* model, std::string id = "", bool displaySV = false);
@@ -67,7 +74,7 @@ private:
     static void removeTrainedModelUnusedData(svm_model* model, svm_problem* problem);
     void resetModel(svm_model* model = nullptr, bool copy = true);
     svm_model *esvmModel = nullptr;
-    /*std::unique_ptr<svm_model> esvmModel = nullptr;*/
+    /*std::unique_ptr<svm_model> esvmModel = nullptr;*/    
 };
 
 #endif/*ESVM_LIBSVM_H*/
