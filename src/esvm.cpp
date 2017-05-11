@@ -27,7 +27,7 @@ ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> nega
     int negSamples = (int)negatives.size();
 
     std::vector<int> targets(posSamples + negSamples, ESVM_NEGATIVE_CLASS);
-    for (int s = 0; s < posSamples; s++)
+    for (int s = 0; s < posSamples; ++s)
         targets[s] = ESVM_POSITIVE_CLASS;
 
     std::vector<FeatureVector> samples;
@@ -145,7 +145,7 @@ ESVM& ESVM::operator=(const ESVM& esvm)
     // check for self-assignment
     if (&esvm == this)
         return *this;
-
+    
     targetID = esvm.targetID;
     esvmModel = deepCopyModel(esvm.esvmModel);
     return *this;
@@ -163,7 +163,7 @@ ESVM& ESVM::operator=(const ESVM& esvm)
 // Builds an 'empty' model ensuring all 'null' references
 svm_model* ESVM::makeEmptyModel()
 {
-    svm_model* model = new svm_model;
+    svm_model* model = Malloc(svm_model, 1);
     model->free_sv = 0;
     model->l = 0;
     model->nr_class = 0;
@@ -194,76 +194,56 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
     newModel->nr_class = model->nr_class;
     newModel->param = model->param;    
 
-    newModel->label = new int[newModel->nr_class];
+    newModel->label = Malloc(int, newModel->nr_class);
     for (int c = 0; c < newModel->nr_class; ++c)
         newModel->label[c] = model->label[c];
 
-    if (!model->free_sv)
-    {
-        ///logger << "free_sv == 0" << std::endl;///TODO REMOVE
-
+    if (!model->free_sv) {
         if (!model->param.weight)
             newModel->param.weight = nullptr;
         else {
-            newModel->param.weight = new double[newModel->param.nr_weight];
-            newModel->param.weight_label = new int[newModel->param.nr_weight];
+            newModel->param.weight = Malloc(double, newModel->param.nr_weight);
+            newModel->param.weight_label = Malloc(int, newModel->param.nr_weight);
             for (int w = 0; w < newModel->param.nr_weight; ++w) {
                 newModel->param.weight[w] = model->param.weight[w];
                 newModel->param.weight_label[w] = model->param.weight_label[w];
             }
         }
     }
-    else
-    {
-        ///logger << "Free_sv != 0 (1)" << std::endl;///TODO REMOVE
-        
-        newModel->nSV = new int[newModel->nr_class];
+    else {       
+        newModel->nSV = Malloc(int, newModel->nr_class);
         for (int c = 0; c < newModel->nr_class; ++c)
             newModel->nSV[c] = model->nSV[c];
 
-        ///logger << "Free_sv != 0 (2)" << std::endl;///TODO REMOVE
-
-        newModel->sv_coef = new double*[model->nr_class - 1];
+        newModel->sv_coef = Malloc(double*, model->nr_class - 1);
         for (int c_1 = 0; c_1 < newModel->nr_class - 1; ++c_1) {
-            newModel->sv_coef[c_1] = new double[newModel->l];
+            newModel->sv_coef[c_1] = Malloc(double, newModel->l);
             for (int cn = 0; cn < newModel->l; ++cn)
                 newModel->sv_coef[c_1][cn] = model->sv_coef[c_1][cn];
         }
 
-        ///logger << "Free_sv != 0 (3)" << std::endl;///TODO REMOVE
-
         int nFeatures = 0;
         while (model->SV[0][nFeatures++].index != -1); // count 'svm_nodes'
 
-        ///logger << "Free_sv != 0 (4) " << std::to_string(nFeatures) << " " << std::to_string(newModel->l) << std::endl;///TODO REMOVE
-        
-        newModel->sv_indices = (model->sv_indices) ? new int[newModel->l] : nullptr;
-        newModel->SV = new svm_node*[newModel->l];
+        newModel->sv_indices = (model->sv_indices) ? Malloc(int, newModel->l) : nullptr;
+        newModel->SV = Malloc(svm_node*, newModel->l);
         for (int sv = 0; sv < newModel->l; ++sv) {
-            ///logger << "Free_sv != 0 (4.1)" << std::endl;///TODO REMOVE
             if (model->sv_indices)
                 newModel->sv_indices[sv] = model->sv_indices[sv];
-            ///logger << "Free_sv != 0 (4.11) " << std::to_string(sv) << std::endl;///TODO REMOVE
-            newModel->SV[sv] = new svm_node[nFeatures];
-            ///logger << "Free_sv != 0 (4.2)" << std::endl;///TODO REMOVE
+            newModel->SV[sv] = Malloc(svm_node, nFeatures);
             for (int f = 0; f < nFeatures; ++f)
                 newModel->SV[sv][f] = model->SV[sv][f];
-            ///logger << "Free_sv != 0 (4.3)" << std::endl;///TODO REMOVE
         }
 
-        //////logger << "Free_sv != 0 (5)" << std::endl;///TODO REMOVE
-
         int nClassPairWise = newModel->nr_class*(newModel->nr_class - 1) / 2;
-        newModel->rho = new double[nClassPairWise];
+        newModel->rho = Malloc(double, nClassPairWise);
         for (int cPW = 0; cPW < nClassPairWise; ++cPW)
             newModel->rho[cPW] = model->rho[cPW];
 
-        ///logger << "Free_sv != 0 (6)" << std::endl;///TODO REMOVE
-
         if (ESVM_USE_PREDICT_PROBABILITY && newModel->param.probability && model->probA && model->probB) {
             newModel->param.probability = 1;
-            newModel->probA = new double[nClassPairWise];
-            newModel->probB = new double[nClassPairWise];
+            newModel->probA = Malloc(double, nClassPairWise);
+            newModel->probB = Malloc(double, nClassPairWise);
             for (int p = 0; p < nClassPairWise; ++p) {
                 newModel->probA[p] = model->probA[p];
                 newModel->probB[p] = model->probB[p];
@@ -276,8 +256,6 @@ svm_model* ESVM::deepCopyModel(svm_model* model)
         }
     }
 
-    ///logger << "DEEPCOPY != null? " << (newModel != nullptr) << std::endl;///TODO REMOVE
-
     return newModel;
 }
 
@@ -287,46 +265,38 @@ void ESVM::destroyModel(svm_model** model)
     if (model != nullptr && *model != nullptr)
     {
         svm_model* pModel = *model;
-        delete[] pModel->label;
-        pModel->label = nullptr;
+        FreeNull(pModel->label);
 
         bool freeParam = pModel->free_sv == FreeModelState::PARAM || pModel->free_sv == FreeModelState::MULTI;
         bool freeModel = pModel->free_sv == FreeModelState::MODEL || pModel->free_sv == FreeModelState::MULTI;
         
         if (freeParam) {
-            delete[] pModel->param.weight;
-            pModel->param.weight = nullptr;
-            delete[] pModel->param.weight_label;
-            pModel->param.weight_label = nullptr;
+            FreeNull(pModel->param.weight);
+            FreeNull(pModel->param.weight_label);
         }
 
         if (freeModel) {
-            delete[] pModel->rho;
-            pModel->rho = nullptr;
-            delete[] pModel->nSV;
-            pModel->nSV = nullptr;
-            delete[] pModel->sv_indices;
-            pModel->sv_indices = nullptr;
+            FreeNull(pModel->rho);
+            FreeNull(pModel->nSV);
+            FreeNull(pModel->sv_indices);
             if (pModel->sv_coef)
                 for (int c = 0; c < pModel->nr_class - 1; ++c)
-                    delete[] pModel->sv_coef[c];
-            delete[] pModel->sv_coef;
-            pModel->sv_coef = nullptr;
+                    free(pModel->sv_coef[c]);
+            FreeNull(pModel->sv_coef);
             if (pModel->SV)
                 for (int sv = 0; sv < pModel->l; ++sv)
-                    delete[] pModel->SV[sv];
-            delete[] pModel->SV;
-            pModel->SV = nullptr;
+                    free(pModel->SV[sv]);
+            FreeNull(pModel->SV);
         }
 
         if (ESVM_USE_PREDICT_PROBABILITY && pModel->param.probability) {
-            delete[] pModel->probA;
-            delete[] pModel->probB;
+            free(pModel->probA);
+            free(pModel->probB);
         }
         pModel->probA = nullptr;
         pModel->probB = nullptr;
 
-        delete pModel;
+        FreeNull(pModel);
         *model = nullptr;
     }
 }
@@ -348,22 +318,20 @@ void ESVM::removeTrainedModelUnusedData(svm_model* model, svm_problem* problem)
         if (model->sv_indices[i] - 1 == s)  // indices are one-based
             i++;
         else
-            delete[] problem->x[s];
+            free(problem->x[s]);
     }
 
     // remove unused training paramters
     if (model->param.probability) {
-        delete[] model->param.weight;
-        delete[] model->param.weight_label;
+        free(model->param.weight);
+        free(model->param.weight_label);
     }
     model->param.weight = nullptr;
     model->param.weight_label = nullptr;
 
     // destroy problem contained data
-    delete[] problem->x;
-    delete[] problem->y;
-    problem->x = nullptr;
-    problem->y = nullptr;
+    FreeNull(problem->x);
+    FreeNull(problem->y);
 
     // update mode
     model->free_sv = FreeModelState::MODEL;
@@ -530,7 +498,7 @@ bool ESVM::checkBinaryHeader(std::ifstream& binaryFileStream, std::string header
     binaryFileStream.read(headerCheck, headerLength);
     headerCheck[headerLength] = '\0';                   // avoids comparing different strings because '\0' is not found
     bool isFound = (header == std::string(headerCheck));
-    delete headerCheck;
+    delete[] headerCheck;
     return isFound;
 }
 
@@ -598,10 +566,10 @@ void ESVM::loadModelFile_binary(std::string filePath)
         model = makeEmptyModel();
         model->param = param;
         model->nr_class = 2;        
-        model->rho = new double[1];                 // 1 decision function parameter
-        model->sv_coef = new double*[1];            // 1 x N sv coefficients for 1 decision function
-        model->label = new int[model->nr_class];
-        model->nSV = new int[model->nr_class];
+        model->rho = Malloc(double, 1);             // 1 decision function parameter
+        model->sv_coef = Malloc(double*, 1);        // 1 x N sv coefficients for 1 decision function
+        model->label = Malloc(int, model->nr_class);
+        model->nSV = Malloc(int, model->nr_class);
 
         // labels required to determine/ensure of the order of positives/negatives SV saved to file
         modelFile.read(reinterpret_cast<char*>(&model->rho[0]), sizeof(model->rho[0]));
@@ -622,10 +590,10 @@ void ESVM::loadModelFile_binary(std::string filePath)
 
         // read support vectors and decision function coefficients
         std::vector<FeatureVector> sampleSV(model->l);
-        model->sv_coef[0] = new double[model->l];
+        model->sv_coef[0] = Malloc(double, model->l);
         modelFile.read(reinterpret_cast<char*>(&model->sv_coef[0][0]), model->l * sizeof(model->sv_coef[0][0]));
-        model->SV = new svm_node*[model->l];
-        for (int sv = 0; sv < model->l; sv++)
+        model->SV = Malloc(svm_node*, model->l);
+        for (int sv = 0; sv < model->l; ++sv)
         {
             sampleSV[sv] = FeatureVector(nFeatures);
             modelFile.read(reinterpret_cast<char*>(&sampleSV[sv][0]), nFeatures * sizeof(&sampleSV[sv][0]));
@@ -711,7 +679,7 @@ void ESVM::saveModelFile_binary(std::string filePath) const
 
         // write support vectors and decision function coefficients    
         modelFile.write(reinterpret_cast<const char*>(&esvmModel->sv_coef[0][0]), esvmModel->l * sizeof(esvmModel->sv_coef[0][0]));
-        for (int sv = 0; sv < esvmModel->l; sv++)
+        for (int sv = 0; sv < esvmModel->l; ++sv)
             modelFile.write(reinterpret_cast<const char*>(&esvmModel->SV[sv][0]), nFeatures * sizeof(esvmModel->SV[sv][0]));
         modelFile.close();
     }
@@ -773,7 +741,7 @@ void ESVM::readSampleDataFile_binary(std::string filePath, std::vector<FeatureVe
         sampleFeatureVectors = std::vector<FeatureVector>(nSamples);
         targetOutputs = std::vector<int>(nSamples);
         samplesFile.read(reinterpret_cast<char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
-        for (int s = 0; s < nSamples; s++)
+        for (int s = 0; s < nSamples; ++s)
         {
             sampleFeatureVectors[s] = FeatureVector(nFeatures);        
             samplesFile.read(reinterpret_cast<char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));
@@ -955,7 +923,7 @@ void ESVM::writeSampleDataFile_binary(std::string filePath, std::vector<FeatureV
 
     // write target outputs and sample features
     samplesFile.write(reinterpret_cast<const char*>(&targetOutputs[0]), nSamples * sizeof(targetOutputs[0]));
-    for (int s = 0; s < nSamples; s++)    
+    for (int s = 0; s < nSamples; ++s)
         samplesFile.write(reinterpret_cast<const char*>(&sampleFeatureVectors[s][0]), nFeatures * sizeof(sampleFeatureVectors[s][0]));    
 
     samplesFile.close();
@@ -999,23 +967,14 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     prob.l = (int)samples.size();   // number of training data        
     
     // convert and assign training vectors and corresponding target values for classification 
-    prob.y = new double[prob.l];
-    prob.x = new svm_node*[prob.l];
+    prob.y = Malloc(double, prob.l);
+    prob.x = Malloc(svm_node*, prob.l);
     /// ############################################# #pragma omp parallel for
-    for (int s = 0; s < prob.l; s++)
+    for (int s = 0; s < prob.l; ++s)
     {
         prob.y[s] = targetOutputs[s];
         prob.x[s] = getFeatureNodes(samples[s]);
     }
-        
-    /// ################################################ DEBUG
-    /// logger << "'trainModel' samples converted to 'svm_node'" << std::endl;
-    /*
-    logger << "ESVM training samples | outputs" << std::endl;
-    for (int s = 0; s < samples.size(); s++)
-        logger << "      " << featuresToVectorString(samples[s]) << " | " << prob.y[s] << std::endl;
-    */
-    /// ################################################ DEBUG
 
     // set training parameters    
     svm_parameter param;
@@ -1042,9 +1001,13 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     param.weight = nullptr;
     param.weight_label = nullptr;
     #else/*ESVM_WEIGHTS_MODE != 0*/
-    param.nr_weight = 2;                                                            // number of weights
-    param.weight = new double[2] { classWeights[0], classWeights[1] };              // class weights (positive, negative)
-    param.weight_label = new int[2] { ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };   // class labels    
+    param.nr_weight = 2;                    // number of weights
+    param.weight = Malloc(double, 2);       // class weights (positive, negative)
+    param.weight[0] = classWeights[0];
+    param.weight[1] = classWeights[1];
+    param.weight_label = Malloc(int, 2);    // class labels
+    param.weight_label[0] = ESVM_POSITIVE_CLASS;
+    param.weight_label[1] = ESVM_NEGATIVE_CLASS;        
     #endif/*ESVM_WEIGHTS_MODE*/
 
     // validate parameters and train models
@@ -1158,19 +1121,8 @@ double ESVM::predict(FeatureVector probeSample) const
         double* probEstimates = (double *)malloc(model->nr_class * sizeof(double)); // = new double[model->nr_class];
         double p = svm_predict_probability(model, getFeatureVector(probeSample), probEstimates);
         */
-        double* probEstimates = new double[model->nr_class];
+        double* probEstimates = Malloc(double, model->nr_class);
         svm_predict_probability(model, getFeatureVector(probeSample), probEstimates);
-
-        /// ################################################ DEBUG
-        logstream logger(LOGGER_FILE);
-        logger << "ESVM predict" << std::endl;
-        for (int s = 0; s < model->nr_class; s++)
-        {
-            logger << "   probEstimates " << s << ": " << probEstimates[s] << std::endl;
-        }
-        /// ################################################ DEBUG
-
-        //return p;
         return probEstimates[0];
     }
     #endif/*ESVM_USE_PREDICT_PROBABILITY*/
@@ -1180,7 +1132,9 @@ double ESVM::predict(FeatureVector probeSample) const
     // and that we have only 2 classes, we have only one decision value (positive vs. negative)    
     double* decisionValues = new double[esvmModel->nr_class * (esvmModel->nr_class - 1) / 2]; 
     svm_predict_values(esvmModel, getFeatureNodes(probeSample), decisionValues);
-    return decisionValues[0];
+    double decision = decisionValues[0];
+    delete[] decisionValues;
+    return decision;
 }
 
 /*
@@ -1190,7 +1144,7 @@ std::vector<double> ESVM::predict(std::vector<FeatureVector> probeSamples) const
 {
     size_t nPredictions = probeSamples.size();
     std::vector<double> outputs(nPredictions);
-    for (size_t p = 0; p < nPredictions; p++)
+    for (size_t p = 0; p < nPredictions; ++p)
         outputs[p] = predict(probeSamples[p]);
     return outputs;
 }
@@ -1236,9 +1190,9 @@ svm_node* ESVM::getFeatureNodes(FeatureVector features)
 */
 svm_node* ESVM::getFeatureNodes(double* features, int featureCount)
 {
-    svm_node* fv = new svm_node[featureCount + 1];
+    svm_node* fv = Malloc(svm_node, featureCount + 1);
     /// ############################################# #pragma omp parallel for
-    for (int f = 0; f < featureCount; f++)
+    for (int f = 0; f < featureCount; ++f)
     {
         fv[f].index = f + 1;        // indexes should be one based
         fv[f].value = features[f];
