@@ -68,7 +68,7 @@ int proc_createNegativesSampleFiles()
     cv::Size imageSize = cv::Size(48, 48);
 
     // improved LBP face detection parameters (try to focus roi on more descriptive part of the face)
-    #if PROC_ESVM_GENERATE_SAMPLE_FILES_MODE == 1
+    #if ESVM_ROI_PREPROCESS_MODE == 1
         double scaleFactor = 1.1;
         int nmsThreshold = 1;                           // 0 generates multiple detections, >0 usually returns only 1 face on 'cropped_faces' ROIs
         cv::Size minSize(20, 20), maxSize = imageSize;
