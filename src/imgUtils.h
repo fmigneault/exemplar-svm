@@ -18,8 +18,11 @@ bool imConvert(std::string path, std::string toExtension, std::string fromExtens
 cv::Mat imTranslate(const cv::Mat& image, cv::Point offset);
 
 // Flips an image in horizontal/vertital/both directions
-enum FlipMode { VERTICAL = 0, HORIZONTAL = 1, BOTH = -1 };
+enum FlipMode { VERTICAL = 0, HORIZONTAL = 1, BOTH = -1, NONE = -2 };
 cv::Mat imFlip(cv::Mat image, FlipMode flipMode);
+
+// Resizes an image to the specified dimensions
+cv::Mat imResize(cv::Mat image, cv::Size size, cv::InterpolationFlags interpolMethod = cv::INTER_AREA);
 
 // Crops an image with specified inputs
 cv::Mat imCrop(cv::Mat image, int x, int y, int w, int h);
