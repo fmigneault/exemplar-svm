@@ -275,11 +275,12 @@ void displayOptions()
            << tab << tab << "PROC_ESVM_TITAN:                               " << PROC_ESVM_TITAN << std::endl
            << tab << tab << "PROC_ESVM_SAMAN:                               " << PROC_ESVM_SAMAN << std::endl
            << tab << tab << "PROC_ESVM_SIMPLIFIED_WORKING:                  " << PROC_ESVM_SIMPLIFIED_WORKING << std::endl
+           << tab << tab << "PROC_ESVM_FULL_GENERATION_TESTING:             " << PROC_ESVM_FULL_GENERATION_TESTING << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_CONVERTED_IMAGES:           " << PROC_ESVM_GENERATE_CONVERTED_IMAGES << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
-           << tab << tab << "PROC_ESVM_FULL_GENERATION_TESTING:             " << PROC_ESVM_FULL_GENERATION_TESTING << std::endl;
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION:       " << PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION << std::endl;
 }
 
 /* ==========
@@ -296,11 +297,11 @@ int test_paths()
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
     ASSERT_LOG(bfs::is_directory(negativeSamplesDir), "Cannot find negative samples directory");
-    ASSERT_LOG(bfs::is_directory(testingSamplesDir), "Cannot find testing probe samples directory");
+    ASSERT_LOG(bfs::is_directory(testingSamplesDir),  "Cannot find testing probe samples directory");
     ASSERT_LOG(checkPathEndSlash(roiVideoImagesPath), "ROI directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(refStillImagesPath), "REF directory doesn't end with slash character");
     ASSERT_LOG(checkPathEndSlash(negativeSamplesDir), "Negative samples directory doesn't end with slash character");
-    ASSERT_LOG(checkPathEndSlash(testingSamplesDir), "Testing probe samples directory doesn't end with slash character");
+    ASSERT_LOG(checkPathEndSlash(testingSamplesDir),  "Testing probe samples directory doesn't end with slash character");
     // OpenCV
     ASSERT_LOG(bfs::is_directory(sourcesOpenCV), "Cannot find OpenCV's root sources directory");
     ASSERT_LOG(checkPathEndSlash(sourcesOpenCV), "OpenCV's root sources directory doesn't end with slash character");

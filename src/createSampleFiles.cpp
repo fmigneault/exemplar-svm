@@ -49,8 +49,8 @@ int proc_generateConvertedImageTypes()
 int proc_createNegativesSampleFiles()
 {
     #if PROC_ESVM_GENERATE_SAMPLE_FILES
-
     logstream logger("negatives-output.txt");
+    logger << "Running '" << __func__ << "' test..." << std::endl;    
     std::string tab = "    ";
 
     // outputs
@@ -61,6 +61,9 @@ int proc_createNegativesSampleFiles()
     ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY || PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM, 
                "Either 'PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY' or 'PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM' must be enabled for file generation");
     ASSERT_LOG(delayShowROI > 0, "Delay to display ROI during file generation must be greater than zero");
+    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION >= 0 && PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION <= SESSION_QUANTITY,
+               "Undefined value '" + std::to_string(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION) + 
+               "' specified for 'PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION', must be in range [0" + std::to_string(SESSION_QUANTITY) + "]");
 
     // general parameters    
     size_t nPatches = 9;
@@ -76,7 +79,7 @@ int proc_createNegativesSampleFiles()
         std::string faceCascadeFilePath = sourcesOpenCV + "data/lbpcascades/lbpcascade_frontalface_improved.xml";
         assert(bfs::is_regular_file(faceCascadeFilePath));
         assert(faceCascade.load(faceCascadeFilePath));
-    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_MODE*/
+    #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
     // feature extraction HOG parameters
     cv::Size patchSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
@@ -84,6 +87,7 @@ int proc_createNegativesSampleFiles()
     cv::Size blockStride = cv::Size(2, 2);
     cv::Size cellSize = cv::Size(2, 2);
     int nBins = 3;
+    FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
 
     // Negatives to employ
     std::vector<std::string> negativesID = { "0001", "0002", "0007", "0009", "0011",
@@ -91,18 +95,23 @@ int proc_createNegativesSampleFiles()
                                              "0019", "0020", "0021", "0022", "0025" };
 
     // init containers / classes with parameters
-    xstd::mvector<2, cv::Mat> matNegativeSamples;               // [negative][patch](Mat[x,y])
-    std::vector<std::string> negativeSamplesID;                 // [negative](string)
-    FeatureExtractorHOG hog;
-    hog.initialize(patchSize, blockSize, blockStride, cellSize, nBins);
+    size_t nNegatives = 0;
+    size_t dimsNegatives[2] = { nPatches, nNegatives };         // [patch][negative]
+    xstd::mvector<2, FeatureVector> fvNegRaw(dimsNegatives);    // [patch][negative](FeatureVector)    
+    std::vector<std::string> negativeSamplesID;                 // [negative](string)    
 
     // Loop for all ChokePoint cropped faces
+    int totalSeq = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0 ? TOTAL_SEQUENCES : TOTAL_SEQUENCES / SESSION_QUANTITY;
     std::vector<int> perSessionNegatives(SESSION_QUANTITY, 0);
-    std::vector<int> perSequenceNegatives(PORTAL_QUANTITY * SESSION_QUANTITY * PORTAL_TYPE_QUANTITY * CAMERA_QUANTITY, 0);
+    std::vector<int> perSequenceNegatives(totalSeq, 0);
     int seqIdx = 0;
     std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
     bfs::directory_iterator endDir;
+    #if PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0
     for (int sn = 1; sn <= SESSION_QUANTITY; ++sn) {            // session number
+    #else /*PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == [1-4]*/
+    int sn = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION; {
+    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION*/
     for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
     for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
@@ -157,34 +166,21 @@ int proc_createNegativesSampleFiles()
                                 roi = imCropByRatio(img, ESVM_ROI_CROP_RATIO);
                             #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
+                            // feature extraction HOG and update sample counts/ids
                             std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION,
-                                                                        windowNameROI, cv::IMREAD_GRAYSCALE);
-                            size_t neg = matNegativeSamples.size();
-                            matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
+                                                                        windowNameROI, cv::IMREAD_GRAYSCALE);                            
                             for (size_t p = 0; p < nPatches; ++p)
-                                matNegativeSamples[neg][p] = patches[p];
+                                fvNegRaw[p].push_back(hog.compute(patches[p]));
+
                             negativeSamplesID.push_back(strID);
                             perSessionNegatives[sn-1]++;
                             perSequenceNegatives[seqIdx]++;
-                        }
-                    }
-                }
-            }
-        }
+                            nNegatives++;        
+        } } } } } // end get samples only from negative individual images
         seqIdx++;
-
     } } } } // end ChokePoint loops
-
     cv::destroyAllWindows();
-
-    size_t nNegatives = matNegativeSamples.size();
-    size_t dimsNegatives[2] = { nPatches, nNegatives };             // [patch][negative]
-    xstd::mvector<2, FeatureVector> fvNegRaw(dimsNegatives);        // [patch][negative](FeatureVector)
-
-    // feature extraction HOG
-    for (size_t p = 0; p < nPatches; ++p)
-        for (size_t neg = 0; neg < nNegatives; ++neg)
-            fvNegRaw[p][neg] = hog.compute(matNegativeSamples[neg][p]);
+    dimsNegatives[1] = nNegatives;  // update loaded negative count
 
     // find + apply normalization values
     size_t hogFeatCount = hog.getFeatureCount();
@@ -327,6 +323,7 @@ int proc_createNegativesSampleFiles()
                     << "nFeatures:        " << hogFeatCount << std::endl
                     << "BINARY fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
                     << "LIBSVM fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
+                    << "SESSION mode:     " << PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION << std::endl
                     << "OverAll Norm:     " << std::endl
                     << tab << "minROI[p]:    " << minPatchOverAll << std::endl
                     << tab << "maxROI[p]:    " << maxPatchOverAll << std::endl
