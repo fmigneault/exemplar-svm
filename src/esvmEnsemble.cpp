@@ -109,6 +109,11 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         hogRefMin = 0;
         hogRefMax = 0.704711;
         
+        // found min/max using 'proc_createNegativesSampleFiles' with 'PROC_ESVM_GENERATE_SAMPLE_FILES'=1 (S1 only) 
+        // generate AFTER fix of patch split / data pointer access of patches for HOG
+        hogRefMin = 0;
+        hogRefMax = 0.766903;
+        
         // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
         // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
         ///hogRefMin = 0;

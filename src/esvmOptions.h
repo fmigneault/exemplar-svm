@@ -47,7 +47,7 @@
         7: normalization min-max per feature, for each patch
         8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORMALIZATION_MODE 1   //7
+#define ESVM_FEATURE_NORMALIZATION_MODE 7
 // Specify if normalized features need to be clipped if outside of [0,1]
 #define ESVM_FEATURE_NORMALIZATION_CLIP 1
 /*
