@@ -47,7 +47,7 @@
         7: normalization min-max per feature, for each patch
         8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORMALIZATION_MODE 1   //7
+#define ESVM_FEATURE_NORMALIZATION_MODE 7
 // Specify if normalized features need to be clipped if outside of [0,1]
 #define ESVM_FEATURE_NORMALIZATION_CLIP 1
 /*
@@ -174,16 +174,24 @@
         2: run with BINARY formatted sample files
 */
 #define PROC_ESVM_SIMPLIFIED_WORKING 2
+// Generate from scratch multiple training/testing samples and evaluate them
+#define PROC_ESVM_FULL_GENERATION_TESTING 0
 // Generate some differnt image types for convenience
 #define PROC_ESVM_GENERATE_CONVERTED_IMAGES 0
 // Generate sample files using various enabled parameters
-#define PROC_ESVM_GENERATE_SAMPLE_FILES 0
+#define PROC_ESVM_GENERATE_SAMPLE_FILES 1
 // Request binary format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
 // Request libsvm format sample file generation
-#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
-// Generate from scratch multiple training/testing samples and evaluate them
-#define PROC_ESVM_FULL_GENERATION_TESTING 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 1
+/*
+    Specify which sequence to generate files for using the 'proc_createNegativesSampleFiles' enabled by 'PROC_ESVM_GENERATE_SAMPLE_FILES'
+
+    PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION:
+        0:      generate negative sample files that employ negative individuals from all 4 sessions of ChokePoint (all available negative images)
+        [1-4]:  generate negative sample files that employ negative individuals only from the specified session number of ChokePoint        
+*/
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION 1
 
 /* ------------------------------------------------------------
    Image paths

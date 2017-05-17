@@ -75,9 +75,19 @@ cv::Mat imTranslate(const cv::Mat& image, cv::Point offset)
 
 cv::Mat imFlip(cv::Mat image, FlipMode flipMode)
 {
+    if (flipMode == FlipMode::NONE)
+        return image;
+
     cv::Mat flip;
     cv::flip(image, flip, flipMode);
     return flip;
+}
+
+cv::Mat imResize(cv::Mat image, cv::Size size, cv::InterpolationFlags interpolMethod)
+{
+    cv::Mat resized;
+    cv::resize(image, resized, size, 0, 0, interpolMethod);
+    return resized;
 }
 
 cv::Mat imCrop(cv::Mat image, int x, int y, int w, int h)

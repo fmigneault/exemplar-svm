@@ -19,6 +19,7 @@ const int SESSION_QUANTITY = 4;
 const int SESSION_SIMULTANEOUS_INDIVIDUALS = 5;
 const int CAMERA_QUANTITY = 3;
 const int INDIVIDUAL_QUANTITY = 30;
+const int TOTAL_SEQUENCES = PORTAL_QUANTITY * SESSION_QUANTITY * PORTAL_TYPE_QUANTITY * CAMERA_QUANTITY;
 // Combine sequence information
 std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id = 0);
 std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
