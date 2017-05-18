@@ -152,6 +152,13 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
         scoreRefMin = -5.15837;
         scoreRefMax = 0.156316;
+
+        // found min/max using 'FullGenerationAndTestProcess' AFTER fix of patch split / data pointer access of patches for HOG
+        //      S1 - Min / Max: -4.03879 / 0.366612
+        //      S3 - Min / Max : -4.16766 / 0.200456
+        //      EX - Min / Max : -4.28606 / 0.60522
+        scoreRefMin = -4.28606;
+        scoreRefMax = 0.60522;
     
         // found min/max using FAST-DT live test 
         ///scoreRefMin = 0.085;         // Testing
