@@ -121,7 +121,9 @@ if (${ESVM_BUILD_HOG})
     mark_as_advanced(FORCE ${feHOG_DIR})
 else()
     # find feHOG installed config
-    find_package(feHOG REQUIRED CONFIG)
+    find_package(feHOG REQUIRED CONFIG
+                 NAMES feHOG FEHOG FE_HOG FeatureExtractorHOG
+                 PATHS ${FEHOG_ROOT_DIR} ${FEHOG_ROOT_DIR}/cmake ${feHOG_DIR} ${feHOG_DIR}/cmake)
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${FEHOG_INCLUDE_DIRS})
     set(ESVM_HEADER_FILES   ${ESVM_HEADER_FILES}    ${FEHOG_HEADER_FILES})
     set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${FEHOG_LIBRARIES})
@@ -145,7 +147,9 @@ if (${ESVM_USE_LBP})
 endif()
 
 # find Common(C++)
-find_package(CommonCpp REQUIRED CONFIG)
+find_package(CommonCpp REQUIRED CONFIG
+             NAMES "CommonCpp" "Common-Cpp" "Common_Cpp" "CommonC++" "Common-C++" "Common_C++"
+             PATHS ${COMMON_CPP_ROOT_DIR} ${COMMON_CPP_ROOT_DIR}/cmake ${CommonCpp_DIR} ${CommonCpp_DIR}/cmake)
 if (${CommonCpp_FOUND})    
     set(ESVM_INCLUDE_DIRS  ${ESVM_INCLUDE_DIRS} ${CommonCpp_INCLUDE_DIRS})
     set(ESVM_LIBRARIES     ${ESVM_LIBRARIES}    ${CommonCpp_LIBRARIES})
