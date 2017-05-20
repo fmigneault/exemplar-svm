@@ -15,7 +15,3 @@ include ( FindPackageHandleStandardArgs )
 find_package_handle_standard_args ( feHOG DEFAULT_MSG
 	FEHOG_ROOT_DIR	
 )
-
-mark_as_advanced (
-	FEHOG_ROOT_DIR
-)
