@@ -263,7 +263,6 @@ inline std::vector<TMat> imPreprocess(std::string imagePath, cv::Size imSize, cv
 }
 
 // Returns a vector of images combining patches splitting and other preprocessing steps (resizing, grayscale, hist.equal., etc.) 
-// Input image internal memory is modified after calling this function (buffer is reused)
 template<typename TMat>
 inline std::vector<TMat> imPreprocess(const TMat& roi, cv::Size imSize, cv::Size patchCounts, bool useHistEqual = false,
                                       std::string windowName = "", cv::ImreadModes readMode = cv::IMREAD_GRAYSCALE, 
@@ -273,13 +272,15 @@ inline std::vector<TMat> imPreprocess(const TMat& roi, cv::Size imSize, cv::Size
     {
         cv::imshow(windowName, roi);
         cv::waitKey(1); // allow window redraw
-    }
-    if (readMode == cv::IMREAD_COLOR || roi.channels() > 1)
-        cv::cvtColor(roi, roi, CV_BGR2GRAY);
+    }    
+    TMat img;
+    roi.copyTo(img);
+    if (readMode == cv::IMREAD_COLOR || img.channels() > 1)
+        cv::cvtColor(img, img, CV_BGR2GRAY);
     if (useHistEqual)
-        cv::equalizeHist(roi, roi);
-    cv::resize(roi, roi, imSize, 0, 0, resizeMode);
-    return imSplitPatches(roi, patchCounts);
+        cv::equalizeHist(img, img);
+    cv::resize(img, img, imSize, 0, 0, resizeMode);
+    return imSplitPatches(img, patchCounts);
 }
 
 #endif/*IMG_UTILS_H*/
