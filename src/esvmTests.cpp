@@ -280,7 +280,8 @@ void displayOptions()
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES:               " << PROC_ESVM_GENERATE_SAMPLE_FILES << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
            << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM:        " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
-           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION:       " << PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION << std::endl;
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION:       " << PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION << std::endl
+           << tab << tab << "PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION:   " << PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION << std::endl;
 }
 
 /* ==========
@@ -4300,7 +4301,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SAMAN()
 TEST DEFINITION
 
     This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated 
-    negative samples files from the ChokePoint dataset (Sequence 1).  
+    negative samples files from the ChokePoint dataset (session 1).  
 **************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 {
@@ -4570,11 +4571,11 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
 /**************************************************************************************************************************
 TEST DEFINITION
 
-
-**************************************************************************************************************************/
 /// TO VALIDATE
-/// This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated negative samples files from the ChokePoint dataset(Sequence 1).
+/// This test corresponds to the complete and working procedure to enroll and test image stills against pre-generated 
+/// negative samples files from the ChokePoint dataset(session 1).
 ///
+**************************************************************************************************************************/
 int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
 {
     #if PROC_ESVM_FULL_GENERATION_TESTING

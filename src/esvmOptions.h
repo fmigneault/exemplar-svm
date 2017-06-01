@@ -173,8 +173,18 @@
         1: run with LIBSVM formatted sample files
         2: run with BINARY formatted sample files
 */
-#define PROC_ESVM_SIMPLIFIED_WORKING 2
-// Generate from scratch multiple training/testing samples and evaluate them
+#define PROC_ESVM_SIMPLIFIED_WORKING 0
+/*
+    Generate from scratch multiple training/testing samples and evaluate them
+    
+    PROC_ESVM_FULL_GENERATION_TESTING:
+        0: not run
+        1: run 3 different and independent sessions (S1, S3, FastDT)
+           apply specified normalization values from loaded and generated samples, display newly found values for each session
+           run using 'proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess'
+        2: run over multiple test replications and obtain average scores with specified configurations
+           run using 'proc_runSingleSamplePerPersonStillToVideo_FullGeneration_ReplicationTests'
+*/
 #define PROC_ESVM_FULL_GENERATION_TESTING 0
 // Generate some differnt image types for convenience
 #define PROC_ESVM_GENERATE_CONVERTED_IMAGES 0
@@ -183,7 +193,7 @@
 // Request binary format sample file generation
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY 1
 // Request libsvm format sample file generation
-#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM 0
 /*
     Specify which sequence to generate files for using the 'proc_createNegativesSampleFiles' enabled by 'PROC_ESVM_GENERATE_SAMPLE_FILES'
 
@@ -191,7 +201,10 @@
         0:      generate negative sample files that employ negative individuals from all 4 sessions of ChokePoint (all available negative images)
         [1-4]:  generate negative sample files that employ negative individuals only from the specified session number of ChokePoint        
 */
-#define PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION 1
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION 0
+// Specify which replication individuals to employ for negative sample files generation
+// see corresponding ID values in 'getReplicationNegativeIDs' in 'createSampleFiles'
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION 1
 
 /* ------------------------------------------------------------
    Image paths
