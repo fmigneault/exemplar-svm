@@ -19,6 +19,7 @@
 /* Processes */
 int proc_generateConvertedImageTypes();
 int proc_createNegativesSampleFiles();
+std::vector<std::string> getReplicationNegativeIDs();
 int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string negativesImageDirPath);
 
 /* Utilities */

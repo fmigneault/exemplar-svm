@@ -46,10 +46,39 @@ int proc_generateConvertedImageTypes()
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
+std::vector<std::string> getReplicationNegativeIDs()
+{
+    return std::vector<std::string>
+    #if !defined(PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION) || PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 0
+    { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0025" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 1
+    { "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0012", "0014", "0016", "0018", "0019", "0023", "0024", "0027" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 2
+    { "0001", "0004", "0007", "0009", "0010", "0011", "0012", "0014", "0016", "0017", "0021", "0024", "0026", "0027", "0030" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 3
+    { "0001", "0002", "0006", "0007", "0009", "0010", "0013", "0014", "0016", "0020", "0021", "0022", "0023", "0026", "0027" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 4
+    { "0002", "0003", "0005", "0006", "0007", "0009", "0010", "0011", "0013", "0017", "0021", "0022", "0025", "0026", "0027" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 5
+    { "0001", "0002", "0005", "0006", "0010", "0011", "0016", "0018", "0019", "0021", "0023", "0025", "0027", "0028", "0029" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 6
+    { "0002", "0007", "0009", "0010", "0011", "0012", "0013", "0014", "0017", "0022", "0024", "0027", "0028", "0029", "0030" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 7
+    { "0001", "0002", "0004", "0005", "0007", "0010", "0011", "0017", "0019", "0020", "0022", "0023", "0024", "0028", "0030" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 8
+    { "0001", "0003", "0004", "0006", "0007", "0010", "0011", "0012", "0017", "0021", "0023", "0026", "0027", "0029", "0030" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 9
+    { "0001", "0002", "0007", "0009", "0010", "0011", "0015", "0016", "0017", "0018", "0020", "0022", "0023", "0025", "0030" };
+    #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 10
+    { "0001", "0003", "0006", "0015", "0016", "0017", "0018", "0019", "0022", "0023", "0024", "0026", "0028", "0029", "0030" };
+    #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION*/
+}
+
 int proc_createNegativesSampleFiles()
 {
     #if PROC_ESVM_GENERATE_SAMPLE_FILES
-    logstream logger("negatives-output.txt");
+    logstream logger(LOGGER_FILE);
+    logstream logNeg("negatives-output.txt");
     logger << "Running '" << __func__ << "' test..." << std::endl;    
     std::string tab = "    ";
 
@@ -90,9 +119,8 @@ int proc_createNegativesSampleFiles()
     FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
 
     // Negatives to employ
-    std::vector<std::string> negativesID = { "0001", "0002", "0007", "0009", "0011",
-                                             "0013", "0014", "0016", "0017", "0018",
-                                             "0019", "0020", "0021", "0022", "0025" };
+    std::vector<std::string> negativesID = getReplicationNegativeIDs();
+    logNeg << "Using negative IDs: " << negativesID << std::endl;
 
     // init containers / classes with parameters
     size_t nNegatives = 0;
@@ -122,7 +150,7 @@ int proc_createNegativesSampleFiles()
         for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
         {
             std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
-            logger << "Loading negative from directory: '" << dirPath << "'" << std::endl;
+            logNeg << "Loading negative from directory: '" << dirPath << "'" << std::endl;
             if (bfs::is_directory(dirPath))
             {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
@@ -146,18 +174,18 @@ int proc_createNegativesSampleFiles()
                                 size_t nFaces = faces.size();
                                 if (nFaces > 0)
                                 {
-                                    logger << "Found " << faces.size() << " face(s)" << std::endl;
+                                    logNeg << "Found " << faces.size() << " face(s)" << std::endl;
                                     for (size_t iFace = 0; iFace < nFaces; ++iFace) {
                                         if (keepAllFoundROI || iFace == 0)              // update kept ROI according to setting
                                             roi = img(faces[iFace]);
-                                        logger << tab << "face[" << iFace << "] = " << faces[iFace] << std::endl;
+                                        logNeg << tab << "face[" << iFace << "] = " << faces[iFace] << std::endl;
                                         cv::imshow(windowNameROI, img(faces[iFace]));   // always display all found ROIs
                                         cv::waitKey(delayShowROI);
                                     }
                                 }
                                 else
                                 {
-                                    logger << "Did not find face on cropped image: '" << imgPath << "'" << std::endl;
+                                    logNeg << "Did not find face on cropped image: '" << imgPath << "'" << std::endl;
                                     continue;   // skip if not found any face
                                 }
                             #elif ESVM_ROI_PREPROCESS_MODE == 2         // pre-cropping of ROI
@@ -207,13 +235,13 @@ int proc_createNegativesSampleFiles()
         findNormParamsPerFeature(MIN_MAX, fvNegRaw[p], minPatchPerFeat[p], maxPatchPerFeat[p]);
         findNormParamsPerFeature(Z_SCORE, fvNegRaw[p], meanPatchPerFeat[p], stdDevPatchPerFeat[p]);
 
-        logger << "Patch Number: " << p << std::endl;
-        logger << tab << "OverAll: " << std::endl 
+        logNeg << "Patch Number: " << p << std::endl;
+        logNeg << tab << "OverAll: " << std::endl
                << tab << tab << "Min: " << minPatchOverAll[p] << std::endl
                << tab << tab << "Max: " << maxPatchOverAll[p] << std::endl
                << tab << tab << "Mean: " << meanPatchOverAll[p] << std::endl
                << tab << tab << "StdDev: " << stdDevPatchOverAll[p] << std::endl;
-        logger << tab << "PerFeat: " << std::endl 
+        logNeg << tab << "PerFeat: " << std::endl
                << tab << tab << "Min: " << minPatchPerFeat[p] << std::endl
                << tab << tab << "Max: " << maxPatchPerFeat[p] << std::endl
                << tab << tab << "Mean: " << meanPatchPerFeat[p] << std::endl
@@ -324,6 +352,7 @@ int proc_createNegativesSampleFiles()
                     << "BINARY fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
                     << "LIBSVM fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
                     << "SESSION mode:     " << PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION << std::endl
+                    << "REPLICATION:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION << std::endl
                     << "OverAll Norm:     " << std::endl
                     << tab << "minROI[p]:    " << minPatchOverAll << std::endl
                     << tab << "maxROI[p]:    " << maxPatchOverAll << std::endl
@@ -352,7 +381,9 @@ int proc_createNegativesSampleFiles()
 
 int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string negativesImageDirPath)
 {
-    logstream logger("probes-output.txt");
+    logstream logger(LOGGER_FILE);
+    logstream logPrb("probes-output.txt");
+    logger << "Running '" << __func__ << "' test..." << std::endl;
 
     double hogRefMin = 0;            // Min found using 'FullChokePoint' test with SAMAN pre-generated files
     double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
@@ -377,9 +408,9 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
 
     // Add ROI to corresponding sample vectors according to individual IDs
-    logger << "Loading probe images from '" << positivesImageDirPath << "'...: " << std::endl;
+    logPrb << "Loading probe images from '" << positivesImageDirPath << "'...: " << std::endl;
     matPositiveSamples = loadAndProcessImages(positivesImageDirPath, ".png");
-    logger << "Loading probe images from '" << negativesImageDirPath << "'...: " << std::endl;
+    logPrb << "Loading probe images from '" << negativesImageDirPath << "'...: " << std::endl;
     matNegativeSamples = loadAndProcessImages(negativesImageDirPath, ".png");
 
     size_t nPositives = matPositiveSamples.size();
@@ -411,7 +442,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     std::vector<int> targetOutputsNeg(nNegatives, -1);
     targetOutputs.insert(targetOutputs.end(), targetOutputsNeg.begin(), targetOutputsNeg.end());
 
-    logger << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
+    logPrb << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     for (size_t p = 0; p < nPatches; ++p)
         ESVM::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
@@ -419,7 +450,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");
 
-    // logger << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
+    // logPrb << "nNegatives: " << nNegatives << " nPatches: " << nPatches << endl;
     // for (size_t p = 0; p < nPatches; ++p)
     //     for (size_t neg = 0; neg < nNegatives; ++neg) {
     //         for (size_t i = 0; i < fvNeg[p][neg].size(); ++i) {
@@ -430,6 +461,5 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 
     // outputFile.close();
 
-    logger << "DONE!" << std::endl;
     return 0;
 }
