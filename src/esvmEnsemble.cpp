@@ -11,8 +11,7 @@
     Initializes an ESVM Ensemble
 */
 esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs)
-{ 
-    logstream logger(LOGGER_FILE);
+{     
     setConstants(negativesDir);
     size_t nPositives = positiveROIs.size();
     size_t nPatches = getPatchCount();
@@ -33,8 +32,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     // Exemplar-SVM
     EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)    
 
-    // load positive target still images, extract features and normalize
-    logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
+    // load positive target still images, extract features and normalize    
     for (size_t pos = 0; pos < nPositives; pos++)
     {       
         // apply pre-processing operation as required
@@ -68,8 +66,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         }
     }
 
-    // training
-    logger << "Training ESVM with positives and negatives..." << std::endl;
+    // training    
     for (size_t p = 0; p < nPatches; p++)
     {
         /* note: 
@@ -81,8 +78,7 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-perFeat" + sampleFileExt;
         ///std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax" + sampleFileExt;
         ///std::string negativeFileName = "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/ sampleFileExt;
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);
-        logger << "Training ESVM with positives and negatives..." << std::endl;
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);        
         for (size_t pos = 0; pos < nPositives; pos++)
             EoESVM[p][pos] = ESVM({ posSamples[p][pos] }, negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
     }
@@ -152,6 +148,13 @@ void esvmEnsemble::setConstants(std::string negativesDir)
         // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
         scoreRefMin = -5.15837;
         scoreRefMax = 0.156316;
+
+        // found min/max using 'FullGenerationAndTestProcess' AFTER fix of patch split / data pointer access of patches for HOG
+        //      S1 - Min / Max: -4.03879 / 0.366612
+        //      S3 - Min / Max : -4.16766 / 0.200456
+        //      EX - Min / Max : -4.28606 / 0.60522
+        scoreRefMin = -4.28606;
+        scoreRefMax = 0.60522;
     
         // found min/max using FAST-DT live test 
         ///scoreRefMin = 0.085;         // Testing
@@ -188,8 +191,7 @@ std::string esvmEnsemble::getPositiveID(int positiveIndex)
     Predicts the classification value for the specified roi using the trained ESVM model.
 */
 std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
-{
-    logstream logger(LOGGER_FILE);
+{    
     size_t nPositives = getPositiveCount();
     size_t nPatches = getPatchCount();
 
@@ -200,8 +202,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
     cv::Mat procROI = roi;
     #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
-    // load probe still images, extract features and normalize
-    logger << "Loading probe images, extracting feature vectors and normalizing..." << std::endl;
+    // load probe still images, extract features and normalize    
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
     std::vector<cv::Mat> patches = imPreprocess(procROI, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
     for (size_t p = 0; p < nPatches; p++) 
@@ -226,8 +227,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
     }
 
-    // testing, score fusion, normalization
-    logger << "Testing probe samples against enrolled targets..." << std::endl;
+    // testing, score fusion, normalization    
     xstd::mvector<1, double> classificationScores(nPositives, 0.0);
     size_t dimsProbes[2]{ nPatches, nPositives }; 
     xstd::mvector<2, double> scores(dimsProbes, 0.0);

@@ -108,7 +108,6 @@ void findNormParamsOverAll(NormType norm, const std::vector<FeatureVector>& feat
 
     if (norm == MIN_MAX)
     {
-
         for (size_t s = 0; s < nSamples; s++)
         {
             findNormParamsAcrossFeatures(norm, featureVectors[s], foundParam1, foundParam2);
