@@ -47,30 +47,98 @@ int proc_generateConvertedImageTypes()
 }
 
 std::vector<std::string> getReplicationNegativeIDs()
-{
+{    
     return std::vector<std::string>
-    #if !defined(PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION) || PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 0
-    { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0025" };
+    #if !defined(PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION) || PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 0        
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15 
+        { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0025" }; 
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 1
-    { "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0012", "0014", "0016", "0018", "0019", "0023", "0024", "0027" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0018", "0001", "0023", "0014", "0005", "0019", "0016", "0004", "0012", "0027" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15 
+        { "0018", "0001", "0023", "0014", "0005", "0019", "0016", "0004", "0012", "0027", "0003", "0006", "0007", "0024", "0002" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 2
-    { "0001", "0004", "0007", "0009", "0010", "0011", "0012", "0014", "0016", "0017", "0021", "0024", "0026", "0027", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0026", "0021", "0004", "0007", "0027", "0024", "0009", "0016", "0030", "0011" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0026", "0021", "0004", "0007", "0027", "0024", "0009", "0016", "0030", "0011", "0012", "0010", "0002", "0017", "0014" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 3
-    { "0001", "0002", "0006", "0007", "0009", "0010", "0013", "0014", "0016", "0020", "0021", "0022", "0023", "0026", "0027" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0023", "0007", "0027", "0006", "0021", "0020", "0013", "0022", "0014", "0026" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0023", "0007", "0027", "0006", "0021", "0020", "0013", "0022", "0014", "0026", "0016", "0009", "0002", "0001", "0010" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 4
-    { "0002", "0003", "0005", "0006", "0007", "0009", "0010", "0011", "0013", "0017", "0021", "0022", "0025", "0026", "0027" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0027", "0006", "0022", "0005", "0010", "0009", "0003", "0011", "0021", "0017" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0027", "0006", "0022", "0005", "0010", "0009", "0003", "0011", "0021", "0017", "0026", "0007", "0025", "0002", "0013" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 5
-    { "0001", "0002", "0005", "0006", "0010", "0011", "0016", "0018", "0019", "0021", "0023", "0025", "0027", "0028", "0029" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0005", "0019", "0021", "0023", "0002", "0016", "0011", "0027", "0018", "0029" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0005", "0019", "0021", "0023", "0002", "0016", "0011", "0027", "0018", "0029", "0001", "0006", "0028", "0010", "0025" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 6
-    { "0002", "0007", "0009", "0010", "0011", "0012", "0013", "0014", "0017", "0022", "0024", "0027", "0028", "0029", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0029", "0030", "0002", "0013", "0007", "0012", "0010", "0009", "0017", "0014" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0029", "0030", "0002", "0013", "0007", "0012", "0010", "0009", "0017", "0014", "0011", "0028", "0024", "0027", "0022" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 7
-    { "0001", "0002", "0004", "0005", "0007", "0010", "0011", "0017", "0019", "0020", "0022", "0023", "0024", "0028", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0010", "0004", "0017", "0001", "0011", "0030", "0022", "0005", "0020", "0023" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0010", "0004", "0017", "0001", "0011", "0030", "0022", "0005", "0020", "0023", "0028", "0007", "0024", "0002", "0019" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 8
-    { "0001", "0003", "0004", "0006", "0007", "0010", "0011", "0012", "0017", "0021", "0023", "0026", "0027", "0029", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0007", "0004", "0010", "0001", "0012", "0011", "0021", "0006", "0003", "0030" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0007", "0004", "0010", "0001", "0012", "0011", "0021", "0006", "0003", "0030", "0017", "0026", "0023", "0029", "0027" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 9
-    { "0001", "0002", "0007", "0009", "0010", "0011", "0015", "0016", "0017", "0018", "0020", "0022", "0023", "0025", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0020", "0025", "0015", "0030", "0007", "0023", "0011", "0017", "0002", "0009" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0020", "0025", "0015", "0030", "0007", "0023", "0011", "0017", "0002", "0009", "0018", "0022", "0001", "0010", "0016" };
+        #else
+        ();
+        #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 10
-    { "0001", "0003", "0006", "0015", "0016", "0017", "0018", "0019", "0022", "0023", "0024", "0026", "0028", "0029", "0030" };
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        { "0028", "0001", "0023", "0017", "0022", "0016", "0030", "0003", "0018", "0029" };
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0001", "0003", "0006", "0015", "0016", "0017", "0018", "0019", "0022", "0023", "0024", "0026", "0028", "0029", "0030" };
+        #else
+        ();
+        #endif
+    #else
+        ();
     #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION*/
 }
 
@@ -79,7 +147,7 @@ int proc_createNegativesSampleFiles()
     #if PROC_ESVM_GENERATE_SAMPLE_FILES
     logstream logger(LOGGER_FILE);
     logstream logNeg("negatives-output.txt");
-    logger << "Running '" << __func__ << "' test..." << std::endl;    
+    logger << "Running '" << __func__ << "' test..." << std::endl;
     std::string tab = "    ";
 
     // outputs
@@ -93,6 +161,11 @@ int proc_createNegativesSampleFiles()
     ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION >= 0 && PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION <= SESSION_QUANTITY,
                "Undefined value '" + std::to_string(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION) + 
                "' specified for 'PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION', must be in range [0" + std::to_string(SESSION_QUANTITY) + "]");
+
+    // Negatives to employ
+    std::vector<std::string> negativesID = getReplicationNegativeIDs();
+    ASSERT_LOG(negativesID.size() > 0, "Negative IDs cannot be empty");
+    logNeg << "Using negative IDs: " << negativesID << std::endl;
 
     // general parameters    
     size_t nPatches = 9;
@@ -117,10 +190,6 @@ int proc_createNegativesSampleFiles()
     cv::Size cellSize = cv::Size(2, 2);
     int nBins = 3;
     FeatureExtractorHOG hog(patchSize, blockSize, blockStride, cellSize, nBins);
-
-    // Negatives to employ
-    std::vector<std::string> negativesID = getReplicationNegativeIDs();
-    logNeg << "Using negative IDs: " << negativesID << std::endl;
 
     // init containers / classes with parameters
     size_t nNegatives = 0;
@@ -225,7 +294,8 @@ int proc_createNegativesSampleFiles()
                                     fvNegZScorePatchOverAll(dimsNegatives), fvNegZScoreROIOverAll(dimsNegatives),
                                     fvNegMinMaxPatchPerFeat(dimsNegatives), fvNegMinMaxROIPerFeat(dimsNegatives),
                                     fvNegZScorePatchPerFeat(dimsNegatives), fvNegZScoreROIPerFeat(dimsNegatives);
-
+    std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
+    
     bool clip = ESVM_FEATURE_NORMALIZATION_CLIP;
     for (size_t p = 0; p < nPatches; ++p)
     {
@@ -248,12 +318,36 @@ int proc_createNegativesSampleFiles()
                << tab << tab << "StdDev: " << stdDevPatchPerFeat[p] << std::endl;
 
         // apply found normalization parameters
-        for (size_t neg = 0; neg < nNegatives; ++neg) {
+        #pragma omp parallel for
+        for (long neg = 0; neg < nNegatives; ++neg) {
             fvNegMinMaxPatchOverAll[p][neg] = normalizeOverAll(MIN_MAX,    fvNegRaw[p][neg], minPatchOverAll[p],  maxPatchOverAll[p],    clip);
             fvNegZScorePatchOverAll[p][neg] = normalizeOverAll(Z_SCORE,    fvNegRaw[p][neg], meanPatchOverAll[p], stdDevPatchOverAll[p], clip);
             fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p],  maxPatchPerFeat[p],    clip);
             fvNegZScorePatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], clip);
         }
+
+        // write resulting sample files gradually (per patch) to distribute memory allocation
+        std::string fileStart = "negatives-patch" + std::to_string(p);
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
+            ESVM::writeSampleDataFile(fileStart + "-raw.bin",                       fvNegRaw[p],                negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.bin",   fvNegZScorePatchOverAll[p], negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.bin",   fvNegZScorePatchPerFeat[p], negClass, BINARY);
+        #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
+            ESVM::writeSampleDataFile(fileStart + "-raw.data",                      fvNegRaw[p],                negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.data", fvNegMinMaxPatchOverAll[p], negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.data",  fvNegZScorePatchOverAll[p], negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.data", fvNegMinMaxPatchPerFeat[p], negClass, LIBSVM);
+            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.data",  fvNegZScorePatchPerFeat[p], negClass, LIBSVM);
+        #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
+
+        // free vectors not required anymore
+        fvNegMinMaxPatchOverAll[p].clear();
+        fvNegZScorePatchOverAll[p].clear();
+        fvNegMinMaxPatchPerFeat[p].clear();
+        fvNegZScorePatchPerFeat[p].clear();
 
         // update across all patches min-max normalization parameters
         if (minAllROIOverAll > minPatchOverAll[p])
@@ -284,37 +378,30 @@ int proc_createNegativesSampleFiles()
             fvNegMinMaxROIPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minAllROIPerFeat,  maxAllROIPerFeat,    clip);
             fvNegZScoreROIPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanAllROIPerFeat, stdDevAllROIPerFeat, clip);
         }
-    }
 
-    // write resulting sample files
-    std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
-    for (size_t p = 0; p < nPatches; ++p)
-    {
+        // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string fileStart = "negatives-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-            ESVM::writeSampleDataFile(fileStart + "-raw.bin",                       fvNegRaw[p],                negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.bin",    fvNegMinMaxROIOverAll[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.bin",   fvNegZScorePatchOverAll[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.bin",     fvNegZScoreROIOverAll[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.bin",    fvNegMinMaxROIPerFeat[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.bin",   fvNegZScorePatchPerFeat[p], negClass, BINARY);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.bin",     fvNegZScoreROIPerFeat[p],   negClass, BINARY);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
-            ESVM::writeSampleDataFile(fileStart + "-raw.data",                      fvNegRaw[p],                negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.data", fvNegMinMaxPatchOverAll[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.data",   fvNegMinMaxROIOverAll[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.data",  fvNegZScorePatchOverAll[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.data",    fvNegZScoreROIOverAll[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.data", fvNegMinMaxPatchPerFeat[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.data",   fvNegMinMaxROIPerFeat[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.data",  fvNegZScorePatchPerFeat[p], negClass, LIBSVM);
             ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.data",    fvNegZScoreROIPerFeat[p],   negClass, LIBSVM);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
+
+        // free vectors not required anymore
+        fvNegMinMaxROIOverAll[p].clear();
+        fvNegZScoreROIOverAll[p].clear();
+        fvNegMinMaxROIPerFeat[p].clear();
+        fvNegZScoreROIPerFeat[p].clear();
+        fvNegRaw[p].clear();
     }
-    
+
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
     for (size_t p = 0; p < nPatches; ++p) {
         str_minPatchPerFeat += "\n" + tab + tab + featuresToVectorString(minPatchPerFeat[p]);
