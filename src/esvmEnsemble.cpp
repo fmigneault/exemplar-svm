@@ -8,10 +8,11 @@
 #include <sstream>
 
 /*
-    Initializes an ESVM Ensemble
+    Initializes an Ensemble of ESVM (EoESVM)
 */
-esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs)
-{     
+esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROIs, const std::string negativesDir,
+                           const std::vector<std::string>& positiveIDs)
+{
     setConstants(negativesDir);
     size_t nPositives = positiveROIs.size();
     size_t nPatches = getPatchCount();
@@ -20,67 +21,91 @@ esvmEnsemble::esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negati
     else
     {
         enrolledPositiveIDs = std::vector<std::string>(nPositives);
-        for (size_t pos = 0; pos < nPositives; pos++)
+        for (size_t pos = 0; pos < nPositives; ++pos)
             enrolledPositiveIDs[pos] = std::to_string(pos);
-    }    
+    }
 
     // positive samples
     nPositives = positiveROIs.size();
-    size_t dimsPositives[2]{ nPatches, nPositives };
-    xstd::mvector<2, FeatureVector> posSamples(dimsPositives);          // [patch][positives](FeatureVector)
+    size_t dimsPositives[3]{ nPatches, nPositives, 0 };
+    xstd::mvector<3, FeatureVector> posSamples(dimsPositives);          // [patch][positives][representation](FeatureVector)
 
     // Exemplar-SVM
-    EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)    
+    EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)
 
-    // load positive target still images, extract features and normalize    
-    for (size_t pos = 0; pos < nPositives; pos++)
-    {       
-        // apply pre-processing operation as required
-        #if ESVM_ROI_PREPROCESS_MODE == 2
-        cv::Mat roi = imCropByRatio(positiveROIs[pos], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
-        #else
-        cv::Mat roi = positiveROIs[pos];
-        #endif/*ESVM_ROI_PREPROCESS_MODE*/
-
-        std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
-        for (size_t p = 0; p < nPatches; p++) 
+    // load positive target still images, extract features and normalize
+    for (size_t pos = 0; pos < nPositives; ++pos)
+    {
+        // apply operations for each positive target representation
+        size_t nRepresentations = positiveROIs[pos].size();
+        for (size_t p = 0; p < nPatches; ++p)
+            posSamples[p][pos] = std::vector<FeatureVector>(nRepresentations);
+        for (size_t r = 0; r < nRepresentations; ++r)
         {
-            posSamples[p][pos] = hog.compute(patches[p]);
-            #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-            posSamples[p][pos] = normalizeOverAll(MIN_MAX, posSamples[p][pos], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-            posSamples[p][pos] = normalizeOverAll(Z_SCORE, posSamples[p][pos], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-            posSamples[p][pos] = normalizePerFeature(MIN_MAX, posSamples[p][pos], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-            posSamples[p][pos] = normalizePerFeature(Z_SCORE, posSamples[p][pos], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-            posSamples[p][pos] = normalizeOverAll(MIN_MAX, posSamples[p][pos], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-            posSamples[p][pos] = normalizeOverAll(Z_SCORE, posSamples[p][pos], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-            posSamples[p][pos] = normalizePerFeature(MIN_MAX, posSamples[p][pos], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-            #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-            posSamples[p][pos] = normalizePerFeature(Z_SCORE, posSamples[p][pos], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-            #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+            // apply pre-processing operation as required
+            #if ESVM_ROI_PREPROCESS_MODE == 2
+            cv::Mat roi = imCropByRatio(positiveROIs[pos][r], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
+            #else
+            cv::Mat roi = positiveROIs[pos];
+            #endif/*ESVM_ROI_PREPROCESS_MODE*/
+
+            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
+            for (size_t p = 0; p < nPatches; ++p)
+            {
+                posSamples[p][pos][r] = hog.compute(patches[p]);
+                #if ESVM_FEATURE_NORMALIZATION_MODE == 1
+                posSamples[p][pos][r] = normalizeOverAll(MIN_MAX, posSamples[p][pos][r], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
+                posSamples[p][pos][r] = normalizeOverAll(Z_SCORE, posSamples[p][pos][r], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
+                posSamples[p][pos][r] = normalizePerFeature(MIN_MAX, posSamples[p][pos][r], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
+                posSamples[p][pos][r] = normalizePerFeature(Z_SCORE, posSamples[p][pos][r], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
+                posSamples[p][pos][r] = normalizeOverAll(MIN_MAX, posSamples[p][pos][r], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
+                posSamples[p][pos][r] = normalizeOverAll(Z_SCORE, posSamples[p][pos][r][r], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
+                posSamples[p][pos][r] = normalizePerFeature(MIN_MAX, posSamples[p][pos][r], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
+                posSamples[p][pos][r] = normalizePerFeature(Z_SCORE, posSamples[p][pos][r], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+            }
         }
     }
 
-    // training    
-    for (size_t p = 0; p < nPatches; p++)
+    // training
+    for (size_t p = 0; p < nPatches; ++p)
     {
-        /* note: 
-                we re-assign the negative samples per patch individually and sequentially as loading them all 
+        /* note:
+                we re-assign the negative samples per patch individually and sequentially as loading them all
                 simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
         */
         std::vector<FeatureVector> negPatchSamples;
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
+        #if ESVM_FEATURE_NORMALIZATION_MODE == 0
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-raw" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 1
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax-overAll" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-zscore-overAll" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax-perFeat" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-zscore-perFeat" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-overAll" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-overAll" + sampleFileExt;
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-perFeat" + sampleFileExt;
-        ///std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax" + sampleFileExt;
-        ///std::string negativeFileName = "negatives-hog-patch" + std::to_string(p) + /*"-fullNorm" +*/ sampleFileExt;
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);        
-        for (size_t pos = 0; pos < nPositives; pos++)
-            EoESVM[p][pos] = ESVM({ posSamples[p][pos] }, negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+        #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
+        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-perFeat" + sampleFileExt;
+        #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);
+        for (size_t pos = 0; pos < nPositives; ++pos)
+            EoESVM[p][pos] = ESVM(posSamples[p][pos], negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
     }
 }
 
@@ -89,7 +114,7 @@ void esvmEnsemble::setConstants(std::string negativesDir)
     imageSize = cv::Size(48, 48);
     patchCounts = cv::Size(3, 3);
     blockSize = cv::Size(2, 2);
-    blockStride  = cv::Size(2, 2);
+    blockStride = cv::Size(2, 2);
     cellSize = cv::Size(2, 2);
     nBins = 3;
     windowSize = cv::Size(imageSize.width / patchCounts.width, imageSize.height / patchCounts.height);
@@ -99,86 +124,86 @@ void esvmEnsemble::setConstants(std::string negativesDir)
 
     #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max overall normalization across patches
         // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
-        hogRefMin = 0;
-        hogRefMax = 0.675058;
-        // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
-        hogRefMin = 0;
-        hogRefMax = 0.704711;
-        
-        // found min/max using 'proc_createNegativesSampleFiles' with 'PROC_ESVM_GENERATE_SAMPLE_FILES'=1 (S1 only) 
-        // generate AFTER fix of patch split / data pointer access of patches for HOG
-        hogRefMin = 0;
-        hogRefMax = 0.766903;
-        
-        // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
-        // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
-        ///hogRefMin = 0;
-        ///hogRefMax = 0.682703;
+    hogRefMin = 0;
+    hogRefMax = 0.675058;
+    // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
+    hogRefMin = 0;
+    hogRefMax = 0.704711;
 
-        // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (11344 samples)
-        // uses the 'LBP improved' localized face ROI refinement for more focused face details / less background noise
-        // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 1)
-        ///hogRefMin = 0;
-        ///hogRefMax = 0.695519;
-    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score overall normalization across patches        
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 2)");
+    // found min/max using 'proc_createNegativesSampleFiles' with 'PROC_ESVM_GENERATE_SAMPLE_FILES'=1 (S1 only)
+    // generate AFTER fix of patch split / data pointer access of patches for HOG
+    hogRefMin = 0;
+    hogRefMax = 0.766903;
+
+    // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (35276 samples)
+    // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 0)
+    ///hogRefMin = 0;
+    ///hogRefMax = 0.682703;
+
+    // found min/max using 'create_negatives' procedure with all ChokePoint available ROIs that match the specified negative IDs (11344 samples)
+    // uses the 'LBP improved' localized face ROI refinement for more focused face details / less background noise
+    // feature extraction is executed using the same pre-process as on-line execution (with HistEqual = 1)
+    ///hogRefMin = 0;
+    ///hogRefMax = 0.695519;
+    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score overall normalization across patches
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 2)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 3  // Min-Max per feature normalization across patches
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 3)");
-        hogRefMin = {};
-        hogRefMax = {};
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 3)");
+    hogRefMin = {};
+    hogRefMax = {};
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 4  // Z-Score per feature normalization across patches
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 4)");
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 4)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 5  // Min-Max overall normalization for each patch
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 5)");
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 5)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 6  // Z-Score overall normalization for each patch
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 6)");
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 6)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 7  // Min-Max per feature normalization for each patch
-        ESVM::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
-        ESVM::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
+    ESVM::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
+    ESVM::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 8  // Z-Score per feature normalization for each patch
-        THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 8)");
+    THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 8)");
     #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
     /* --- Score 'hardcoded' normalization values for on-line classification --- */
 
     #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max normalization
         // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
-        scoreRefMin = -1.578030;
-        scoreRefMax = -0.478968;
-        // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
-        scoreRefMin = -5.15837;
-        scoreRefMax = 0.156316;
+    scoreRefMin = -1.578030;
+    scoreRefMax = -0.478968;
+    // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
+    scoreRefMin = -5.15837;
+    scoreRefMax = 0.156316;
 
-        // found min/max using 'FullGenerationAndTestProcess' AFTER fix of patch split / data pointer access of patches for HOG
-        //      S1 - Min / Max: -4.03879 / 0.366612
-        //      S3 - Min / Max : -4.16766 / 0.200456
-        //      EX - Min / Max : -4.28606 / 0.60522
-        scoreRefMin = -4.28606;
-        scoreRefMax = 0.60522;
-    
-        // found min/max using FAST-DT live test 
-        ///scoreRefMin = 0.085;         // Testing
-        ///scoreRefMin = -0.638025;
-        ///scoreRefMax =  0.513050;
+    // found min/max using 'FullGenerationAndTestProcess' AFTER fix of patch split / data pointer access of patches for HOG
+    //      S1 - Min / Max: -4.03879 / 0.366612
+    //      S3 - Min / Max : -4.16766 / 0.200456
+    //      EX - Min / Max : -4.28606 / 0.60522
+    scoreRefMin = -4.28606;
+    scoreRefMax = 0.60522;
 
-        // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
-        /* found from test */
-        //scoreRefMin = -4.69201; 
-        //scoreRefMax = 1.46431;
-        /* experimental adjustment */
-        ///scoreRefMin = -2.929948; 
-        ///scoreRefMax = -0.731181;
+    // found min/max using FAST-DT live test
+    ///scoreRefMin = 0.085;         // Testing
+    ///scoreRefMin = -0.638025;
+    ///scoreRefMax =  0.513050;
+
+    // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
+    /* found from test */
+    //scoreRefMin = -4.69201;
+    //scoreRefMax = 1.46431;
+    /* experimental adjustment */
+    ///scoreRefMin = -2.929948;
+    ///scoreRefMax = -0.731181;
     #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score normalization
-        // found using FAST-DT live test 
+        // found using FAST-DT live test
         ///scoreRefMean = -1.26193;
         ///scoreRefStdDev = 0.247168;
         // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
-        scoreRefMean = -1.61661;
-        scoreRefStdDev = 0.712719;
+    scoreRefMean = -1.61661;
+    scoreRefStdDev = 0.712719;
     #endif/*ESVM_SCORE_NORMALIZATION_MODE*/
 
     sampleFileExt = ".bin";
-    sampleFileFormat = BINARY;    
+    sampleFileFormat = BINARY;
 }
 
 std::string esvmEnsemble::getPositiveID(int positiveIndex)
@@ -188,10 +213,10 @@ std::string esvmEnsemble::getPositiveID(int positiveIndex)
 }
 
 /*
-    Predicts the classification value for the specified roi using the trained ESVM model.
+    Predicts the classification value for the specified roi using the trained Ensemble of ESVM model.
 */
-std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
-{    
+std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
+{
     size_t nPositives = getPositiveCount();
     size_t nPatches = getPatchCount();
 
@@ -202,10 +227,10 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
     cv::Mat procROI = roi;
     #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
-    // load probe still images, extract features and normalize    
+    // load probe still images, extract features and normalize
     xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
     std::vector<cv::Mat> patches = imPreprocess(procROI, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
-    for (size_t p = 0; p < nPatches; p++) 
+    for (size_t p = 0; p < nPatches; p++)
     {
         probeSampleFeats[p] = hog.compute(patches[p]);
         #if ESVM_FEATURE_NORMALIZATION_MODE == 1
@@ -227,13 +252,13 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat roi)
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
     }
 
-    // testing, score fusion, normalization    
+    // testing, score fusion, normalization
     xstd::mvector<1, double> classificationScores(nPositives, 0.0);
-    size_t dimsProbes[2]{ nPatches, nPositives }; 
+    size_t dimsProbes[2]{ nPatches, nPositives };
     xstd::mvector<2, double> scores(dimsProbes, 0.0);
-    for (size_t pos = 0; pos < nPositives; pos++) 
+    for (size_t pos = 0; pos < nPositives; ++pos)
     {
-        for (size_t p = 0; p < nPatches; p++)
+        for (size_t p = 0; p < nPatches; ++p)
         {
             scores[p][pos] = EoESVM[p][pos].predict(probeSampleFeats[p]);
             classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion

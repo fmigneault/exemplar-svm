@@ -16,11 +16,12 @@ class esvmEnsemble
 {
 public:
     esvmEnsemble() {};
-    esvmEnsemble(std::vector<cv::Mat> positiveROIs, std::string negativesDir, std::vector<std::string> positiveIDs = {});
-    std::vector<double> predict(const cv::Mat roi);
+    esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROIs, const std::string negativesDir,
+                 const std::vector<std::string>& positiveIDs = {});
+    std::vector<double> predict(const cv::Mat& roi);
     inline size_t getPositiveCount() { return enrolledPositiveIDs.size(); }
     inline size_t getPatchCount() { return patchCounts.area(); }
-    inline std::string getPositiveID(int positiveIndex);    
+    inline std::string getPositiveID(int positiveIndex);
 
 private:
     void setConstants(std::string negativesDir);
@@ -35,14 +36,14 @@ private:
     cv::Size cellSize;
     int nBins;
     FeatureExtractorHOG hog;
-    
-    xstd::mvector<2, ESVM> EoESVM; 
+
+    xstd::mvector<2, ESVM> EoESVM;
 
     std::string sampleFileExt;
     FileFormat sampleFileFormat;
 
     /* --- Reference 'hardcoded' normalization values --- */
-    
+
     #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max features - overall normalization - across patches
     double hogRefMin;
     double hogRefMax;
@@ -72,7 +73,7 @@ private:
     #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max scores normalization
     double scoreRefMin;
     double scoreRefMax;
-    #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score scores normalization    
+    #elif ESVM_SCORE_NORMALIZATION_MODE == 2    // Z-Score scores normalization
     double scoreRefMean;
     double scoreRefStdDev;
     #endif/*ESVM_SCORE_NORMALIZATION_MODE*/
