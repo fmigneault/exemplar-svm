@@ -204,7 +204,7 @@
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION 0
 // Specify which replication individuals to employ for negative sample files generation
 // see corresponding ID values in 'getReplicationNegativeIDs' in 'createSampleFiles'
-#define PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION 0
+#define PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION 1
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT 10
 
 /* ------------------------------------------------------------

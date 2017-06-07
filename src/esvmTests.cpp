@@ -2987,8 +2987,8 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         // Only original representation otherwise (no synthetic images)
         #else/*!TEST_USE_SYNTHETIC_GENERATION*/
 
-            matPositiveSamples[pos][0] = imPreprocess(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
-                                                      ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+            matPositiveSamples[pos][0] = imPreprocess<cv::Mat>(refStillImagesPath + "roiID" + positivesID[pos] + ".tif", imageSize, patchCounts,
+                                                               ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
         
         #endif/*TEST_USE_SYNTHETIC_GENERATION*/
     }
@@ -3119,8 +3119,9 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                             {
                                 size_t neg = matNegativeSamples.size();
                                 matNegativeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                std::vector<cv::Mat> patches = imPreprocess<cv::Mat>(itDir->path().string(), imageSize, patchCounts,
+                                                                                     ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME,
+                                                                                     cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; ++p)
                                     matNegativeSamples[neg][p] = patches[p];
 
@@ -3130,8 +3131,9 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                             {
                                 size_t prb = matProbeSamples.size();
                                 matProbeSamples.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME, cv::IMREAD_GRAYSCALE);
+                                std::vector<cv::Mat> patches = imPreprocess<cv::Mat>(itDir->path().string(), imageSize, patchCounts,
+                                                                                     ESVM_USE_HISTOGRAM_EQUALIZATION, WINDOW_NAME,
+                                                                                     cv::IMREAD_GRAYSCALE);
                                 for (size_t p = 0; p < nPatches; ++p)
                                     matProbeSamples[prb][p] = patches[p];
 

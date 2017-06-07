@@ -20,8 +20,8 @@ xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string 
             {
                 size_t neg = processedImagePatches.size();
                 processedImagePatches.push_back(xstd::mvector<1, cv::Mat>(nPatches));
-                std::vector<cv::Mat> patches = imPreprocess(itDir->path().string(), imageSize, patchCounts,
-                                                            ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+                std::vector<cv::Mat> patches = imPreprocess<cv::Mat>(itDir->path().string(), imageSize, patchCounts,
+                                                                     ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
                 for (size_t p = 0; p < nPatches; ++p)
                     processedImagePatches[neg][p] = patches[p];
             }                  
