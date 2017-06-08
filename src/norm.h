@@ -29,7 +29,7 @@ FeatureVector normalizeOverAll(NormType norm, const FeatureVector& featureVector
 
 // Normalization [0, 1] for each feature in the vector using the corresponding norm features
 FeatureVector normalizePerFeature(NormType norm, const FeatureVector& featureVector,
-                                  FeatureVector& featuresParam1, FeatureVector& featuresParam2, bool clipFeatures = false);
+                                  const FeatureVector& featuresParam1, const FeatureVector& featuresParam2, bool clipFeatures = false);
 
 // Normalization [0, 1] over all the scores with specified norm values, or using the found norm values from the scores otherwise
 std::vector<double> normalizeClassScores(NormType norm, const std::vector<double>& scores, double param1, double param2, bool clipScores = false);
@@ -42,7 +42,7 @@ inline double normalizeClassScoreToSimilarity(double score) { return (score + 1)
 void findNormParamsAcrossFeatures(NormType norm, const FeatureVector& featureVector, OUT_PARAM double& param1, OUT_PARAM double& param2,
                                   int *posParam1 = nullptr, int *posParam2 = nullptr);
 
-// Find the norm parameters acros features and across a whole list of feature vectors
+// Find the norm parameters across features and across a whole list of feature vectors
 void findNormParamsOverAll(NormType norm, const std::vector<FeatureVector>& featureVectors, OUT_PARAM double& param1, OUT_PARAM double& param2);
 
 // Find the norm parameters per feature across a whole list of feature vectors

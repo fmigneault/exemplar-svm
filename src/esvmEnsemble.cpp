@@ -26,7 +26,6 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
     }
 
     // positive samples
-    nPositives = positiveROIs.size();
     size_t dimsPositives[3]{ nPatches, nPositives, 0 };
     xstd::mvector<3, FeatureVector> posSamples(dimsPositives);          // [patch][positives][representation](FeatureVector)
 
@@ -46,7 +45,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             #if ESVM_ROI_PREPROCESS_MODE == 2
             cv::Mat roi = imCropByRatio(positiveROIs[pos][r], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
             #else
-            cv::Mat roi = positiveROIs[pos];
+            cv::Mat roi = positiveROIs[pos][r];
             #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
             std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
@@ -81,7 +80,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
                 we re-assign the negative samples per patch individually and sequentially as loading them all
                 simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
         */
-        std::vector<FeatureVector> negPatchSamples;
+        
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
         #if ESVM_FEATURE_NORMALIZATION_MODE == 0
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-raw" + sampleFileExt;
@@ -102,7 +101,8 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-perFeat" + sampleFileExt;
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
-
+        
+        std::vector<FeatureVector> negPatchSamples;
         ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);
         for (size_t pos = 0; pos < nPositives; ++pos)
             EoESVM[p][pos] = ESVM(posSamples[p][pos], negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));

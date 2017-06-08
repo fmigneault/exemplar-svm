@@ -45,7 +45,7 @@ FeatureVector normalizeOverAll(NormType norm, const FeatureVector& featureVector
 }
 
 FeatureVector normalizePerFeature(NormType norm, const FeatureVector& featureVector, 
-                                  FeatureVector& featuresParam1, FeatureVector& featuresParam2, bool clipFeatures)
+                                  const FeatureVector& featuresParam1, const FeatureVector& featuresParam2, bool clipFeatures)
 {
     // check number of features
     size_t nFeatures = featureVector.size();
