@@ -216,18 +216,20 @@ int proc_createNegativesSampleFiles()
         string seq = buildChokePointSequenceString(pn, *pt, sn, cn);
 
         // Add ROI to corresponding sample vectors according to individual IDs            
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; id++)
+        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
         {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
-            logNeg << "Loading negative from directory: '" << dirPath << "'" << std::endl;
-            if (bfs::is_directory(dirPath))
+            std::string strID = buildChokePointIndividualID(id);
+            if (!contains(negativesID, strID))
+                logNeg << "Skipping non-negative: '" << strID << "'" << std::endl;
+            else
             {
-                for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
+                std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+                logNeg << "Loading negative from directory: '" << dirPath << "'" << std::endl;
+                if (bfs::is_directory(dirPath))
                 {
-                    if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
+                    for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
                     {
-                        std::string strID = buildChokePointIndividualID(id);
-                        if (contains(negativesID, strID))
+                        if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
                         {
                             std::string imgPath = itDir->path().string();
                             cv::Mat img = cv::imread(imgPath, cv::IMREAD_GRAYSCALE);
