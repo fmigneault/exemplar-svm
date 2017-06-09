@@ -75,12 +75,20 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
 
     // extract features and normalize from additional negatives if specified
     size_t nAdditionalNegatives = additionalNegativeROIs.size();
-    size_t dimsPositives[2]{ nPatches, nAdditionalNegatives };
+    size_t dimsNegatives[2]{ nPatches, nAdditionalNegatives };
     xstd::mvector<2, FeatureVector> negSamples(dimsNegatives);    // [patch][negatives](FeatureVector)
     if (nAdditionalNegatives > 0) 
     {
         for (size_t neg = 0; neg < nAdditionalNegatives; ++neg) 
         {
+            // apply pre-processing operation as required
+            #if ESVM_ROI_PREPROCESS_MODE == 2
+            cv::Mat roi = imCropByRatio(additionalNegativeROIs[neg], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
+            #else
+            cv::Mat roi = additionalNegativeROIs[neg];
+            #endif/*ESVM_ROI_PREPROCESS_MODE*/
+
+            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
             for (size_t p = 0; p < nPatches; ++p)
             {
                 negSamples[p][neg] = hog.compute(patches[p]);
