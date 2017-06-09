@@ -11,7 +11,7 @@
     Initializes an Ensemble of ESVM (EoESVM)
 */
 esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROIs, const std::string negativesDir,
-                           const std::vector<std::string>& positiveIDs)
+                           const std::vector<std::string>& positiveIDs, const std::vector<cv::Mat>& additionalNegativeROIs)
 {
     setConstants(negativesDir);
     size_t nPositives = positiveROIs.size();
@@ -23,7 +23,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         enrolledPositiveIDs = std::vector<std::string>(nPositives);
         for (size_t pos = 0; pos < nPositives; ++pos)
             enrolledPositiveIDs[pos] = std::to_string(pos);
-    }
+    }    
 
     // positive samples
     size_t dimsPositives[3]{ nPatches, nPositives, 0 };
@@ -73,11 +73,43 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         }
     }
 
+    // extract features and normalize from additional negatives if specified
+    size_t nAdditionalNegatives = additionalNegativeROIs.size();
+    size_t dimsPositives[2]{ nPatches, nAdditionalNegatives };
+    xstd::mvector<2, FeatureVector> negSamples(dimsNegatives);    // [patch][negatives](FeatureVector)
+    if (nAdditionalNegatives > 0) 
+    {
+        for (size_t neg = 0; neg < nAdditionalNegatives; ++neg) 
+        {
+            for (size_t p = 0; p < nPatches; ++p)
+            {
+                negSamples[p][neg] = hog.compute(patches[p]);
+                #if ESVM_FEATURE_NORMALIZATION_MODE == 1
+                negSamples[p][neg] = normalizeOverAll(MIN_MAX, negSamples[p][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
+                negSamples[p][neg] = normalizeOverAll(Z_SCORE, negSamples[p][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
+                negSamples[p][neg] = normalizePerFeature(MIN_MAX, negSamples[p][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
+                negSamples[p][neg] = normalizePerFeature(Z_SCORE, negSamples[p][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
+                negSamples[p][neg] = normalizeOverAll(MIN_MAX, negSamples[p][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
+                negSamples[p][neg] = normalizeOverAll(Z_SCORE, negSamples[p][neg][r], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
+                negSamples[p][neg] = normalizePerFeature(MIN_MAX, negSamples[p][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
+                negSamples[p][neg] = normalizePerFeature(Z_SCORE, negSamples[p][neg], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+            }
+        }
+    }
+
     // training
     for (size_t p = 0; p < nPatches; ++p)
     {
         /* note:
-                we re-assign the negative samples per patch individually and sequentially as loading them all
+                we re-assign the negative samples per patch individually and sequentially clear them as loading them all
                 simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
         */
         
@@ -102,10 +134,14 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-perFeat" + sampleFileExt;
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         
-        std::vector<FeatureVector> negPatchSamples;
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negPatchSamples, sampleFileFormat);
+        std::vector<FeatureVector> negFileSamples;  // reset on each patch
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);
+        negSamples[p].insert(negSamples[p].end(), negFileSamples.begin(), negFileSamples.end());
+
         for (size_t pos = 0; pos < nPositives; ++pos)
-            EoESVM[p][pos] = ESVM(posSamples[p][pos], negPatchSamples, enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+            EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p], enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+
+        negSamples[p].clear();
     }
 }
 
