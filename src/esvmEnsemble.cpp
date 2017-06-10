@@ -11,7 +11,7 @@
     Initializes an Ensemble of ESVM (EoESVM)
 */
 esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROIs, const std::string negativesDir,
-                           const std::vector<std::string>& positiveIDs, const std::vector<cv::Mat>& additionalNegativeROIs)
+                           const std::vector<std::string>& positiveIDs, const std::vector<std::vector<cv::Mat> >& additionalNegativeROIs)
 {
     setConstants(negativesDir);
     size_t nPositives = positiveROIs.size();
@@ -28,6 +28,11 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
     // positive samples
     size_t dimsPositives[3]{ nPatches, nPositives, 0 };
     xstd::mvector<3, FeatureVector> posSamples(dimsPositives);          // [patch][positives][representation](FeatureVector)
+
+    // additional negative samples    
+    size_t dimsNegatives[3]{ nPatches, nPositives, 0 };
+    xstd::mvector<3, FeatureVector> negSamples(dimsNegatives);          // [patch][positives][negatives](FeatureVector)
+    size_t nAdditionalNegatives = additionalNegativeROIs.size();
 
     // Exemplar-SVM
     EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)
@@ -52,7 +57,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             for (size_t p = 0; p < nPatches; ++p)
             {
                 posSamples[p][pos][r] = hog.compute(patches[p]);
-                #if ESVM_FEATURE_NORMALIZATION_MODE == 1
+                #if   ESVM_FEATURE_NORMALIZATION_MODE == 1
                 posSamples[p][pos][r] = normalizeOverAll(MIN_MAX, posSamples[p][pos][r], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
                 #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
                 posSamples[p][pos][r] = normalizeOverAll(Z_SCORE, posSamples[p][pos][r], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
@@ -71,44 +76,42 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
                 #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
             }
         }
-    }
 
-    // extract features and normalize from additional negatives if specified
-    size_t nAdditionalNegatives = additionalNegativeROIs.size();
-    size_t dimsNegatives[2]{ nPatches, nAdditionalNegatives };
-    xstd::mvector<2, FeatureVector> negSamples(dimsNegatives);    // [patch][negatives](FeatureVector)
-    if (nAdditionalNegatives > 0) 
-    {
-        for (size_t neg = 0; neg < nAdditionalNegatives; ++neg) 
+        // extract features and normalize from additional negatives if specified and matching positives to enroll
+        if (nAdditionalNegatives == nPositives)
         {
-            // apply pre-processing operation as required
-            #if ESVM_ROI_PREPROCESS_MODE == 2
-            cv::Mat roi = imCropByRatio(additionalNegativeROIs[neg], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
-            #else
-            cv::Mat roi = additionalNegativeROIs[neg];
-            #endif/*ESVM_ROI_PREPROCESS_MODE*/
-
-            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
-            for (size_t p = 0; p < nPatches; ++p)
+            size_t nNegatives = additionalNegativeROIs[pos].size();
+            for (size_t neg = 0; neg < nNegatives; ++neg)
             {
-                negSamples[p][neg] = hog.compute(patches[p]);
-                #if ESVM_FEATURE_NORMALIZATION_MODE == 1
-                negSamples[p][neg] = normalizeOverAll(MIN_MAX, negSamples[p][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-                negSamples[p][neg] = normalizeOverAll(Z_SCORE, negSamples[p][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-                negSamples[p][neg] = normalizePerFeature(MIN_MAX, negSamples[p][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-                negSamples[p][neg] = normalizePerFeature(Z_SCORE, negSamples[p][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-                negSamples[p][neg] = normalizeOverAll(MIN_MAX, negSamples[p][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-                negSamples[p][neg] = normalizeOverAll(Z_SCORE, negSamples[p][neg][r], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-                negSamples[p][neg] = normalizePerFeature(MIN_MAX, negSamples[p][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-                #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-                negSamples[p][neg] = normalizePerFeature(Z_SCORE, negSamples[p][neg], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
-                #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+                // apply pre-processing operation as required
+                #if ESVM_ROI_PREPROCESS_MODE == 2
+                cv::Mat roi = imCropByRatio(additionalNegativeROIs[pos][neg], ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
+                #else
+                cv::Mat roi = additionalNegativeROIs[pos][neg];
+                #endif/*ESVM_ROI_PREPROCESS_MODE*/
+
+                std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
+                for (size_t p = 0; p < nPatches; ++p)
+                {
+                    negSamples[p][pos][neg] = hog.compute(patches[p]);
+                    #if   ESVM_FEATURE_NORMALIZATION_MODE == 1
+                    negSamples[p][pos][neg] = normalizeOverAll(MIN_MAX, negSamples[p][pos][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
+                    negSamples[p][pos][neg] = normalizeOverAll(Z_SCORE, negSamples[p][pos][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
+                    negSamples[p][pos][neg] = normalizePerFeature(MIN_MAX, negSamples[p][pos][neg], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
+                    negSamples[p][pos][neg] = normalizePerFeature(Z_SCORE, negSamples[p][pos][neg], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
+                    negSamples[p][pos][neg] = normalizeOverAll(MIN_MAX, negSamples[p][pos][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
+                    negSamples[p][pos][neg] = normalizeOverAll(Z_SCORE, negSamples[p][pos][neg][r], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
+                    negSamples[p][pos][neg] = normalizePerFeature(MIN_MAX, negSamples[p][pos][neg], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
+                    negSamples[p][pos][neg] = normalizePerFeature(Z_SCORE, negSamples[p][pos][neg], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+                    #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
+                }
             }
         }
     }
@@ -122,7 +125,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         */
         
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
-        #if ESVM_FEATURE_NORMALIZATION_MODE == 0
+        #if   ESVM_FEATURE_NORMALIZATION_MODE == 0
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-raw" + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 1
         std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax-overAll" + sampleFileExt;
@@ -143,12 +146,13 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         
         std::vector<FeatureVector> negFileSamples;  // reset on each patch
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);
-        negSamples[p].insert(negSamples[p].end(), negFileSamples.begin(), negFileSamples.end());
+        ESVM::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);        
 
-        for (size_t pos = 0; pos < nPositives; ++pos)
-            EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p], enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
-
+        for (size_t pos = 0; pos < nPositives; ++pos) {
+            negSamples[p][pos].insert(negSamples[p][pos].end(), negFileSamples.begin(), negFileSamples.end());
+            EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p][pos], enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+            negSamples[p][pos].clear();
+        }
         negSamples[p].clear();
     }
 }
@@ -277,7 +281,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
     for (size_t p = 0; p < nPatches; p++)
     {
         probeSampleFeats[p] = hog.compute(patches[p]);
-        #if ESVM_FEATURE_NORMALIZATION_MODE == 1
+        #if   ESVM_FEATURE_NORMALIZATION_MODE == 1
         probeSampleFeats[p] = normalizeOverAll(MIN_MAX, probeSampleFeats[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
         probeSampleFeats[p] = normalizeOverAll(Z_SCORE, probeSampleFeats[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);

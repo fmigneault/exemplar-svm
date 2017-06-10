@@ -172,10 +172,10 @@ inline std::vector<TMat> imSyntheticGeneration(const TMat& image, size_t transla
     synth[4] = imTranslate(image, cv::Point(0, -translationOffset));
     synth[5] = imFlip(image, HORIZONTAL);
     
-    size_t size = std::floor(image.rows() * (1 - scale));
+    size_t size = std::floor(image.rows * (1 - scale));
     while (size > minSize) {
-        synth.push_back(imResize(image), cv::Size(size, size));
-        size -= std::floor(image.rows() * (1 - scale));
+        synth.push_back(imResize(image, cv::Size(size, size)));
+        size -= std::floor(image.rows * (1 - scale));
     }
 
     return synth;
