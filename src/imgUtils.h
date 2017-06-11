@@ -71,12 +71,13 @@ inline bool imConvert(std::string path, std::string toExtension, std::string fro
 }
 
 // Translation of an image with XY pixel offset
+// Fills the background 'new' pixels resulting from translation with specified value, defaults: 0 (black)
 template<typename TMat>
-inline TMat imTranslate(const TMat& image, cv::Point offset)
+inline TMat imTranslate(const TMat& image, cv::Point offset, cv::Scalar fill = cv::Scalar::all(0))
 {
     cv::Rect source = cv::Rect(cv::max(0, -offset.x), cv::max(0, -offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
     cv::Rect target = cv::Rect(cv::max(0, offset.x), cv::max(0, offset.y), image.cols - abs(offset.x), image.rows - abs(offset.y));
-    TMat trans = TMat::zeros(image.size(), image.type());
+    TMat trans(image.size(), image.type(), fill);
     image(source).copyTo(trans(target));
     return trans;
 }
@@ -156,6 +157,50 @@ inline TMat imCropByRatio(const TMat& image, double ratio, CropMode cropMode = C
     }
 }
 
+// Heuristic that finds the background color using the maximum gray pixel value from the four image corners
+// Optionally only employs mask corners to find the background color where:  mask = (TL, TR, BL, BR)
+inline cv::Scalar findBackGroundColor(const cv::Mat& image, cv::Vec4b mask = cv::Vec4b::all(1))
+{    
+    if (image.channels() == 1) {
+        uchar bg = 0;
+        if (mask[0]) bg = MAX(bg, image.at<uchar>(0, 0));
+        if (mask[1]) bg = MAX(bg, image.at<uchar>(0, image.cols - 1));
+        if (mask[2]) bg = MAX(bg, image.at<uchar>(image.rows - 1, 0));
+        if (mask[3]) bg = MAX(bg, image.at<uchar>(image.rows - 1, image.cols - 1));
+        return cv::Scalar::all(bg);
+    }
+    
+    cv::Mat corners(cv::Size(2, 2), image.type(), 0), cornersGray;
+    corners.at<cv::Vec3b>(0, 0) = image.at<cv::Vec3b>(0, 0);
+    corners.at<cv::Vec3b>(0, 1) = image.at<cv::Vec3b>(0, image.cols - 1);
+    corners.at<cv::Vec3b>(1, 0) = image.at<cv::Vec3b>(image.rows - 1, 0);
+    corners.at<cv::Vec3b>(1, 1) = image.at<cv::Vec3b>(image.rows - 1, image.cols - 1);
+    cv::cvtColor(corners, cornersGray, cv::COLOR_BGR2GRAY);    
+
+    uchar bgGray = 0;
+    cv::Scalar bg = cv::Scalar::all(0);
+    if (mask[0] && cornersGray.at<uchar>(0, 1) > bgGray) {
+        bg = corners.at<cv::Vec3b>(0, 0);
+        bgGray = cornersGray.at<uchar>(0, 0);
+    }
+    if (mask[1] && cornersGray.at<uchar>(0, 1) > bgGray) {
+        bg = corners.at<cv::Vec3b>(0, 1);
+        bgGray = cornersGray.at<uchar>(0, 1);
+    }
+    if (mask[2] && cornersGray.at<uchar>(1, 0) > bgGray) {
+        bg = corners.at<cv::Vec3b>(1, 0);
+        bgGray = cornersGray.at<uchar>(1, 0);
+    }    
+    if (mask[3] && cornersGray.at<uchar>(1, 1) > bgGray)
+        bg = corners.at<cv::Vec3b>(1, 1);
+    return bg;
+}
+
+inline cv::Scalar findBackGroundColor(const cv::UMat& image, cv::Vec4b mask = cv::Vec4b::all(1)) 
+{ 
+    return findBackGroundColor(image.getMat(cv::ACCESS_READ), mask); 
+}
+
 // Returns a vector containing the original image followed by multiple synthetic images generated from the original
 template<typename TMat>
 inline std::vector<TMat> imSyntheticGeneration(const TMat& image, size_t translationOffset = 4, double scale = 0.5, size_t minSize = 20)
@@ -166,16 +211,17 @@ inline std::vector<TMat> imSyntheticGeneration(const TMat& image, size_t transla
 
     std::vector<TMat> synth(6);
     image.copyTo(synth[0]);
-    synth[1] = imTranslate(image, cv::Point(translationOffset, 0));
-    synth[2] = imTranslate(image, cv::Point(0, translationOffset));
-    synth[3] = imTranslate(image, cv::Point(-translationOffset, 0));
-    synth[4] = imTranslate(image, cv::Point(0, -translationOffset));
-    synth[5] = imFlip(image, HORIZONTAL);
     
+    synth[1] = imTranslate(image, cv::Point( translationOffset, 0), findBackGroundColor(image, cv::Vec4b(1, 0, 1, 0)));
+    synth[2] = imTranslate(image, cv::Point(0,  translationOffset), findBackGroundColor(image, cv::Vec4b(1, 1, 0, 0)));
+    synth[3] = imTranslate(image, cv::Point(-translationOffset, 0), findBackGroundColor(image, cv::Vec4b(0, 1, 0, 1)));
+    synth[4] = imTranslate(image, cv::Point(0, -translationOffset), findBackGroundColor(image, cv::Vec4b(0, 0, 1, 1)));
+    synth[5] = imFlip(image, HORIZONTAL);
+
     size_t size = std::floor(image.rows * (1 - scale));
     while (size > minSize) {
         synth.push_back(imResize(image, cv::Size(size, size)));
-        size -= std::floor(image.rows * (1 - scale));
+        size = std::floor(size * (1 - scale));
     }
 
     return synth;
