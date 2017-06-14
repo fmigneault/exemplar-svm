@@ -81,6 +81,8 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         if (nAdditionalNegatives == nPositives)
         {
             size_t nNegatives = additionalNegativeROIs[pos].size();
+            for (size_t p = 0; p < nPatches; ++p)
+                negSamples[p][pos] = std::vector<FeatureVector>(nNegatives);
             for (size_t neg = 0; neg < nNegatives; ++neg)
             {
                 // apply pre-processing operation as required
