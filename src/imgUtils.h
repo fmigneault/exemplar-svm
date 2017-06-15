@@ -201,27 +201,31 @@ inline cv::Scalar findBackGroundColor(const cv::UMat& image, cv::Vec4b mask = cv
     return findBackGroundColor(image.getMat(cv::ACCESS_READ), mask); 
 }
 
-// Returns a vector containing the original image followed by multiple synthetic images generated from the original
+// Returns a vector containing multiple synthetic images generated from the original image using specified parameters
+// The orginal image is returned as first element in the output vector if requested with 'keepOriginal' (default: true)
 template<typename TMat>
-inline std::vector<TMat> imSyntheticGeneration(const TMat& image, size_t translationOffset = 4, double scale = 0.5, size_t minSize = 20)
+inline std::vector<TMat> imSyntheticGeneration(const TMat& image, size_t translationOffset = 4, 
+                                               double scale = 0.5, size_t minSize = 20, bool keepOriginal = true)
 {
     ASSERT_LOG(translationOffset > 0, "Translation offset must be greater than zero");
     ASSERT_LOG(scale > 0 && scale < 1.0, "Scale must be in range ]0,1[");
     ASSERT_LOG(minSize > 0, "Scale minimum size must be greater than zero");
 
-    std::vector<TMat> synth(6);
-    image.copyTo(synth[0]);
+    size_t offsetOriginal = keepOriginal ? 0 : 1;
+    std::vector<TMat> synth(6 - offsetOriginal);
+    if (keepOriginal)
+        image.copyTo(synth[0]);
     
-    synth[1] = imTranslate(image, cv::Point( translationOffset, 0), findBackGroundColor(image, cv::Vec4b(1, 0, 1, 0)));
-    synth[2] = imTranslate(image, cv::Point(0,  translationOffset), findBackGroundColor(image, cv::Vec4b(1, 1, 0, 0)));
-    synth[3] = imTranslate(image, cv::Point(-translationOffset, 0), findBackGroundColor(image, cv::Vec4b(0, 1, 0, 1)));
-    synth[4] = imTranslate(image, cv::Point(0, -translationOffset), findBackGroundColor(image, cv::Vec4b(0, 0, 1, 1)));
-    synth[5] = imFlip(image, HORIZONTAL);
+    synth[1 - offsetOriginal] = imTranslate(image, cv::Point( translationOffset, 0), findBackGroundColor(image, cv::Vec4b(1, 0, 1, 0)));
+    synth[2 - offsetOriginal] = imTranslate(image, cv::Point(0,  translationOffset), findBackGroundColor(image, cv::Vec4b(1, 1, 0, 0)));
+    synth[3 - offsetOriginal] = imTranslate(image, cv::Point(-translationOffset, 0), findBackGroundColor(image, cv::Vec4b(0, 1, 0, 1)));
+    synth[4 - offsetOriginal] = imTranslate(image, cv::Point(0, -translationOffset), findBackGroundColor(image, cv::Vec4b(0, 0, 1, 1)));
+    synth[5 - offsetOriginal] = imFlip(image, HORIZONTAL);
 
-    size_t size = std::floor(image.rows * (1 - scale));
+    size_t size = std::floor(image.rows * scale);
     while (size > minSize) {
         synth.push_back(imResize(image, cv::Size(size, size)));
-        size = std::floor(size * (1 - scale));
+        size = std::floor(size * scale);
     }
 
     return synth;
