@@ -55,5 +55,7 @@ tessdata/
 *.vsp
 
 # Project specific
+data/
+img/
 lib/
 sln/
