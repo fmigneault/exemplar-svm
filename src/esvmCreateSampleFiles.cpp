@@ -152,6 +152,7 @@ int proc_createNegativesSampleFiles()
     logstream logNeg("negatives-output.txt");
     logger << "Running '" << __func__ << "' test..." << std::endl;
     std::string tab = "    ";
+    ChokePoint cp;
 
     // outputs
     std::string windowNameOriginal = "WINDOW_ORIGINAL";     // display oringal 'cropped_face' ROIs
@@ -161,9 +162,9 @@ int proc_createNegativesSampleFiles()
     ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY || PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM, 
                "Either 'PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY' or 'PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM' must be enabled for file generation");
     ASSERT_LOG(delayShowROI > 0, "Delay to display ROI during file generation must be greater than zero");
-    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION >= 0 && PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION <= SESSION_QUANTITY,
+    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION >= 0 && PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION <= cp.SESSION_QUANTITY,
                "Undefined value '" + std::to_string(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION) + 
-               "' specified for 'PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION', must be in range [0" + std::to_string(SESSION_QUANTITY) + "]");
+               "' specified for 'PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION', must be in range [0" + std::to_string(cp.SESSION_QUANTITY) + "]");
 
     // Negatives to employ
     std::vector<std::string> negativesID = getReplicationNegativeIDs();
@@ -201,32 +202,33 @@ int proc_createNegativesSampleFiles()
     std::vector<std::string> negativeSamplesID;                 // [negative](string)    
 
     // Loop for all ChokePoint cropped faces
-    int totalSeq = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0 ? TOTAL_SEQUENCES : TOTAL_SEQUENCES / SESSION_QUANTITY;
-    std::vector<int> perSessionNegatives(SESSION_QUANTITY, 0);
+    int totalSeq = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0 ? cp.TOTAL_SEQUENCES : cp.TOTAL_SEQUENCES / cp.SESSION_QUANTITY;
+    std::vector<int> perSessionNegatives(cp.SESSION_QUANTITY, 0);
     std::vector<int> perSequenceNegatives(totalSeq, 0);
     int seqIdx = 0;
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    
+    std::vector<ChokePoint::PortalType> types = { ChokePoint::PortalType::ENTER, ChokePoint::PortalType::LEAVE };
     bfs::directory_iterator endDir;
     #if PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0
-    for (int sn = 1; sn <= SESSION_QUANTITY; ++sn) {            // session number
+    for (int sn = 1; sn <= cp.SESSION_QUANTITY; ++sn) {         // session number
     #else /*PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == [1-4]*/
     int sn = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION; {
     #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION*/
-    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (int pn = 1; pn <= cp.PORTAL_QUANTITY; ++pn) {             // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
-    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
-    {     
-        string seq = buildChokePointSequenceString(pn, *pt, sn, cn);
+    for (int cn = 1; cn <= cp.CAMERA_QUANTITY; ++cn)            // camera number
+    {       
+        string seq = cp.getSequenceString(pn, *pt, sn, cn);
 
         // Add ROI to corresponding sample vectors according to individual IDs            
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
+        for (int id = 1; id <= cp.INDIVIDUAL_QUANTITY; ++id)
         {
-            std::string strID = buildChokePointIndividualID(id);
+            std::string strID = cp.getIndividualID(id);
             if (!contains(negativesID, strID))
                 logNeg << "Skipping non-negative: '" << strID << "'" << std::endl;
             else
             {
-                std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+                std::string dirPath = roiChokePointCroppedFacePath + cp.getSequenceString(pn, *pt, sn, cn, id) + "/";
                 logNeg << "Loading negative from directory: '" << dirPath << "'" << std::endl;
                 if (bfs::is_directory(dirPath))
                 {
@@ -481,7 +483,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     double hogRefMax = 0.675058;     // Max found using 'FullChokePoint' test with SAMAN pre-generated files
     size_t nPatches = 9;
     xstd::mvector<2, cv::Mat> matPositiveSamples, matNegativeSamples;
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    std::vector<ChokePoint::PortalType> types = { ChokePoint::PortalType::ENTER, ChokePoint::PortalType::LEAVE };
     cv::Size patchCounts = cv::Size(3, 3);
     cv::Size imageSize = cv::Size(48, 48);
     xstd::mvector<2, FeatureVector> fvNeg, fvPositiveSamples;                   // [patch][descriptor][negative](FeatureVector)
