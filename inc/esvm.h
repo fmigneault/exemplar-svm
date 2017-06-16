@@ -1,14 +1,19 @@
 #ifndef ESVM_LIBSVM_H
 #define ESVM_LIBSVM_H
 
-#include "esvmTypes.h"
 #include "svm.h"
+#include "esvmTests.h"
+#include "esvmTypes.h"
+
+#include "types.h"
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 /* ESVM */
 

@@ -34,13 +34,16 @@ Properties/
 x64/
 x86/
 bld/
+bld-vc14-x64/
+lib-vc14-x64/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
 
-# Visual Studio 2015 cache/options directory
+# Visual Studio cache/options directory
 .vs/
 _ReSharper.Caches/
+.vscode/
 *.TMP
 output.txt
 

@@ -1,9 +1,6 @@
 #ifndef ESVM_TYPES_H
 #define ESVM_TYPES_H
 
-#include <vector>
-
-typedef std::vector<double> FeatureVector;
 enum FileFormat { BINARY, LIBSVM };
 
 // Status to free model memory, matches libsvm for '0'/'1'

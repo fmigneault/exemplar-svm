@@ -1,0 +1,7 @@
+# - Config file for the ExemplarSVM-LIBSVM (ESVM) package
+# It defines the following variables
+#  ESVM_INCLUDE_DIRS - include directories
+#  ESVM_LIBRARIES    - libraries to link against
+
+set(ESVM_INCLUDE_DIRS   "@ESVM_CONFIG_INC@")
+set(ESVM_LIBRARIES      "@ESVM_CONFIG_LIB@")

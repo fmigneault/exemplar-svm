@@ -1,47 +1,19 @@
 #ifndef ESVM_TESTS_H
 #define ESVM_TESTS_H
 
-#include "opencv2/opencv.hpp"
-#include "mvector.hpp"
-#include "esvmTypes.h"
 #include "esvm.h"
+#include "esvmTypes.h"
 
-/* ChokePoint Dataset:
-      P#T_S#_C#:      2 portals, 2 types (E:enter/L:leave), 4 sessions, 3 cameras = 48 video dirs (with Ground Truths, one by one individuals pass)
-      P2T_S5_C#:      portal #2 only, 2 types (E:enter/L:leave), session #5, 3 cameras = 6 video dirs (no Ground Truths, simultaneous individuals)
-      Crop Face dir:  up to 30 individuals (if present) with N face ROIs
-*/
-// Possible sequence information
-enum PORTAL_TYPE { ENTER, LEAVE };
-const int PORTAL_TYPE_QUANTITY = 2;
-const int PORTAL_QUANTITY = 2;
-const int SESSION_QUANTITY = 4;
-const int SESSION_SIMULTANEOUS_INDIVIDUALS = 5;
-const int CAMERA_QUANTITY = 3;
-const int INDIVIDUAL_QUANTITY = 30;
-const int TOTAL_SEQUENCES = PORTAL_QUANTITY * SESSION_QUANTITY * PORTAL_TYPE_QUANTITY * CAMERA_QUANTITY;
-// Combine sequence information
-std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id = 0);
-std::string buildChokePointIndividualID(int id, bool withPrefixID = false);
-
-/* Types */
-enum TestStatus  // errors should be defined as negative values (-#) to ensure 'RETURN_ERROR' functionality
-{
-	PASSED		= 0,
-    SKIPPED     = 1,
-    OBSOLETE    = 2
-};
+#include "opencv2/opencv.hpp"
+#include "types.h"
+#include "mvector.hpp"
 
 /* Test utilities */
-svm_model* buildDummyExemplarSvmModel(int free_sv = FreeModelState::MODEL);
-/*void destroyDummyExemplarSvmModelContent(svm_model *model);*/
-bool checkPathEndSlash(std::string path);
+svm_model* buildDummyExemplarSvmModel(FreeModelState free_sv = MODEL);
+void destroyDummyExemplarSvmModelContent(svm_model *model, FreeModelState free_sv);
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_libsvm(std::string filePath, size_t nSamples, size_t nFeatures);
 bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_t nFeatures);
-int passThroughDisplayTestStatus(std::string testName, int error = TestStatus::PASSED);
-template <const int BIT_SIZE>
-std::string displayAsBinary(const int option, bool displayNumeric = true);
 void displayHeader();
 void displayOptions();
 

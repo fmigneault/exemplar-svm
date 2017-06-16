@@ -16,6 +16,13 @@
 #define ESVM_NEGATIVE_CLASS -1
 #define ESVM_BINARY_HEADER_MODEL "ESVM bin model"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM bin samples"
+/*
+    ESVM_DISPLAY_TRAIN_PARAMS:
+        0: do not display obtained parameters after training
+        1: display abridged parameters after training (no SV)
+        2: display complete parameters after training (all available according to model status, including SV)
+*/
+#define ESVM_DISPLAY_TRAIN_PARAMS 1
 // Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
 #define ESVM_ROI_CROP_RATIO 0.80
 /* Employ specific ROI pre-processing operation before further feature extraction operations
@@ -94,7 +101,7 @@
 */
 #define TEST_FEATURES_NORMALIZATION_MODE 3
 // Validates image paths found and with expected format
-#define TEST_PATHS 1
+#define TEST_PATHS 0
 // Test functionality of patch extraction procedures
 #define TEST_IMAGE_PATCH_EXTRACTION 1
 // Test and display results of regular image preprocessing chain for reference still
@@ -123,7 +130,7 @@
 // Test functionality of model file loading/saving from (LIBSVM/BINARY, pre-trained/from samples) format comparison
 #define TEST_ESVM_SAVE_LOAD_MODEL_FILE_FORMAT_COMPARE 0
 // Test model resetting using 'svm_model' struct directly populated in code, validate parameter checks
-#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 0
+#define TEST_ESVM_MODEL_STRUCT_SVM_PARAMS 1
 // Test memory deallocation of various model parameters on reset or destructor calls
 #define TEST_ESVM_MODEL_MEMORY_OPERATIONS 0
 // Test expected functionalities of model with reset/changed parameters (model properly updated)
@@ -211,11 +218,17 @@
    Image paths
 ------------------------------------------------------------ */
 
+#ifdef ESVM_ROOT_PATH
+const std::string refPath = ESVM_ROOT_PATH;
+#else
+const std::string refPath = "..";
+#endif
+
 // Local
-const std::string roiVideoImagesPath = "../img/roi/";                               // Person ROI tracks obtained from face detection + tracking
-const std::string refStillImagesPath = "../img/ref/";                               // Reference high quality still ROIs for enrollment in SSPP
-const std::string negativeSamplesDir = "../data/negatives/";                        // Pre-generated ChokePoint negative samples files
-const std::string testingSamplesDir = "../data/testing/";                           // Pre-generated ChokePoint probe samples files
+const std::string roiVideoImagesPath = refPath + "/img/roi/";                           // Person ROI tracks obtained from face detection + tracking
+const std::string refStillImagesPath = refPath + "/img/ref/";                           // Reference high quality still ROIs for enrollment in SSPP
+const std::string negativeSamplesDir = refPath + "/data/negatives/";                    // Pre-generated ChokePoint negative samples files
+const std::string testingSamplesDir  = refPath + "/data/testing/";                      // Pre-generated ChokePoint probe samples files
 // OpenCV
 const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
 // ChokePoint

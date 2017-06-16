@@ -1,18 +1,15 @@
 ﻿#include "esvmOptions.h"
 #include "esvmTests.h"
+#include "esvmTypes.h"
 #include "esvmUtils.h"
 #include "esvm.h"
 
 #include "feHOG.h"
+#if ESVM_HAS_FELBP
 #include "feLBP.h"
-#include "norm.h"
-#include "eval.h"
-#include "logger.h"
-#include "imgUtils.h"
-#include "generic.h"
+#endif/*ESVM_HAS_FELBP*/
 
-#include <iomanip>
-#include <bitset>
+#include "CommonCpp.h"
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
@@ -21,52 +18,56 @@ namespace bfs = boost::filesystem;
     UTILITY FUNCTIONS
 ====================== */
 
-// Builds the string as "P#T_S#_C#", if the individual is non-zero, it adds the sub folder as "P#T_S#_C#/ID#"
-std::string buildChokePointSequenceString(int portal, PORTAL_TYPE type, int session, int camera, int id)
-{
-    std::string dir = "P" + std::to_string(portal) + (type == ENTER ? "E" : type == LEAVE ? "L" : "") +
-                      "_S" + std::to_string(session) + "_C" + std::to_string(camera);
-    return id > 0 ? dir + "/" + buildChokePointIndividualID(id) : dir;
-}
-
-std::string buildChokePointIndividualID(int id, bool withPrefixID)
-{
-    return (withPrefixID ? "ID" : "") + std::string(id > 9 ? 2 : 3, '0').append(std::to_string(id));
-}
+// parameters employed by 'dummy' svm_model builder/destructor for testing purposes
+#define DUMMY_SVM_MODEL_NSV 5
+#define DUMMY_SVM_MODEL_NCLASS 2
+#define DUMMY_SVM_MODEL_NFEATURES 3
 
 // builds a dummy model with all valid parameters to test read/write procedures
-svm_model* buildDummyExemplarSvmModel(int free_sv)
+svm_model* buildDummyExemplarSvmModel(FreeModelState free_sv)
 {
     svm_model *model = ESVM::makeEmptyModel();
     try
-    {        
-        int nSV = 5;
-        int nClass = 2;
-        int nFeatures = 3;
-
+    {
         model->param.kernel_type = LINEAR;
         model->param.svm_type = C_SVC;
         model->param.C = 1;
         model->free_sv = free_sv;
-        model->nr_class = nClass;
-        model->l = nSV;
-        model->label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+        model->nr_class = DUMMY_SVM_MODEL_NCLASS;
+        model->l = DUMMY_SVM_MODEL_NSV;
+        model->label = Malloc(int, model->nr_class);
+        model->label[0] = ESVM_POSITIVE_CLASS;
+        model->label[1] = ESVM_NEGATIVE_CLASS;
         if (free_sv == FreeModelState::PARAM || free_sv == FreeModelState::MULTI) {
             model->param.nr_weight = model->nr_class;
-            model->param.weight = new double[model->nr_class]{ model->l - 1.0, 1.0 };
-            model->param.weight_label = new int[model->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
+            model->param.weight = Malloc(double, model->nr_class);
+            model->param.weight[0] = model->l - 1.0;
+            model->param.weight[1] = 1.0;
+            model->param.weight_label = Malloc(int, model->nr_class);
+            model->param.weight_label[0] = model->label[0];
+            model->param.weight_label[1] = model->label[1];
         }
         if (free_sv == FreeModelState::MODEL || free_sv == FreeModelState::MULTI) {
-            model->rho = new double[1]{ 2.5 };
-            model->sv_indices = new int[model->l]{ 0, 1, 2, 3, 4 };
-            model->sv_coef = new double*[model->nr_class - 1]{ new double[model->l]{ 3.5, -0.1, -0.2, -0.1, -0.2} };            
-            model->nSV = new int[model->nr_class]{ 1, model->l - 1 };
-            model->SV = new svm_node*[model->l];
-            for (int sv = 0; sv < model->l; ++sv)
-            {
-                model->SV[sv] = new svm_node[nFeatures + 1];
-                for (int f = 0; f < nFeatures + 1; ++f)
-                    model->SV[sv][f].index = (f == nFeatures) ? -1 : f;
+            model->rho = Malloc(double, 1);
+            model->rho[0] = 2.5;
+            model->sv_indices = Malloc(int, model->l);                       
+            for (int i = 0; i < model->l; ++i)
+                model->sv_indices[i] = i;
+            model->sv_coef = (double**)malloc(sizeof(double*)*(model->nr_class - 1));
+            std::vector<double> sv{ 3.5, -0.1, -0.2, -0.1, -0.2 };
+            for (int i = 0; i < model->nr_class - 1; ++i) {
+                model->sv_coef[i] = Malloc(double, model->l);
+                for (int j = 0; j < model->l; ++j)
+                    model->sv_coef[i][j] = sv[j];
+            }
+            model->nSV = Malloc(int, model->nr_class);
+            model->nSV[0] = 1;
+            model->nSV[1] = model->l - 1;
+            model->SV = Malloc(svm_node*, model->l);
+            for (int sv = 0; sv < model->l; ++sv) {
+                model->SV[sv] = Malloc(svm_node, DUMMY_SVM_MODEL_NFEATURES + 1);
+                for (int f = 0; f < DUMMY_SVM_MODEL_NFEATURES + 1; ++f)
+                    model->SV[sv][f].index = (f == DUMMY_SVM_MODEL_NFEATURES) ? -1 : f;
             }
             model->SV[0][0].value = 0.50;   model->SV[0][1].value = 0.75;   model->SV[0][2].value = 0.25;
             model->SV[1][0].value = 0.20;   model->SV[1][1].value = 0.75;   model->SV[1][2].value = 0.10;
@@ -76,16 +77,17 @@ svm_model* buildDummyExemplarSvmModel(int free_sv)
         }
         #if ESVM_USE_PREDICT_PROBABILITY
         model->param.probability = 1;
-        model->probA = new double[1]{ 1.2 };
-        model->probB = new double[1]{ 0.8 };
+        model->probA = Malloc(double, 1);
+        model->probA[0] = 1.2;
+        model->probB = Malloc(double, 1);
+        model->probB[0] = 0.8;
         #else
         model->param.probability = 0;
         model->probA = nullptr;
         model->probB = nullptr;
         #endif/*ESVM_USE_PREDICT_PROBABILITY*/
         
-        if (!ESVM::checkModelParameters(model))
-            THROW("Dummy 'svm_model' generation did not respect ESVM requirements");
+        ASSERT_THROW(ESVM::checkModelParameters(model), "Dummy 'svm_model' generation did not respect ESVM requirements");
     }
     catch (std::exception& ex)
     {
@@ -98,27 +100,27 @@ svm_model* buildDummyExemplarSvmModel(int free_sv)
     return model;
 }
 
-/*
 // destroys all the contained memory references inside an 'svm_model' created with 'buildDummyExemplarSvmModel'
-void destroyDummyExemplarSvmModelContent(svm_model *model)
+void destroyDummyExemplarSvmModelContent(svm_model *model, FreeModelState free_sv)
 {
     ///logstream logger(LOGGER_FILE);///TODO REMOVE
     if (!model) return;
     ///logger << "CLEANUP - MODEL !null" << std::endl;///TODO REMOVE
     try
     {
-        // parameters assumed to match 'buildDummyExemplarSvmModel' since 'model->l' could be modified outside for testing purposes
-        int nSV = 5;
-        int nClass = 2;
-        int nFeatures = 4;
-
-        ///logger << "CLEANUP - DEL weight" << std::endl;///TODO REMOVE
-        delete[] model->param.weight;
-        ///logger << "CLEANUP - DEL weight_label" << std::endl;///TODO REMOVE
-        delete[] model->param.weight_label;
+        bool destroyParam = free_sv == FreeModelState::PARAM || FreeModelState::MULTI;
+        bool destroyModel = free_sv == FreeModelState::MODEL || FreeModelState::MULTI;
+        
+        if (destroyParam) {
+            ///logger << "CLEANUP - DEL weight" << std::endl;///TODO REMOVE
+            delete[] model->param.weight;
+            ///logger << "CLEANUP - DEL weight_label" << std::endl;///TODO REMOVE
+            delete[] model->param.weight_label;
+        }
         ///logger << "CLEANUP - DEL label" << std::endl;///TODO REMOVE
         delete[] model->label;
         ///logger << "CLEANUP - DEL probA" << std::endl;///TODO REMOVE
+        
         delete[] model->probA;
         ///logger << "CLEANUP - DEL probB" << std::endl;///TODO REMOVE
         delete[] model->probB;
@@ -128,13 +130,13 @@ void destroyDummyExemplarSvmModelContent(svm_model *model)
         delete[] model->nSV;
         ///logger << "CLEANUP - DEL sv_coef" << std::endl;///TODO REMOVE
         if (model->sv_coef)
-            for (int c = 0; c < nClass - 1; ++c)
+            for (int c = 0; c < DUMMY_SVM_MODEL_NCLASS - 1; ++c)
                 delete[] model->sv_coef[c];
         ///logger << "CLEANUP - DEL sv_coef*" << std::endl;///TODO REMOVE
         delete[] model->sv_coef;
         ///logger << "CLEANUP - DEL SV" << std::endl;///TODO REMOVE
         if (model->SV)
-            for (int sv = 0; sv < nSV; ++sv)
+            for (int sv = 0; sv < DUMMY_SVM_MODEL_NSV; ++sv)
                 delete[] model->SV[sv];
         ///logger << "CLEANUP - DEL SV*" << std::endl;///TODO REMOVE
         delete[] model->SV;
@@ -146,13 +148,6 @@ void destroyDummyExemplarSvmModelContent(svm_model *model)
                << "Exception: [" << ex.what() << "]" << std::endl;
         throw ex;  // re-throw
     }
-}
-*/
-
-bool checkPathEndSlash(std::string path)
-{
-    char end = *path.rbegin();
-    return end == '/' || end == '\\';
 }
 
 void generateDummySamples(std::vector<FeatureVector>& samples, std::vector<int>& targetOutputs, size_t nSamples, size_t nFeatures)
@@ -191,26 +186,6 @@ bool generateDummySampleFile_binary(std::string filePath, size_t nSamples, size_
     generateDummySamples(samples, outputs, nSamples, nFeatures);
     ESVM::writeSampleDataFile(filePath, samples, outputs, BINARY);
     return bfs::is_regular_file(filePath);
-}
-
-int passThroughDisplayTestStatus(std::string testName, int error)
-{
-    logstream logger(LOGGER_FILE);
-    if      (error == SKIPPED)  logger << "Test '" << testName << "' skipped." << std::endl;
-    else if (error == OBSOLETE) logger << "Test '" << testName << "' obsolete." << std::endl;
-    else if (error == PASSED)   logger << "Test '" << testName << "' passed." << std::endl;    
-    else                        logger << "Test '" << testName << "' failed (" << std::to_string(error) << ")." << std::endl;
-    return error;
-}
-
-template <const int BIT_SIZE>
-std::string displayAsBinary(const int option, bool displayNumeric)
-{
-    std::stringstream ss;
-    std::bitset<BIT_SIZE> binOption(option);
-    ss << binOption;
-    if (displayNumeric) ss << " (" << option << ")";
-    return ss.str();
 }
 
 void displayHeader()
@@ -294,6 +269,36 @@ int test_paths()
     #if TEST_PATHS
     logstream logger(LOGGER_FILE);
     logger << "Running '" << __func__ << "' test..." << std::endl;
+    
+    try{
+    logger << "FORCING A 'THROW'" << std::endl;
+    
+    logger << "OK1" << std::endl;    
+    logger << "OK2" << std::endl;
+    //ASSERT_LOG(bfs::is_directory(p), "NOPE1");
+    logger << "OK3" << std::endl;
+    logger << roiVideoImagesPath << std::endl;
+    logger << "-----" << std::endl;
+    bfs::path p(roiVideoImagesPath.c_str());
+    logger << "....." << std::endl;
+    logger << p.string() << std::endl;
+    logger << "=====" << std::endl;
+    ASSERT_LOG(bfs::is_directory(p), "NOPE2");
+    logger << "OK4" << std::endl;
+    ASSERT_LOG(1, "11");
+    ASSERT_LOG(bfs::exists(roiVideoImagesPath), "Cannot find ROI directory");
+    logger << "OKO" << std::endl;
+    boost::system::error_code ec;    
+    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath, ec), "Cannot find ROI directory");
+    ASSERT_LOG(0, "13");
+    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
+    THROW("22");
+    logger << "OK" << std::endl;
+    }
+    catch (std::exception& ex)
+    {
+        logger << "THE HELL?? [" << ex.what() << "]" << std::endl;
+    }
 
     // Local
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
@@ -1875,58 +1880,64 @@ int test_ESVM_ModelFromStructSVM()
         return passThroughDisplayTestStatus(__func__, -1);
     }
 
-    svm_model **invalidModels_preTrained, **invalidModels_notTrained;
     size_t nSVM_preTrained = 12, nSVM_notTrained = 10;
+    std::vector<svm_model*>invalidModels_preTrained(nSVM_preTrained);
+    std::vector<svm_model*>invalidModels_notTrained(nSVM_notTrained);
     try
     {
         // verify invalid model parameters
         ASSERT_LOG(!ESVM::checkModelParameters(nullptr), "No reference to SVM model paramter check should have returned 'false' status");
 
-        logger << "Generating dummy 'svm_model' with invalid parameters..." << std::endl;        
-        invalidModels_preTrained = new svm_model*[nSVM_preTrained];
-        invalidModels_notTrained = new svm_model*[nSVM_notTrained];
+        logger << "Generating dummy 'svm_model' with invalid parameters..." << std::endl;
         for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
             invalidModels_notTrained[svm] = buildDummyExemplarSvmModel(FreeModelState::PARAM);
         for (size_t svm = 0; svm < nSVM_preTrained; ++svm)
             invalidModels_preTrained[svm] = buildDummyExemplarSvmModel(FreeModelState::MODEL);
 
         // params required for both 'free_sv' = 0 | 1
-        invalidModels_preTrained[0]->param.kernel_type = RBF;            // not 'LINEAR' when 'free_sv' = 0
-        invalidModels_preTrained[1]->param.svm_type = ONE_CLASS;         // not 'C_SVC'        
-        invalidModels_preTrained[2]->label[1] = 2;                       // negative class label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
-        invalidModels_preTrained[3]->nr_class = 3;                       // not 2 class
-        invalidModels_preTrained[4]->l = 1;                              // >= 2 samples (1 positive + 1 negative minimum)
-        invalidModels_preTrained[5]->probA = new double[2]{ 1, 1 };      // probability estimates not matching
+        invalidModels_preTrained[0]->param.kernel_type = RBF;           // not 'LINEAR' when 'free_sv' = 0
+        invalidModels_preTrained[1]->param.svm_type = ONE_CLASS;        // not 'C_SVC'        
+        invalidModels_preTrained[2]->label[1] = 2;                      // negative class label as '2' instead of expected 'ESVM_NEGATIVE_CLASS'
+        invalidModels_preTrained[3]->nr_class = 3;                      // not 2 class        
+        invalidModels_preTrained[3]->sv_coef = Malloc(double*, 2);      // create the <nr_class-1> sv_coef that correspond to 'nr_class=3'
+        invalidModels_preTrained[3]->sv_coef[0] = Malloc(double, 5);    //     otherwise, we get invalid memory access that is not the current test
+        invalidModels_preTrained[3]->sv_coef[1] = Malloc(double, 5);
+        std::vector<double> svc{ 3.5, -0.1, -0.2, -0.1, -0.2 };
+        for (int sv = 0; sv < 5; ++sv) {
+            invalidModels_preTrained[3]->sv_coef[0][sv] = svc[sv];
+            invalidModels_preTrained[3]->sv_coef[1][sv] = svc[sv];
+        }
+        invalidModels_preTrained[4]->l = 1;                             // >= 2 samples (1 positive + 1 negative minimum)
+        invalidModels_preTrained[5]->probA = Malloc(double, 2);         // probability estimates not matching
+        invalidModels_preTrained[5]->probA[0] = 1;
+        invalidModels_preTrained[5]->probA[1] = 1;
         invalidModels_preTrained[5]->probB = nullptr;
-        invalidModels_notTrained[0]->param.kernel_type = POLY;           // not 'LINEAR' when 'free_sv' = 0
-        invalidModels_notTrained[1]->param.svm_type = NU_SVC;            // not 'C_SVC'
-        invalidModels_notTrained[2]->label[1] = 1;                       // negative class label as '1' (duplicate of 'ESVM_POSITIVE_CLASS')
-        invalidModels_notTrained[3]->nr_class = 1;                       // not 2 class
-        invalidModels_notTrained[4]->l = 0;                              // >= 2 samples (1 positive + 1 negative minimum)
-        invalidModels_notTrained[5]->probA = nullptr;                    // probability estimates not matching
-        invalidModels_notTrained[5]->probB = new double[2]{ 1, 1 };
+        invalidModels_notTrained[0]->param.kernel_type = POLY;          // not 'LINEAR' when 'free_sv' = 0
+        invalidModels_notTrained[1]->param.svm_type = NU_SVC;           // not 'C_SVC'
+        invalidModels_notTrained[2]->label[1] = 1;                      // negative class label as '1' (duplicate of 'ESVM_POSITIVE_CLASS')
+        invalidModels_notTrained[3]->nr_class = 1;                      // not 2 class
+        invalidModels_notTrained[4]->l = 0;                             // >= 2 samples (1 positive + 1 negative minimum)
+        invalidModels_notTrained[5]->probA = nullptr;                   // probability estimates not matching
+        invalidModels_notTrained[5]->probB = Malloc(double, 2);
+        invalidModels_notTrained[5]->probB[0] = 1;
+        invalidModels_notTrained[5]->probB[1] = 1;        
 
         // params required only when 'free_sv' = 0
-        invalidModels_notTrained[6]->param.C = -1;                       // C <= 0
-        invalidModels_notTrained[7]->param.nr_weight = 1;                // not 0 or 2
-        invalidModels_notTrained[8]->param.weight_label[1] = 2;          // negative class weight label as '2' instead of 'ESVM_NEGATIVE_CLASS'
-        invalidModels_notTrained[9]->param.weight[1] = -1;               // negative class weight not > 0        
+        invalidModels_notTrained[6]->param.C = -1;                      // C <= 0
+        invalidModels_notTrained[7]->param.nr_weight = 1;               // not 0 or 2
+        invalidModels_notTrained[8]->param.weight_label[1] = 2;         // negative class weight label as '2' instead of 'ESVM_NEGATIVE_CLASS'
+        invalidModels_notTrained[9]->param.weight[1] = -1;              // negative class weight not > 0        
         
         // params required only when 'free_sv' = 1
-        invalidModels_preTrained[6]->nSV[0] = 0;                         // no positive samples
-        delete[] invalidModels_preTrained[7]->rho;
-        invalidModels_preTrained[7]->rho = nullptr;                      // missing rho
-        delete[] invalidModels_preTrained[8]->sv_coef[0];                // missing SV coefficient for decision function
-        invalidModels_preTrained[8]->sv_coef[0] = nullptr;
-        delete[] invalidModels_preTrained[9]->sv_coef[0];                // missing SV coefficient container (only 1D for ESVM containing 2 classes)
-        delete[] invalidModels_preTrained[9]->sv_coef;
-        invalidModels_preTrained[9]->sv_coef = nullptr;
-        delete[] invalidModels_preTrained[10]->SV[2];                    // missing any of the SV features (not zero to validate whole set check)
-        invalidModels_preTrained[10]->SV[2] = nullptr;
-        for (int sv = 0; sv < invalidModels_preTrained[11]->l; ++sv)     // missing the SV container
-            delete[] invalidModels_preTrained[11]->SV[sv];
-        delete[] invalidModels_preTrained[11]->SV;
-        invalidModels_preTrained[11]->SV = nullptr;
+        invalidModels_preTrained[6]->nSV[0] = 0;                        // no positive samples
+        FreeNull(invalidModels_preTrained[7]->rho);                     // missing rho        
+        FreeNull(invalidModels_preTrained[8]->sv_coef[0]);              // missing SV coefficient for decision function        
+        FreeNull(invalidModels_preTrained[9]->sv_coef[0]);              // missing SV coefficient container (only 1D for ESVM containing 2 classes)
+        FreeNull(invalidModels_preTrained[9]->sv_coef);
+        FreeNull(invalidModels_preTrained[10]->SV[2]);                  // missing any of the SV features (not zero to validate whole set check)        
+        for (int sv = 0; sv < invalidModels_preTrained[11]->l; ++sv)    // missing the SV container
+            free(invalidModels_preTrained[11]->SV[sv]);
+        FreeNull(invalidModels_preTrained[11]->SV);
 
         for (size_t svm = 0; svm < nSVM_notTrained; ++svm)
             ASSERT_LOG(!ESVM::checkModelParameters(invalidModels_notTrained[svm]), "Invalid SVM not trained model parameters (svm=" +
@@ -1950,8 +1961,6 @@ int test_ESVM_ModelFromStructSVM()
             svm_destroy_param(&invalidModels_preTrained[svm]->param);
             ESVM::destroyModel(&invalidModels_preTrained[svm]);
         }
-        delete[] invalidModels_notTrained;
-        delete[] invalidModels_preTrained;
         return passThroughDisplayTestStatus(__func__, -2);
     }
 
@@ -1968,8 +1977,7 @@ int test_ESVM_ModelFromStructSVM()
         } 
         catch (...) {} // expected exception
         ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
-        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
-        svm_destroy_param(&invalidModels_notTrained[svm]->param);
+        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");        
         ESVM::destroyModel(&invalidModels_notTrained[svm]);
     }
 
@@ -1986,12 +1994,9 @@ int test_ESVM_ModelFromStructSVM()
         }
         catch (...) {} // expected exception
         ASSERT_LOG(!esvm.isModelTrained(), "Invalid parameters should not have allowed ESVM initialization with model considered as trained");
-        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");
-        svm_destroy_param(&invalidModels_preTrained[svm]->param);
+        ASSERT_LOG(!esvm.isModelSet(), "Invalid parameters should not have allowed ESVM resetting with invalid model");        
         ESVM::destroyModel(&invalidModels_preTrained[svm]);
     }
-    delete[] invalidModels_notTrained;
-    delete[] invalidModels_preTrained;
 
     #else/*TEST_ESVM_MODEL_STRUCT_SVM_PARAMS*/
     return passThroughDisplayTestStatus(__func__, SKIPPED);
@@ -2017,8 +2022,9 @@ int test_ESVM_ModelMemoryOperations()
                 ESVM esvm(model, "TEST-DESTRUCTOR");
                 ASSERT_LOG(esvm.isModelTrained(), "ESVM model should have been trained and properly set to evaluate following functionality");
             }   // out of score will call destructor
-
+            
             // verify results of model destructor
+            /* --- CANNOT BE CHECKED AS SVM_MODEL IS NOW DEEPCOPIED
             ASSERT_LOG(model->label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
             ASSERT_LOG(model->nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
             ASSERT_LOG(model->probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
@@ -2027,6 +2033,8 @@ int test_ESVM_ModelMemoryOperations()
             ASSERT_LOG(model->sv_coef == nullptr, "Model 'coef' container should have been deallocated and its reference be set to 'null'");
             ASSERT_LOG(model->sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
             ASSERT_LOG(model->SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
+            */
+            //destroyDummyExemplarSvmModelContent(model); /*IGNORE FOR NOW - ONLY VALIDATE VALUES - MEMORY LEAK OF THE TEST NOT A MAJOR CONCERN*/
         }
         catch (std::exception& ex)
         {
@@ -2056,11 +2064,8 @@ int test_ESVM_ModelMemoryOperations()
         try
         {
             // save to file then reload to induce a 'reset' (replace old model by loaded one)
-            ///logger << "THAT? 1:" << esvm.isModelTrained() << std::endl;  ///TODO REMOVE
             esvm.saveModelFile(modelFileName, LIBSVM);  
-            ///logger << "THAT? 2" << std::endl;  ///TODO REMOVE
             esvm.loadModelFile(modelFileName, LIBSVM);
-            ///logger << "THAT? 3" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(esvm.isModelSet(), "ESVM pre-trained model should have been set from reset operation");
         }
         catch (std::exception& ex)
@@ -2070,27 +2075,19 @@ int test_ESVM_ModelMemoryOperations()
             bfs::remove_all(modelFileName);
             return passThroughDisplayTestStatus(__func__, -3);
         }
+        /* --- CANNOT BE CHECKED AS SVM_MODEL IS NOW DEEPCOPIED
         logger << "Model for reset memory evaluation properly reset, validating reset parameters..." << std::endl;
         try
         {
-            // verify results of model reset   
-            ///logger << "THIS? 1" << std::endl;  ///TODO REMOVE
+            // verify results of model reset
             ASSERT_LOG(model->label == nullptr, "Model 'label' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 2" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->nSV == nullptr, "Model 'nSV' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 3" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->probA == nullptr, "Model 'probA' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 4" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->probB == nullptr, "Model 'probB' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 5" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->rho == nullptr, "Model 'rho' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 6" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->sv_coef == nullptr, "Model 'sv_coef' container should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 7" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->sv_indices == nullptr, "Model 'sv_indices' should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 8" << std::endl;  ///TODO REMOVE
             ASSERT_LOG(model->SV == nullptr, "Model 'SV' reference container should have been deallocated and its reference be set to 'null'");
-            ///logger << "THIS? 9" << std::endl;  ///TODO REMOVE
         }
         catch (std::exception& ex)
         {
@@ -2099,7 +2096,8 @@ int test_ESVM_ModelMemoryOperations()
             bfs::remove_all(modelFileName);
             return passThroughDisplayTestStatus(__func__, -4);
         }
-
+        */
+        
         ESVM::destroyModel(&model);
 
         /// TODO    
@@ -2139,11 +2137,12 @@ int test_ESVM_ModelMemoryParamCheck()
             // initial model to test that parameters are reset
             model1 = buildDummyExemplarSvmModel(FreeModelState::MODEL);
             ///logger << "esvm1 = ESVM(&model1, 'RESET-PARAM-1');" << std::endl;  ///TODO REMOVE
-            esvm1 = ESVM(model1, "RESET-PARAM-1");
+            std::string modelID1 = "RESET-PARAM-1";
+            esvm1 = ESVM(model1, modelID1);
             ///logger << "INFOS::" << std::endl;  ///TODO REMOVE
             ///esvm1.logModelParameters(true);  ///TODO REMOVE
-            ASSERT_LOG(esvm1.isModelTrained(), "First model for parameter reset validation should be set and trained for following evaluations");
-            ASSERT_LOG(esvm1.targetID == "RESET-PARAM-1", "First model for parameter reset validation should be set with expected first target ID");
+            ASSERT_LOG(esvm1.isModelTrained(), "Model for parameter reset validation should be set and trained for following evaluations");
+            ASSERT_LOG(esvm1.targetID == modelID1, "Model for parameter reset validation should be set with expected target ID");
         }
         catch (std::exception& ex)
         {
@@ -2153,26 +2152,37 @@ int test_ESVM_ModelMemoryParamCheck()
         }
         try
         {
-            // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
+            std::vector<double> sv{ 2.4, -0.8, -0.4 };
 
-            //////////////////////////////////////////////////////////////////////////////////////////// TODO - USE 'makeEmptyModel'
+            // create minimal model with parameters different than 'buildDummyExemplarSvmModel' to test against after reset
+            model2 = esvm2.makeEmptyModel();
             model2->param.kernel_type = LINEAR;
             model2->param.svm_type = C_SVC;
             model2->free_sv = 1;
             model2->nr_class = 2;
-            model2->l = 3;
+            model2->l = sv.size();
             model2->param.weight = nullptr;
             model2->param.weight_label = nullptr;
-            model2->rho = new double[1]{ 4.8 };
-            model2->sv_indices = new int[model2->l]{ 10, 9, 8 };
-            model2->sv_coef = new double*[model2->nr_class - 1]{ new double[model2->l]{ 2.4, -0.8, -0.4 } };
-            model2->label = new int[model2->nr_class]{ ESVM_POSITIVE_CLASS, ESVM_NEGATIVE_CLASS };
-            model2->nSV = new int[model2->nr_class]{ 1, model2->l - 1 };
-            model2->SV = new svm_node*[model2->l];
+            model2->rho = Malloc(double, 1);
+            model2->rho[0] = 4.8;
+            model2->sv_indices = Malloc(int, model2->l);
+            model2->sv_indices[0] = 10;
+            model2->sv_indices[1] = 9;
+            model2->sv_indices[2] = 8;
+            model2->sv_coef = Malloc(double*, model2->nr_class - 1);
+            model2->sv_coef[0] = Malloc(double, model2->l);
+            for (size_t i = 0; i < sv.size(); ++i)
+                model2->sv_coef[0][i] = sv[i];
+            model2->label = Malloc(int, model2->nr_class);
+            model2->label[0] = ESVM_POSITIVE_CLASS;
+            model2->label[1] = ESVM_NEGATIVE_CLASS;
+            model2->nSV = Malloc(int, model2->nr_class);
+            model2->nSV[0] = 1;
+            model2->nSV[1] = model2->l - 1;
+            model2->SV = Malloc(svm_node*, model2->l);            
             int nFeatures = 2;                          // number of samples features different to induce error on failed reset of parameters
-            for (int sv = 0; sv < model2->l; ++sv)
-            {
-                model2->SV[sv] = new svm_node[nFeatures + 1];
+            for (int sv = 0; sv < model2->l; ++sv) {
+                model2->SV[sv] = Malloc(svm_node, nFeatures + 1);
                 for (int f = 0; f < nFeatures + 1; ++f)
                     model2->SV[sv][f].index = (f == nFeatures) ? -1 : f;
             }
@@ -2188,8 +2198,14 @@ int test_ESVM_ModelMemoryParamCheck()
             testFeatureVectors.push_back(FeatureVector{ 3.25, 0.25 });    expectedPredictions.push_back(6.25);
             testFeatureVectors.push_back(FeatureVector{ -1.8, 1.10 });    expectedPredictions.push_back(-10.92);
 
-            esvm2 = ESVM(model2, "RESET-PARAM-2");
-            ASSERT_LOG(esvm1.isModelTrained(), "Second model for parameter reset validation should be set and trained for following evaluations");
+            std::string modelID2 = "RESET-PARAM-2";
+            esvm2 = ESVM(model2, modelID2);
+            ASSERT_LOG(esvm2.isModelTrained(), "Model for parameter reset validation should be set and trained for following evaluations");
+            ASSERT_LOG(esvm2.targetID == modelID2, "Model for parameter reset validation should be set with expected target ID");
+
+
+            //////// TODO /////////
+            /*TEST MODEL PARAMETERS UPDATED*/
         }
         catch (std::exception& ex)
         {
@@ -2258,7 +2274,7 @@ int proc_readDataFiles()
 {
     #if PROC_READ_DATA_FILES
     logstream logger(LOGGER_FILE);
-    logger << "Running '" << __func__ << "' test ['PROC_READ_DATA_FILES'=" << displayAsBinary<8>(PROC_READ_DATA_FILES) << "]..." << std::endl;
+    logger << "Running '" << __func__ << "' test ['PROC_READ_DATA_FILES'=" << displayAsBinary<8>(PROC_READ_DATA_FILES, true) << "]..." << std::endl;
 
     #if PROC_READ_DATA_FILES & 0b00000001   // (1) Run ESVM training/testing using images and feature extraction on whole image
     // Specifying Size(0,0) or Size(1,1) will result in not applying patches (use whole ROI)
@@ -4350,7 +4366,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     xstd::mvector<2, int> probeGroundTruths(dimsResults);               // [positive][probe](int)
 
     // Exemplar-SVM    
-    xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM)    
+    xstd::mvector<2, ESVM> esvm(dimsPositives);                         // [patch][positive](ESVM) 
 
     // prepare hog feature extractor
     cv::Size blockSize(2, 2);
@@ -4370,8 +4386,10 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     logger << "Loading positive image stills, extracting feature vectors and normalizing..." << std::endl;
     for (size_t pos = 0; pos < nPositives; ++pos)
     {
+        auto path = refStillImagesPath + "roi" + positivesID[pos] + ".tif";
+        auto test = cv::imread(path);
         std::vector<cv::Mat> patches = imPreprocess(refStillImagesPath + "roi" + positivesID[pos] + ".tif", 
-                                                    imageSize, patchCounts, false, "", IMREAD_GRAYSCALE, INTER_LINEAR);
+                                                    imageSize, patchCounts, false, "", cv::IMREAD_GRAYSCALE, cv::INTER_LINEAR);
         for (size_t p = 0; p < nPatches; ++p)
             positiveSamples[p][pos] = normalizeOverAll(MIN_MAX, hog.compute(patches[p]), hogRefMin, hogRefMax, false);
     }
@@ -4480,11 +4498,13 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     // training
     logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; ++p)
+        logger << "NEG p=" << p << ": " << negativeSamples[p].size() << std::endl;
+
+    for (size_t p = 0; p < nPatches; ++p)
         for (size_t pos = 0; pos < nPositives; ++pos)
             esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
 
-    // testing, score fusion, normalization
-    logger << "Testing probe samples against enrolled targets..." << std::endl;
+    // testing, score fusion, normalizatio    logger << "Testing probe samples against enrolled targets..." << std::endl;
     double minScore = DBL_MAX, maxScore = -DBL_MAX, meanScore = 0, stddevScore = 0, varScore = 0;
     std::vector<double> meanScorePerPatch(nPatches, 0.0), stddevScorePerPatch(nPatches, 0.0), varScorePerPatch(nPatches, 0.0);
     std::vector<size_t> nProbesPerPositive(nPositives, 0);
@@ -4927,7 +4947,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     }
 
     // calculate performance results
-    int nResultType = 3;    // 3x for FPR,TPR,PPV results
+    size_t nResultType = 3;    // 3x for FPR,TPR,PPV results
     size_t dimsResults[3]{ nPositives, nResultType, 0 }; 
     xstd::mvector<3, double> results_S1(dimsResults), results_S3(dimsResults), results_EX(dimsResults);
     for (size_t pos = 0; pos < nPositives; ++pos) {
