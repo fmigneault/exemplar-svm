@@ -244,7 +244,7 @@ void displayOptions()
            << tab << tab << "TEST_ESVM_MODEL_MEMORY_OPERATIONS:               " << TEST_ESVM_MODEL_MEMORY_OPERATIONS << std::endl
            << tab << tab << "TEST_ESVM_MODEL_MEMORY_PARAM_CHECK:              " << TEST_ESVM_MODEL_MEMORY_PARAM_CHECK << std::endl
            << tab << "PROCEDURES:" << std::endl
-           << tab << tab << "PROC_READ_DATA_FILES:                            " << displayAsBinary<8>(PROC_READ_DATA_FILES) << std::endl
+           << tab << tab << "PROC_READ_DATA_FILES:                            " << displayAsBinary<8>(PROC_READ_DATA_FILES, true) << std::endl
            << tab << tab << "PROC_WRITE_DATA_FILES:                           " << PROC_WRITE_DATA_FILES << std::endl
            << tab << tab << "PROC_ESVM_BASIC_STILL2VIDEO:                     " << PROC_ESVM_BASIC_STILL2VIDEO << std::endl
            << tab << tab << "PROC_ESVM_TITAN:                                 " << PROC_ESVM_TITAN << std::endl
@@ -2876,7 +2876,7 @@ TEST DEFINITION
 int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize, cv::Size patchCounts)
 {
     logstream logger(LOGGER_FILE);
-    logger << "Running '" << __func__ << "' test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;    
 
     /* Training Targets:        single high quality still image for enrollment */    
     /*std::vector<std::string> positivesID = { "0011", "0012", "0013", "0016", "0020" };*/  // same as Saman paper
@@ -3090,18 +3090,18 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
     // Tests divided per sequence information according to selected mode
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    std::vector<ChokePoint::PortalType> types = ChokePoint::PORTAL_TYPES;
     bfs::directory_iterator endDir;
     std::string seq;
-    for (int sn = 1; sn <= SESSION_QUANTITY; ++sn)                  // session number
+    for (int sn = 1; sn <= ChokePoint::SESSION_QUANTITY; ++sn)      // session number
     {
         #if TEST_CHOKEPOINT_SEQUENCES_MODE == 0                     // regroup all by sequence
         cv::namedWindow(WINDOW_NAME);
         #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
-        for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+        for (int pn = 1; pn <= ChokePoint::PORTAL_QUANTITY; ++pn) { // portal number
         for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
-        for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+        for (int cn = 1; cn <= ChokePoint::CAMERA_QUANTITY; ++cn)   // camera number
         {
             #if TEST_CHOKEPOINT_SEQUENCES_MODE == 1                 // slipt all per sequence/portal/camera
             cv::namedWindow(WINDOW_NAME);
@@ -3114,23 +3114,23 @@ int proc_runSingleSamplePerPersonStillToVideo_FullChokePoint(cv::Size imageSize,
                 probeGroundTruth[pos].clear();
             #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
-            seq = buildChokePointSequenceString(pn, *pt, sn, cn);
+            seq = ChokePoint::getSequenceString(pn, *pt, sn, cn);
             logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
             #if TEST_CHOKEPOINT_SEQUENCES_MODE == 0
             seq = "S" + std::to_string(sn);
             #endif/*TEST_CHOKEPOINT_SEQUENCES_MODE*/
 
             // Add ROI to corresponding sample vectors according to individual IDs            
-            for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
+            for (int id = 1; id <= ChokePoint::INDIVIDUAL_QUANTITY; ++id)
             {
-                std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+                std::string dirPath = roiChokePointCroppedFacePath + ChokePoint::getSequenceString(pn, *pt, sn, cn, id) + "/";
                 if (bfs::is_directory(dirPath))
                 {
                     for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
                     {
                         if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm")
                         {
-                            std::string strID = buildChokePointIndividualID(id);
+                            std::string strID = ChokePoint::getIndividualID(id);
                             if (contains(negativesID, strID))
                             {
                                 size_t neg = matNegativeSamples.size();
@@ -3723,7 +3723,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
     logger << "Loading positive enroll image stills..." << std::endl;
     for (size_t pos = 0; pos < nPositives; ++pos)
     {
-        std::string stillPath = roiChokePointEnrollStillPath + "roi" + buildChokePointIndividualID(positivesID[pos], true) + ".tif";
+        std::string stillPath = roiChokePointEnrollStillPath + "roi" + ChokePoint::getIndividualID(positivesID[pos], true) + ".tif";
         std::vector<cv::Mat> patches = imPreprocess(stillPath, imageSize, patchCounts, false, WINDOW_NAME, cv::IMREAD_GRAYSCALE);       
         for (size_t p = 0; p < nPatches; ++p)
             fvPositiveSamples[pos][p] = hog.compute(patches[p]);
@@ -3731,21 +3731,21 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
 
     // Load probe images and extract features if required (PROC_READ_DATA_FILES & 16|128)
     #if PROC_READ_DATA_FILES & 0b10010000
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    std::vector<ChokePoint::PortalTypes> types = ChokePoint::PORTAL_TYPES;
     bfs::directory_iterator endDir;
     std::string seq;    
     int sn = 1;                                                 // session number
-    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn)               // portal number
+    for (int pn = 1; pn <= ChokePoint::PORTAL_QUANTITY; ++pn)   // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt)      // portal type
-    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+    for (int cn = 1; cn <= ChokePoint::CAMERA_QUANTITY; ++cn)   // camera number
     {
-        seq = buildChokePointSequenceString(pn, *pt, sn, cn);
+        seq = ChokePoint::getSequenceString(pn, *pt, sn, cn);
         logger << "Loading probe images and extracting features from sequence " << seq << "..." << std::endl;
 
         // Add ROI to corresponding sample vectors according to individual IDs            
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
+        for (int id = 1; id <= ChokePoint::INDIVIDUAL_QUANTITY; ++id)
         {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+            std::string dirPath = roiChokePointCroppedFacePath + ChokePoint::getSequenceString(pn, *pt, sn, cn, id) + "/";
             if (bfs::is_directory(dirPath))
             {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
@@ -3759,7 +3759,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
                             for (size_t p = 0; p < nPatches; ++p)
                                 fvProbeLoadedSamples[p].push_back(hog.compute(patches[p]));
 
-                            probesLoadedID.push_back(buildChokePointIndividualID(id, true));
+                            probesLoadedID.push_back(ChokePoint::getIndividualID(id, true));
                         } 
                     }
                 }
@@ -3808,7 +3808,7 @@ int proc_runSingleSamplePerPersonStillToVideo_NegativesDataFiles_PositivesExtrac
         std::vector<int> probeGroundTruthsPreGen, probeGroundTruthsLoaded;                                  // [probe](int)
         std::vector<double> probeFusionScoresPreGen, probeFusionScoresLoaded;                               // [probe](double)        
         xstd::mvector<2, double> probePatchScoresPreGen(dimsProbes), probePatchScoresLoaded(dimsProbes);    // [patch][probe](double)        
-        std::string posID = buildChokePointIndividualID(positivesID[pos], true);
+        std::string posID = ChokePoint::getIndividualID(positivesID[pos], true);
         logger << "Starting ESVM training/testing for '" << posID << "'..." << std::endl;
         for (size_t p = 0; p < nPatches; ++p)
         {
@@ -4122,20 +4122,20 @@ int proc_runSingleSamplePerPersonStillToVideo_TITAN(cv::Size imageSize, cv::Size
         logger << "Features dimension (" + descriptorNames[d] + "): " << fvPositiveSamples[0][0][d][0].size() << std::endl;
 
     // Load negative samples from ChokePoint dataset
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    std::vector<ChokePoint::PortalTypes> types = ChokePoint::PORTAL_TYPES;
     bfs::directory_iterator endDir;
     int sn = 1;                                                 // session number    
-    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (int pn = 1; pn <= ChokePoint::PORTAL_QUANTITY; ++pn) { // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
-    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+    for (int cn = 1; cn <= ChokePoint::CAMERA_QUANTITY; ++cn)   // camera number
     {
-        std::string seq = buildChokePointSequenceString(pn, *pt, sn, cn);
+        std::string seq = ChokePoint::getSequenceString(pn, *pt, sn, cn);
         logger << "Loading negative and probe images for sequence " << seq << "..." << std::endl;
 
         // Add ROI to corresponding sample vectors
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id)
+        for (int id = 1; id <= ChokePoint::INDIVIDUAL_QUANTITY; ++id)
         {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, sn, cn, id) + "/";
+            std::string dirPath = roiChokePointCroppedFacePath + ChokePoint::getSequenceString(pn, *pt, sn, cn, id) + "/";
             if (bfs::is_directory(dirPath))
             {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir)
@@ -4603,7 +4603,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
 {
     #if PROC_ESVM_FULL_GENERATION_TESTING
     logstream logger(LOGGER_FILE);
-    logger << "Running '" << __func__ << "' test..." << std::endl;
+    logger << "Running '" << __func__ << "' test..." << std::endl;    
 
     // Extra/External Samples
     std::string samplePath_EX = "./FAST_DT_IMAGES_LOCAL_SEARCH_P1E_S1_C1/";
@@ -4679,7 +4679,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
         LOAD SAMPLES FROM ROI
     -------------------------- */
     logger << "Load samples from ROI..." << std::endl;
-    std::vector<PORTAL_TYPE> types = { ENTER, LEAVE };
+    std::vector<ChokePoint::PortalTypes> types = ChokePoint::PORTAL_TYPES;
     bfs::directory_iterator endDir;
     cv::namedWindow(WINDOW_NAME);
 
@@ -4702,17 +4702,17 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     
     // load negatives / probes from ChokePoint
     int s1 = 1, s3 = 3;
-    for (int pn = 1; pn <= PORTAL_QUANTITY; ++pn) {             // portal number
+    for (int pn = 1; pn <= ChokePoint::PORTAL_QUANTITY; ++pn) { // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
-    for (int cn = 1; cn <= CAMERA_QUANTITY; ++cn)               // camera number
+    for (int cn = 1; cn <= ChokePoint::CAMERA_QUANTITY; ++cn)   // camera number
     {  
         // for each individual in S1 (negatives + probes)
-        for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, s1, cn, id) + "/";
+        for (int id = 1; id <= ChokePoint::INDIVIDUAL_QUANTITY; ++id) {
+            std::string dirPath = roiChokePointCroppedFacePath + ChokePoint::getSequenceString(pn, *pt, s1, cn, id) + "/";
             if (bfs::is_directory(dirPath)) {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir) {
                     if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm") {
-                        std::string strID = buildChokePointIndividualID(id);
+                        std::string strID = ChokePoint::getIndividualID(id);
                         // negatives
                         if (contains(negativesID, strID)) {
                             size_t neg = fvNegativeSamples.size();
@@ -4740,11 +4740,11 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
 
         // for each individual in S3 (only other probes)
         for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
-            std::string dirPath = roiChokePointCroppedFacePath + buildChokePointSequenceString(pn, *pt, s3, cn, id) + "/";
+            std::string dirPath = roiChokePointCroppedFacePath + ChokePoint::getSequenceString(pn, *pt, s3, cn, id) + "/";
             if (bfs::is_directory(dirPath)) {
                 for (bfs::directory_iterator itDir(dirPath); itDir != endDir; ++itDir) {
                     if (bfs::is_regular_file(*itDir) && itDir->path().extension() == ".pgm") {
-                        std::string strID = buildChokePointIndividualID(id);
+                        std::string strID = ChokePoint::getIndividualID(id);
                         // probes
                         if (contains(probesID, strID)) {
                             size_t prb = fvProbeSamples_S3.size();
@@ -4763,7 +4763,7 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess()
     
     // for each individual in extra/external samples (extra probes)
     for (int id = 1; id <= INDIVIDUAL_QUANTITY; ++id) {
-        std::string strID = buildChokePointIndividualID(id, false);
+        std::string strID = ChokePoint::getIndividualID(id, false);
         bfs::path idDir(samplePath_EX + strID);
         // probes
         if (bfs::is_directory(idDir) && contains(probesID, strID)) {
