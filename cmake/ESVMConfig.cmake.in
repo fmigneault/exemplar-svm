@@ -1,7 +1,16 @@
 # - Config file for the ExemplarSVM-LIBSVM (ESVM) package
+<<<<<<< HEAD
 
 set(ESVM_INCLUDE_DIRS       "@ESVM_CONFIG_INC_DIR@")
 set(ESVM_BINARY_DIRS 	    "@ESVM_CONFIG_BIN_DIR@")
 set(ESVM_LIBRARY_DIRS       "@ESVM_CONFIG_LIB_DIR@")
 set(ESVM_LIBRARY_DEBUG      "@ESVM_CONFIG_LIB_DBG@")
 set(ESVM_LIBRARY_RELEASE    "@ESVM_CONFIG_LIB_REL@")
+=======
+# It defines the following variables
+#  ESVM_INCLUDE_DIRS - include directories
+#  ESVM_LIBRARIES    - libraries to link against
+
+set(ESVM_INCLUDE_DIRS   "@ESVM_CONFIG_INC@")
+set(ESVM_LIBRARIES      "@ESVM_CONFIG_LIB@")
+>>>>>>> backup cmake files
