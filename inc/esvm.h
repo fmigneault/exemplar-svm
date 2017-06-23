@@ -2,7 +2,6 @@
 #define ESVM_LIBSVM_H
 
 #include "svm.h"
-#include "esvmTests.h"
 #include "esvmTypes.h"
 
 #include "types.h"
