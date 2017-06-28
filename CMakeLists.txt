@@ -127,7 +127,7 @@ else()
                  PATHS ${feHOG_ROOT_DIR} ${feHOG_ROOT_DIR}/cmake ${feHOG_DIR} ${feHOG_DIR}/cmake)
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${feHOG_INCLUDE_DIRS})
     set(ESVM_HEADER_FILES   ${ESVM_HEADER_FILES}    ${feHOG_HEADER_FILES})
-    set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${feHOG_LIBRARY_DIRS}/$<$<CONFIG:Debug>:${feHOG_LIBRARY_DEBUG}>$<$<CONFIG:Release>:${feHOG_LIBRARY_RELEASE}>)
+    set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       $<$<CONFIG:Debug>:${feHOG_LIBRARY_DEBUG}>$<$<CONFIG:Release>:${feHOG_LIBRARY_RELEASE}>)
     set(ESVM_LIBRARY_DIRS   ${ESVM_LIBRARY_DIRS}    ${feHOG_LIBRARY_DIRS})
     # hide variables required for building from source
     foreach(var IMPLEMENTATION WITH_OPENMP BUILD_TESTS LIBRARY_TYPE)
@@ -154,7 +154,7 @@ find_package(CommonCpp REQUIRED CONFIG
              PATHS ${COMMON_CPP_ROOT_DIR} ${COMMON_CPP_ROOT_DIR}/cmake ${CommonCpp_DIR} ${CommonCpp_DIR}/cmake)
 if (${CommonCpp_FOUND})
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${CommonCpp_INCLUDE_DIRS})
-    set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${CommonCpp_LIBRARY_DIRS}/$<$<CONFIG:Debug>:${CommonCpp_LIBRARY_DEBUG}>$<$<CONFIG:Release>:${CommonCpp_LIBRARY_RELEASE}>)
+    set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       $<$<CONFIG:Debug>:${CommonCpp_LIBRARY_DEBUG}>$<$<CONFIG:Release>:${CommonCpp_LIBRARY_RELEASE}>)
     set(ESVM_LIBRARY_DIRS   ${ESVM_LIBRARY_DIRS}    ${CommonCpp_LIBRARY_DIRS})
 endif()
 
