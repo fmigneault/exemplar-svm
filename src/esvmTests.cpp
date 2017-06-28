@@ -4496,6 +4496,7 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     /////////////////////////////////////////////////////// TESTING ///////////////////////////////////////////////////
 
     // training
+    try {
     logger << "Training ESVM with positives and negatives..." << std::endl;
     for (size_t p = 0; p < nPatches; ++p)
         logger << "NEG p=" << p << ": " << negativeSamples[p].size() << std::endl;
@@ -4503,6 +4504,9 @@ int proc_runSingleSamplePerPersonStillToVideo_DataFiles_SimplifiedWorking()
     for (size_t p = 0; p < nPatches; ++p)
         for (size_t pos = 0; pos < nPositives; ++pos)
             esvm[p][pos] = ESVM({ positiveSamples[p][pos] }, negativeSamples[p], positivesID[pos] + "-patch" + std::to_string(p));
+    }
+    catch(std::exception&ex)
+    { logger << "EXCPTION: " << ex.what() << std::endl; }
 
     // testing, score fusion, normalizatio    logger << "Testing probe samples against enrolled targets..." << std::endl;
     double minScore = DBL_MAX, maxScore = -DBL_MAX, meanScore = 0, stddevScore = 0, varScore = 0;

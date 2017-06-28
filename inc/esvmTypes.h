@@ -1,8 +1,6 @@
 #ifndef ESVM_TYPES_H
 #define ESVM_TYPES_H
 
-enum FileFormat { BINARY, LIBSVM };
-
 // Status to free model memory, matches libsvm for '0'/'1'
 enum FreeModelState { 
     PARAM = 0,
