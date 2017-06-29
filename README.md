@@ -4,7 +4,11 @@
 
 ## Description
 
-Implementation of C++ Exemplar-SVM using LIBSVM library.
+Implementation of C++ Exemplar-SVM using [LIBSVM](https://github.com/cjlin1/libsvm) library.
+
+### Additional details
+
+* Alternatively, multiprocessing can be employed using [libsvm-openmp](https://github.com/KenjiKyo/libsvm/tree/v322-openmp-win64-bins) fork.
 
 ---
 
