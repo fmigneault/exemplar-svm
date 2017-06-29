@@ -4,11 +4,13 @@
 
 ## Description
 
-Implementation of C++ Exemplar-SVM using [LIBSVM](https://github.com/cjlin1/libsvm) library.
+Implementation of C++ Exemplar-SVM using either [LIBSVM](https://github.com/cjlin1/libsvm) or [LIBLINEAR](https://github.com/cjlin1/liblinear) library.
 
 ### Additional details
 
 * Alternatively, multiprocessing can be employed using [libsvm-openmp](https://github.com/KenjiKyo/libsvm/tree/v322-openmp-win64-bins) fork.
+* Planned integration of SVM incremental learning (via [liblinear-incdec](https://www.csie.ntu.edu.tw/~cjlin/papers/ws/) extension)  
+* Planned integration of SVM multicore training (via [liblinear-multicore](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/multicore-liblinear/) extension)  
 
 ---
 

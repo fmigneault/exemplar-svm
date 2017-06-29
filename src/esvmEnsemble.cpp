@@ -41,7 +41,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
     #else
     size_t dimsESVM[2]{ nPatches, nPositives };
     #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
-    EoESVM = xstd::mvector<2, ESVM>(dimsESVM);                          // [patch|random-subspace][positive](ESVM)    
+    EoESVM = xstd::mvector<2, ESVM>(dimsESVM);                          // [patch|random-subspace][positive](ESVM)
 
     // load positive target still images, extract features and normalize
     for (size_t pos = 0; pos < nPositives; ++pos)
@@ -187,7 +187,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             }
 
             #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
-
+            
             negSamples[p][pos].clear();
         }
         negSamples[p].clear();

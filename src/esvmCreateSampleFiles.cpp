@@ -332,15 +332,19 @@ int proc_createNegativesSampleFiles()
             fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p],  maxPatchPerFeat[p],    clip);
             fvNegZScorePatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], clip);
         }
+        
+        #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
+        std::string h = ESVM_BINARY_HEADER_SAMPLES;
+        #endif
 
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string strPatch = "-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-            DataFile::writeSampleDataFile("negatives-raw"                      + strPatch + ".bin",  fvNegRaw[p],                negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normPatch-minmax-overAll" + strPatch + ".bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normPatch-zcore-overAll"  + strPatch + ".bin",  fvNegZScorePatchOverAll[p], negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat" + strPatch + ".bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normPatch-zcore-perFeat"  + strPatch + ".bin",  fvNegZScorePatchPerFeat[p], negClass, BINARY);
+            DataFile::writeSampleDataFile("negatives-raw"                      + strPatch + ".bin",  fvNegRaw[p],                negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normPatch-minmax-overAll" + strPatch + ".bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normPatch-zcore-overAll"  + strPatch + ".bin",  fvNegZScorePatchOverAll[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat" + strPatch + ".bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normPatch-zcore-perFeat"  + strPatch + ".bin",  fvNegZScorePatchPerFeat[p], negClass, BINARY, h);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
             DataFile::writeSampleDataFile("negatives-raw"                      + strPatch + ".data", fvNegRaw[p],                negClass, LIBSVM);
@@ -389,16 +393,16 @@ int proc_createNegativesSampleFiles()
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string strPatch = "-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-            DataFile::writeSampleDataFile("negatives-normROI-minmax-overAll" + strPatch + ".bin",   fvNegMinMaxROIOverAll[p],   negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normROI-zcore-overAll"  + strPatch + ".bin",   fvNegZScoreROIOverAll[p],   negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat" + strPatch + ".bin",   fvNegMinMaxROIPerFeat[p],   negClass, BINARY);
-            DataFile::writeSampleDataFile("negatives-normROI-zcore-perFeat"  + strPatch + ".bin",   fvNegZScoreROIPerFeat[p],   negClass, BINARY);
+            DataFile::writeSampleDataFile("negatives-normROI-minmax-overAll" + strPatch + ".bin",  fvNegMinMaxROIOverAll[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normROI-zcore-overAll"  + strPatch + ".bin",  fvNegZScoreROIOverAll[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat" + strPatch + ".bin",  fvNegMinMaxROIPerFeat[p], negClass, BINARY, h);
+            DataFile::writeSampleDataFile("negatives-normROI-zcore-perFeat"  + strPatch + ".bin",  fvNegZScoreROIPerFeat[p], negClass, BINARY, h);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
-            DataFile::writeSampleDataFile("negatives-normROI-minmax-overAll" + strPatch + ".data",  fvNegMinMaxROIOverAll[p],   negClass, LIBSVM);
-            DataFile::writeSampleDataFile("negatives-normROI-zcore-overAll"  + strPatch + ".data",  fvNegZScoreROIOverAll[p],   negClass, LIBSVM);
-            DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat" + strPatch + ".data",  fvNegMinMaxROIPerFeat[p],   negClass, LIBSVM);
-            DataFile::writeSampleDataFile("negatives-normROI-zcore-perFeat"  + strPatch + ".data",  fvNegZScoreROIPerFeat[p],   negClass, LIBSVM);
+            DataFile::writeSampleDataFile("negatives-normROI-minmax-overAll" + strPatch + ".data", fvNegMinMaxROIOverAll[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile("negatives-normROI-zcore-overAll"  + strPatch + ".data", fvNegZScoreROIOverAll[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat" + strPatch + ".data", fvNegMinMaxROIPerFeat[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile("negatives-normROI-zcore-perFeat"  + strPatch + ".data", fvNegZScoreROIPerFeat[p], negClass, LIBSVM);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
 
         // free vectors not required anymore
@@ -424,8 +428,8 @@ int proc_createNegativesSampleFiles()
     DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat-MAX.data",    maxPatchPerFeat,        negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-MEAN.data",   meanPatchPerFeat,       negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-STDDEV.data", stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
-
-
+    
+    // prepare list of feature vector normalization values
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
     for (size_t p = 0; p < nPatches; ++p) {
         str_minPatchPerFeat += "\n" + tab + tab + featuresToVectorString(minPatchPerFeat[p]);
@@ -556,7 +560,8 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     logPrb << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     for (size_t p = 0; p < nPatches; ++p)
-        DataFile::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
+        DataFile::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", 
+                                      fvPositiveSamples[p], targetOutputs, BINARY, ESVM_BINARY_HEADER_SAMPLES);
 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");
