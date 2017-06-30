@@ -28,40 +28,69 @@ cv::Mat esvmPreprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
     #endif/*ESVM_ROI_PREPROCESS_MODE*/
 }
 
-std::string svm_type_name(svm_model *model)
+std::string svm_type_name(svmModel *model)
 {
     if (model == nullptr) return "'null'";
+    #if ESVM_USE_LIBSVM     
     return svm_type_name(model->param.svm_type);
+    #else ESVM_USE_LIBLINEAR
+    return svm_type_name(model->param.solver_type);
+    #endif
 }
 
 std::string svm_type_name(int type)
 {
     switch (type)
     {
+        #if ESVM_USE_LIBSVM
         case C_SVC:         return "C_SVC";
         case NU_SVC:        return "NU_SVC";
         case ONE_CLASS:     return "ONE_CLASS";
         case EPSILON_SVR:   return "EPSILON_SVR";
         case NU_SVR:        return "NU_SVR";
+        #else ESVM_USE_LIBLINEAR
+        case L2R_LR:
+        case L1R_LR:
+        case L2R_LR_DUAL:
+            return "L_LR";
+        case L2R_L2LOSS_SVC_DUAL:
+        case L2R_L2LOSS_SVC:
+        case L2R_L1LOSS_SVC_DUAL:
+        case L1R_L2LOSS_SVC:
+        case MCSVM_CS:
+            return "C_SVC";
+        case L2R_L2LOSS_SVR:
+        case L2R_L2LOSS_SVR_DUAL:
+        case L2R_L1LOSS_SVR_DUAL:
+            return "L_SVR";
+        #endif
         default:            return "UNDEFINED (" + std::to_string(type) + ")";
     }
 }
 
-std::string svm_kernel_name(svm_model *model)
+std::string svm_kernel_name(svmModel *model)
 {
+    #if ESVM_USE_LIBSVM
     if (model == nullptr) return "'null'";
     return svm_kernel_name(model->param.kernel_type);
+    #elif ESVM_USE_LIBLINEAR
+    return "LINEAR";
+    #endif
 }
 
 std::string svm_kernel_name(int type)
 {
     switch (type)
     {
+        #if ESVM_USE_LIBSVM
         case LINEAR:        return "LINEAR";
         case POLY:          return "POLY";
         case RBF:           return "RBF";
         case SIGMOID:       return "SIGMOID";
         case PRECOMPUTED:   return "PRECOMPUTED";
+        #elif ESVM_USE_LIBLINEAR
+        return "LINEAR";
+        #endif
         default:            return "UNDEFINED (" + std::to_string(type) + ")";
     }
 }

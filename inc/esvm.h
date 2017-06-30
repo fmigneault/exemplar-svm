@@ -1,7 +1,6 @@
 #ifndef ESVM_LIBSVM_H
 #define ESVM_LIBSVM_H
 
-#include "svm.h"
 #include "esvmTypes.h"
 
 #include "datafile.h"
@@ -32,13 +31,13 @@ public:
     ESVM(vector<FeatureVector> positives, vector<FeatureVector> negatives, string id = "");
     ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id = "");
     ESVM(string trainingSamplesFilePath, string id = "");
-    ESVM(svm_model* trainedModel, string id = "");
-    static svm_model* makeEmptyModel();
-    static void destroyModel(svm_model** model);
+    ESVM(svmModel* trainedModel, string id = "");
+    static svmModel* makeEmptyModel();
+    static void destroyModel(svmModel** model);
     bool isModelSet() const;
     bool isModelTrained() const;
     void logModelParameters(bool displaySV = false) const;
-    static bool checkModelParameters(svm_model* model);
+    static bool checkModelParameters(svmModel* model);
     static void readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, 
                                    vector<int>& targetOutputs, FileFormat format = LIBSVM);
     static void readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
@@ -60,21 +59,22 @@ public:
     }
 
 private:
-    static void logModelParameters(svm_model* model, string id = "", bool displaySV = false);    
-    static void checkModelParameters_assert(svm_model* model);
+    static void logModelParameters(svmModel* model, string id = "", bool displaySV = false);    
+    static void checkModelParameters_assert(svmModel* model);
     static vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
     void trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, vector<double> classWeights);
     void loadModelFile_libsvm(string filePath);
     void loadModelFile_binary(string filePath);
     void saveModelFile_binary(string filePath) const;
-    static FeatureVector getFeatureVector(svm_node* features);
-    static svm_node* getFeatureNodes(FeatureVector features);
-    static svm_node* getFeatureNodes(double* features, int featureCount);
-    static svm_model* deepCopyModel(svm_model* model = nullptr);
-    static void removeTrainedModelUnusedData(svm_model* model, svm_problem* problem);
-    void resetModel(svm_model* model = nullptr, bool copy = true);
-    svm_model *esvmModel = nullptr;
-    /*unique_ptr<svm_model> esvmModel = nullptr;*/    
+    static FeatureVector getFeatureVector(svmFeature* features);
+    static svmFeature* getFeatureNodes(FeatureVector features);
+    static svmFeature* getFeatureNodes(double* features, int featureCount);
+    static svmModel* deepCopyModel(svmModel* model = nullptr);
+    static void removeTrainedModelUnusedData(svmModel* model, svmProblem* problem);
+    void resetModel(svmModel* model = nullptr, bool copy = true);
+    static FreeModelState getFreeSV(svmModel* model);
+    svmModel *esvmModel = nullptr;
+    /*unique_ptr<svmModel> esvmModel = nullptr;*/    
 };
 
 #endif/*ESVM_LIBSVM_H*/
