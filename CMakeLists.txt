@@ -22,8 +22,8 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 endif()
 
 # Offer the user the choice of overriding the installation directories
-set(INSTALL_LIBRARY_DIR     lib CACHE PATH "Installation directory for libraries")
-set(INSTALL_BINARY_DIR      bin CACHE PATH "Installation directory for executables")
+set(INSTALL_LIBRARY_DIR lib CACHE PATH "Installation directory for libraries")
+set(INSTALL_BINARY_DIR  bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR inc CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR cmake)
@@ -32,14 +32,6 @@ else()
 endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH "Installation directory for CMake files")
 
-# Make relative paths absolute (needed later on)
-foreach(p LIBRARY BINARY INCLUDE CMAKE)
-  set(var INSTALL_${p}_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
 # set ESVM paths
 set(ESVM_ROOT_DIR           "${CMAKE_CURRENT_LIST_DIR}")
 set(ESVM_EXECUTABLE_DIR     "${ESVM_ROOT_DIR}/bld")
@@ -47,6 +39,14 @@ set(ESVM_SOURCES_DIRS       "${ESVM_ROOT_DIR}/src")
 set(ESVM_INCLUDE_DIRS       "${ESVM_ROOT_DIR}/inc")
 set(ESVM_LIBRARY_DIR        "${ESVM_ROOT_DIR}/lib")
 set(CMAKE_INSTALL_PREFIX    "${ESVM_ROOT_DIR}/install" CACHE STRING "")
+
+# Make relative paths absolute (needed later on)
+foreach(p LIBRARY BINARY INCLUDE CMAKE)
+  set(var INSTALL_${p}_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
 
 # include cmake subdirectory to find packages
 list(APPEND CMAKE_MODULE_PATH "${ESVM_ROOT_DIR}/cmake")
@@ -191,12 +191,12 @@ if (${ESVM_BUILD_LIBSVM})
         set(ESVM_HEADER_TESTS ${ESVM_HEADER_TESTS}  ${LIBSVM_HEADER_FILE})
     endif()
 else()
-    set(ESVM_LIBRARIES    ${ESVM_LIBRARIES}     ${LIBSVM_LIBRARIES})
+    set(ESVM_LIBRARIES  ${ESVM_LIBRARIES}       ${LIBSVM_LIBRARIES})
 endif()
 
 # find mvector
 find_package(mvector REQUIRED)
-set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}  ${MVECTOR_INCLUDE_DIR})
+set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${MVECTOR_INCLUDE_DIR})
 
 # include/linking
 set(ESVM_LIBRARY_NAME ${ESVM_PROJECT})
@@ -228,7 +228,6 @@ string(REGEX REPLACE "\\\\" "/" INSTALL_BINARY_DIR  ${INSTALL_BINARY_DIR})
 string(REGEX REPLACE "\\\\" "/" INSTALL_LIBRARY_DIR ${INSTALL_LIBRARY_DIR}) 
 
 # update config file
-set(ESVM_CONFIG_INC     ${INSTALL_INCLUDE_DIR})
 set(ESVM_CONFIG_INC_DIR ${INSTALL_INCLUDE_DIR})
 set(ESVM_CONFIG_BIN_DIR ${INSTALL_BINARY_DIR})
 set(ESVM_CONFIG_LIB_DIR ${INSTALL_LIBRARY_DIR})
