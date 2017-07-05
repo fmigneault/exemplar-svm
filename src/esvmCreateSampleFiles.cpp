@@ -416,14 +416,14 @@ int proc_createNegativesSampleFiles()
     std::vector<FeatureVector> maxAllROIPerFeatVec{ maxAllROIPerFeat };
     std::vector<FeatureVector> meanAllROIPerFeatVec{ meanAllROIPerFeat };
     std::vector<FeatureVector> stdDevAllROIPerFeatVec{ stdDevAllROIPerFeat };
-    DataFile::writeSampleDataFile("negatives-MIN-normROI-minmax-perFeat.data",      minAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-MAX-normROI-minmax-perFeat.data",      maxAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-MEAN-normROI-zscore-perFeat.data",     meanAllROIPerFeatVec,   negAllROIOupput, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-STDDEV-normROI-zscore-perFeat.data",   stdDevAllROIPerFeatVec, negAllROIOupput, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-MIN-normPath-minmax-perFeat.data",     minPatchPerFeat,        negPatchOutputs, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-MAX-normPath-minmax-perFeat.data",     maxPatchPerFeat,        negPatchOutputs, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-MEAN-normPath-zscore-perFeat.data",    meanPatchPerFeat,       negPatchOutputs, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-STDDEV-normPath-zscore-perFeat.data",  stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat-MIN.data",      minAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat-MAX.data",      maxAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normROI-zscore-perFeat-MEAN.data",     meanAllROIPerFeatVec,   negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normROI-zscore-perFeat-STDDEV.data",   stdDevAllROIPerFeatVec, negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normPath-minmax-perFeat-MIN.data",     minPatchPerFeat,        negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat-MAX.data",    maxPatchPerFeat,        negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-MEAN.data",   meanPatchPerFeat,       negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-STDDEV.data", stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
 
 
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
