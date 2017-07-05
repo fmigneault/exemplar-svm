@@ -134,23 +134,23 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
         #if   ESVM_FEATURE_NORMALIZATION_MODE == 0
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-raw" + sampleFileExt;
+        std::string negativeFileName = "negatives-raw-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 1
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax-overAll" + sampleFileExt;
+        std::string negativeFileName = "negatives-normROI-minmax-overAll-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-zscore-overAll" + sampleFileExt;
+        std::string negativeFileName = "negatives-normROI-zscore-overAll-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-minmax-perFeat" + sampleFileExt;
+        std::string negativeFileName = "negatives-normROI-minmax-perFeat-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normROI-zscore-perFeat" + sampleFileExt;
+        std::string negativeFileName = "negatives-normROI-zscore-perFeat-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-overAll" + sampleFileExt;
+        std::string negativeFileName = "negatives-normPatch-minmax-overAll-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-overAll" + sampleFileExt;
+        std::string negativeFileName = "negatives-normPatch-zscore-overAll-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-minmax-perFeat" + sampleFileExt;
+        std::string negativeFileName = "negatives-normPatch-minmax-perFeat-patch" + std::to_string(p) + sampleFileExt;
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-        std::string negativeFileName = "negatives-patch" + std::to_string(p) + "-normPatch-zscore-perFeat" + sampleFileExt;
+        std::string negativeFileName = "negatives-normPatch-zscore-perFeat-patch" + std::to_string(p) + sampleFileExt;
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         
         std::vector<FeatureVector> negFileSamples;  // reset on each patch
