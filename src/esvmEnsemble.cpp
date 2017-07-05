@@ -243,8 +243,8 @@ void esvmEnsemble::setConstants(std::string negativesDir)
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 6  // Z-Score overall normalization for each patch
     THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 6)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 7  // Min-Max per feature normalization for each patch
-    DataFile::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
-    DataFile::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
+    DataFile::readSampleDataFile(negativesDir + "negatives-normPatch-minmax-perFeat-MIN.data", hogRefMin, LIBSVM);
+    DataFile::readSampleDataFile(negativesDir + "negatives-normPatch-minmax-perFeat-MAX.data", hogRefMax, LIBSVM);
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 8  // Z-Score per feature normalization for each patch
     THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 8)");
     #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
