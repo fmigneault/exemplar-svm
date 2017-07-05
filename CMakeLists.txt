@@ -22,8 +22,8 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 endif()
 
 # Offer the user the choice of overriding the installation directories
-set(INSTALL_LIBRARY_DIR     lib CACHE PATH "Installation directory for libraries")
-set(INSTALL_BINARY_DIR      bin CACHE PATH "Installation directory for executables")
+set(INSTALL_LIBRARY_DIR lib CACHE PATH "Installation directory for libraries")
+set(INSTALL_BINARY_DIR  bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR inc CACHE PATH "Installation directory for header files")
 if(WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR cmake)
@@ -32,14 +32,6 @@ else()
 endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH "Installation directory for CMake files")
 
-# Make relative paths absolute (needed later on)
-foreach(p LIBRARY BINARY INCLUDE CMAKE)
-  set(var INSTALL_${p}_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
 # set ESVM paths
 set(ESVM_ROOT_DIR           "${CMAKE_CURRENT_LIST_DIR}")
 set(ESVM_EXECUTABLE_DIR     "${ESVM_ROOT_DIR}/bld")
@@ -47,6 +39,14 @@ set(ESVM_SOURCES_DIRS       "${ESVM_ROOT_DIR}/src")
 set(ESVM_INCLUDE_DIRS       "${ESVM_ROOT_DIR}/inc")
 set(ESVM_LIBRARY_DIR        "${ESVM_ROOT_DIR}/lib")
 set(CMAKE_INSTALL_PREFIX    "${ESVM_ROOT_DIR}/install" CACHE STRING "")
+
+# Make relative paths absolute (needed later on)
+foreach(p LIBRARY BINARY INCLUDE CMAKE)
+  set(var INSTALL_${p}_DIR)
+  if(NOT IS_ABSOLUTE "${${var}}")
+    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  endif()
+endforeach()
 
 # include cmake subdirectory to find packages
 list(APPEND CMAKE_MODULE_PATH "${ESVM_ROOT_DIR}/cmake")
@@ -106,7 +106,8 @@ add_definitions(-DESVM_ROOT_PATH="${ESVM_ROOT_DIR}")
 # find FeatureExtractorHOG (feHOG)
 if (${ESVM_BUILD_HOG})
     message(STATUS "Trying to find FeatureExtractorHOG (feHOG) to build from source ('ESVM_BUILD_HOG'=ON)")
-    find_package(FeatureExtractorHOG REQUIRED MODULE)
+    find_package(feHOG REQUIRED MODULE
+                 NAMES feHOG feHOG FE_HOG FeatureExtractorHOG)
     add_subdirectory(${feHOG_ROOT_DIR} ${ESVM_LIBRARY_DIR})    # will raise error if invalid dir
     if (${feHOG_FOUND})
         set(ESVM_INCLUDE_DIRS ${ESVM_INCLUDE_DIRS}  ${feHOG_INCLUDE_DIRS})
@@ -191,12 +192,12 @@ if (${ESVM_BUILD_LIBSVM})
         set(ESVM_HEADER_TESTS ${ESVM_HEADER_TESTS}  ${LIBSVM_HEADER_FILE})
     endif()
 else()
-    set(ESVM_LIBRARIES    ${ESVM_LIBRARIES}     ${LIBSVM_LIBRARIES})
+    set(ESVM_LIBRARIES  ${ESVM_LIBRARIES}       ${LIBSVM_LIBRARIES})
 endif()
 
 # find mvector
 find_package(mvector REQUIRED)
-set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}  ${MVECTOR_INCLUDE_DIR})
+set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${MVECTOR_INCLUDE_DIR})
 
 # include/linking
 set(ESVM_LIBRARY_NAME ${ESVM_PROJECT})
@@ -228,12 +229,12 @@ string(REGEX REPLACE "\\\\" "/" INSTALL_BINARY_DIR  ${INSTALL_BINARY_DIR})
 string(REGEX REPLACE "\\\\" "/" INSTALL_LIBRARY_DIR ${INSTALL_LIBRARY_DIR}) 
 
 # update config file
-set(ESVM_CONFIG_INC     ${INSTALL_INCLUDE_DIR})
 set(ESVM_CONFIG_INC_DIR ${INSTALL_INCLUDE_DIR})
 set(ESVM_CONFIG_BIN_DIR ${INSTALL_BINARY_DIR})
 set(ESVM_CONFIG_LIB_DIR ${INSTALL_LIBRARY_DIR})
 set(ESVM_CONFIG_LIB_DBG ${INSTALL_LIBRARY_DIR}/${ESVM_LIBRARY_DEBUG})
 set(ESVM_CONFIG_LIB_REL ${INSTALL_LIBRARY_DIR}/${ESVM_LIBRARY_RELEASE})
+set(ESVM_CONFIG_CMK_DIR ${INSTALL_CMAKE_DIR})
 set(ESVM_CONFIG_FILE    ${ESVM_PROJECT}Config.cmake)
 if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
     set(ESVM_CONFIG_PATH ${ESVM_CONFIG_FILE})
@@ -241,15 +242,21 @@ else()
     set(ESVM_CONFIG_PATH ${CMAKE_BINARY_DIR}/${ESVM_CONFIG_FILE})
 endif()
 file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}" "${INSTALL_INCLUDE_DIR}")
-configure_file(cmake/${ESVM_CONFIG_FILE}.in ${ESVM_CONFIG_PATH})
+configure_file(cmake/${ESVM_CONFIG_FILE}.in ${ESVM_CONFIG_PATH} @ONLY)
+
+# add dependency find config files to install
+set(ESVM_FIND_CONFIG    ${ESVM_FIND_CONFIG} "cmake/FindLibSVM.cmake")
+set(ESVM_FIND_CONFIG    ${ESVM_FIND_CONFIG} "cmake/FindfeHOG.cmake")
+set(ESVM_FIND_CONFIG    ${ESVM_FIND_CONFIG} "cmake/Findmvector.cmake")
 
 # install
 install(TARGETS ${ESVM_LIBRARY_NAME}
         RUNTIME DESTINATION ${INSTALL_BINARY_DIR}
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
         ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR})
-install(FILES     ${ESVM_HEADER_FILES} DESTINATION ${INSTALL_INCLUDE_DIR})
-install(FILES     ${ESVM_CONFIG_PATH}  DESTINATION ${INSTALL_CMAKE_DIR})
+install(FILES   ${ESVM_HEADER_FILES} DESTINATION ${INSTALL_INCLUDE_DIR})
+install(FILES   ${ESVM_CONFIG_PATH}  DESTINATION ${INSTALL_CMAKE_DIR})
+install(FILES   ${ESVM_FIND_CONFIG}  DESTINATION ${INSTALL_CMAKE_DIR})
 if (${ESVM_BUILD_TESTS})
     install(TARGETS ${ESVM_TESTS} RUNTIME DESTINATION ${INSTALL_BINARY_DIR})
 endif()
