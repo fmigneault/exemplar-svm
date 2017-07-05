@@ -35,8 +35,13 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
     xstd::mvector<3, FeatureVector> negSamples(dimsNegatives);          // [patch][positives][negatives](FeatureVector)
     size_t nAdditionalNegatives = additionalNegativeROIs.size();
 
-    // Exemplar-SVM
-    EoESVM = xstd::mvector<2, ESVM>(dimsPositives);                     // [patch][positive](ESVM)
+    // Ensemble of exemplar-SVM
+    #if ESVM_RANDOM_SUBSPACE_METHOD > 0
+    size_t dimsESVM[2]{ nPatches * ESVM_RANDOM_SUBSPACE_METHOD, nPositives };
+    #else
+    size_t dimsESVM[2]{ nPatches, nPositives };
+    #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
+    EoESVM = xstd::mvector<2, ESVM>(dimsESVM);                          // [patch|random-subspace][positive](ESVM)    
 
     // load positive target still images, extract features and normalize
     for (size_t pos = 0; pos < nPositives; ++pos)
@@ -149,11 +154,40 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         
         std::vector<FeatureVector> negFileSamples;  // reset on each patch
-        ESVM::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);        
+        DataFile::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);        
 
         for (size_t pos = 0; pos < nPositives; ++pos) {
             negSamples[p][pos].insert(negSamples[p][pos].end(), negFileSamples.begin(), negFileSamples.end());
-            EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p][pos], enrolledPositiveIDs[pos] + "-patch" + std::to_string(p));
+            std::string idESVM =  enrolledPositiveIDs[pos] + "-patch" + std::to_string(p);
+
+            #if ESVM_RANDOM_SUBSPACE_METHOD == 0
+            EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p][pos], idESVM);
+            
+            #else/*ESVM_RANDOM_SUBSPACE_METHOD*/
+            
+            // transfer features from random selection
+            size_t nPosRS = posSamples[p][pos].size();
+            size_t nNegRS = negSamples[p][pos].size();
+            xstd::mvector<2, FeatureVector> posSamplesRS({ ESVM_RANDOM_SUBSPACE_METHOD, nPosRS });
+            xstd::mvector<2, FeatureVector> negSamplesRS({ ESVM_RANDOM_SUBSPACE_METHOD, nNegRS });
+            #pragma omp parallel for
+            for (long rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+                for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f) {
+                    for (size_t iPosRS = 0; iPosRS < nPosRS; ++iPosRS)
+                        posSamplesRS[rs][iPosRS][f] = posSamples[p][pos][iPosRS][rsmFeatureIndexes[rs][f]];
+                    for (size_t iNegRS = 0; iNegRS < nPosRS; ++iNegRS)
+                        negSamplesRS[rs][iNegRS][f] = negSamples[p][pos][iNegRS][rsmFeatureIndexes[rs][f]];
+                }
+            }
+
+            // train with random subspaces
+            for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+                idESVM += "-rs" + std::to_string(rs);
+                EoESVM[p * ESVM_RANDOM_SUBSPACE_METHOD + rs][pos] = ESVM(posSamplesRS[rs], negSamplesRS[rs], idESVM);
+            }
+
+            #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
+
             negSamples[p][pos].clear();
         }
         negSamples[p].clear();
@@ -174,7 +208,7 @@ void esvmEnsemble::setConstants(std::string negativesDir)
     /* --- Feature 'hardcoded' normalization values for on-line classification --- */
 
     #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max overall normalization across patches
-        // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
+    // found min/max using 'FullChokePoint' test with SAMAN pre-generated files
     hogRefMin = 0;
     hogRefMax = 0.675058;
     // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
@@ -209,16 +243,41 @@ void esvmEnsemble::setConstants(std::string negativesDir)
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 6  // Z-Score overall normalization for each patch
     THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 6)");
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 7  // Min-Max per feature normalization for each patch
-    ESVM::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
-    ESVM::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
+    DataFile::readSampleDataFile(negativesDir + "negatives-MIN-normPatch-minmax-perFeat.data", hogRefMin, LIBSVM);
+    DataFile::readSampleDataFile(negativesDir + "negatives-MAX-normPatch-minmax-perFeat.data", hogRefMax, LIBSVM);
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 8  // Z-Score per feature normalization for each patch
     THROW("Not set reference normalization values (ESVM_FEATURE_NORMALIZATION_MODE == 8)");
     #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
+    /* --- Random Subspace Method for feature selection and compact pool generation --- */
+
+    #if ESVM_RANDOM_SUBSPACE_METHOD
+
+    // read file containing indexes of features to employ from each corresponding random subspace
+    // zero-value features are ignored, others are taken as part of the random subspace
+    std::vector<FeatureVector> rsmIndexes;
+    DataFile::readSampleDataFile("rsm-indexes.data", rsmIndexes, LIBSVM);
+    ASSERT_THROW(rsmIndexes.size() == ESVM_RANDOM_SUBSPACE_METHOD, "Incorrect number of RSM subspaces");
+
+    size_t dimsRSM[2]{ ESVM_RANDOM_SUBSPACE_METHOD, ESVM_RANDOM_SUBSPACE_FEATURES };
+    rsmFeatureIndexes = xstd::mvector<2, int>(dimsRSM, 0);
+    for (size_t rs = 0; rs < rsmIndexes.size(); ++rs) {
+        size_t iFeat = 0;
+        for (size_t f = 0; f < rsmIndexes[rs].size(); ++f) {
+            if (rsmIndexes[rs][f] != 0) {
+                rsmFeatureIndexes[rs][iFeat] = f;
+                iFeat++;
+            }
+        }
+        ASSERT_THROW(iFeat == ESVM_RANDOM_SUBSPACE_FEATURES, "Incorrect number of RSM features");
+    }
+    
+    #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
+
     /* --- Score 'hardcoded' normalization values for on-line classification --- */
 
     #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max normalization
-        // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
+    // found min/max using 'SimplifiedWorkingProcedure' test with SAMAN pre-generated files
     scoreRefMin = -1.578030;
     scoreRefMax = -0.478968;
     // found min/max using 'FullGenerationAndTestProcess' test (loaded ROI from ChokePoint + Fast-DT ROI localized search)
@@ -279,43 +338,57 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
     #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
     // load probe still images, extract features and normalize
-    xstd::mvector<1, FeatureVector> probeSampleFeats(nPatches);
+    std::vector<FeatureVector> probeSamples(nPatches);
     std::vector<cv::Mat> patches = imPreprocess(procROI, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION);
     for (size_t p = 0; p < nPatches; p++)
     {
-        probeSampleFeats[p] = hog.compute(patches[p]);
+        probeSamples[p] = hog.compute(patches[p]);
         #if   ESVM_FEATURE_NORMALIZATION_MODE == 1
-        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, probeSampleFeats[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizeOverAll(MIN_MAX, probeSamples[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 2
-        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, probeSampleFeats[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizeOverAll(Z_SCORE, probeSamples[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 3
-        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, probeSampleFeats[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizePerFeature(MIN_MAX, probeSamples[p], hogRefMin, hogRefMax, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 4
-        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, probeSampleFeats[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizePerFeature(Z_SCORE, probeSamples[p], hogRefMean, hogRefStdDev, ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 5
-        probeSampleFeats[p] = normalizeOverAll(MIN_MAX, probeSampleFeats[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizeOverAll(MIN_MAX, probeSamples[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 6
-        probeSampleFeats[p] = normalizeOverAll(Z_SCORE, probeSampleFeats[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizeOverAll(Z_SCORE, probeSamples[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 7
-        probeSampleFeats[p] = normalizePerFeature(MIN_MAX, probeSampleFeats[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizePerFeature(MIN_MAX, probeSamples[p], hogRefMin[p], hogRefMax[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #elif ESVM_FEATURE_NORMALIZATION_MODE == 8
-        probeSampleFeats[p] = normalizePerFeature(Z_SCORE, probeSampleFeats[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
+        probeSamples[p] = normalizePerFeature(Z_SCORE, probeSamples[p], hogRefMean[p], hogRefStdDev[p], ESVM_FEATURE_NORMALIZATION_CLIP);
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
     }
 
-    // testing, score fusion, normalization
-    xstd::mvector<1, double> classificationScores(nPositives, 0.0);
-    size_t dimsProbes[2]{ nPatches, nPositives };
-    xstd::mvector<2, double> scores(dimsProbes, 0.0);
-    for (size_t pos = 0; pos < nPositives; ++pos)
-    {
-        for (size_t p = 0; p < nPatches; ++p)
-        {
-            scores[p][pos] = EoESVM[p][pos].predict(probeSampleFeats[p]);
-            classificationScores[pos] += scores[p][pos];                          // score accumulation for fusion
+    // prepare test samples    
+    # if !ESVM_RANDOM_SUBSPACE_METHOD
+    size_t nESVM = nPatches;
+    std::vector<FeatureVector> probeSampleTest = probeSamples;
+    #else/*ESVM_RANDOM_SUBSPACE_METHOD*/
+    size_t nESVM = nPatches * ESVM_RANDOM_SUBSPACE_METHOD;
+    std::vector<FeatureVector> probeSampleTest(nESVM);
+    #pragma omp parallel for
+    for (long p = 0; p < nPatches; ++p)
+        for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+            size_t iRS = p * ESVM_RANDOM_SUBSPACE_METHOD + rs;
+            probeSampleTest[iRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
+            for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f)
+                probeSampleTest[iRS][f] = probeSamples[p][rsmFeatureIndexes[rs][f]];
         }
-        // average score fusion and normalization post-fusion
-        classificationScores[pos] /= (double)nPatches;
+    #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
+
+    // testing, score fusion, normalization
+    size_t dimsProbes[2]{ nESVM, nPositives };
+    xstd::mvector<2, double> scores(dimsProbes, 0.0);
+    xstd::mvector<1, double> classificationScores(nPositives, 0.0);
+    for (size_t pos = 0; pos < nPositives; ++pos) {
+        for (size_t svm = 0; svm < nESVM; ++svm) {
+            scores[svm][pos] = EoESVM[svm][pos].predict(probeSampleTest[svm]);
+            classificationScores[pos] += scores[svm][pos];  // score accumulation for fusion
+        }        
+        classificationScores[pos] /= (double)nESVM;         // average score fusion and normalization post-fusion
         #if ESVM_SCORE_NORMALIZATION_MODE == 1
         classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreRefMin, scoreRefMax, ESVM_SCORE_NORMALIZATION_CLIP);
         #elif ESVM_SCORE_NORMALIZATION_MODE == 2

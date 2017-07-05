@@ -70,6 +70,10 @@ private:
     std::vector<FeatureVector> hogRefStdDev;
     #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
 
+    #if ESVM_RANDOM_SUBSPACE_METHOD > 0    
+    xstd::mvector<2, int> rsmFeatureIndexes;
+    #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
+
     #if ESVM_SCORE_NORMALIZATION_MODE == 1      // Min-Max scores normalization
     double scoreRefMin;
     double scoreRefMax;

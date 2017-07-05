@@ -336,18 +336,18 @@ int proc_createNegativesSampleFiles()
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string fileStart = "negatives-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-            ESVM::writeSampleDataFile(fileStart + "-raw.bin",                       fvNegRaw[p],                negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.bin",   fvNegZScorePatchOverAll[p], negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.bin",   fvNegZScorePatchPerFeat[p], negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-raw.bin",                       fvNegRaw[p],                negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.bin",   fvNegZScorePatchOverAll[p], negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.bin",  fvNegMinMaxPatchPerFeat[p], negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.bin",   fvNegZScorePatchPerFeat[p], negClass, BINARY);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
-            ESVM::writeSampleDataFile(fileStart + "-raw.data",                      fvNegRaw[p],                negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.data", fvNegMinMaxPatchOverAll[p], negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.data",  fvNegZScorePatchOverAll[p], negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.data", fvNegMinMaxPatchPerFeat[p], negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.data",  fvNegZScorePatchPerFeat[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-raw.data",                      fvNegRaw[p],                negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-minmax-overAll.data", fvNegMinMaxPatchOverAll[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-zcore-overAll.data",  fvNegZScorePatchOverAll[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-minmax-perFeat.data", fvNegMinMaxPatchPerFeat[p], negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normPatch-zcore-perFeat.data",  fvNegZScorePatchPerFeat[p], negClass, LIBSVM);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
 
         // free vectors not required anymore
@@ -389,16 +389,16 @@ int proc_createNegativesSampleFiles()
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string fileStart = "negatives-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.bin",    fvNegMinMaxROIOverAll[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.bin",     fvNegZScoreROIOverAll[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.bin",    fvNegMinMaxROIPerFeat[p],   negClass, BINARY);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.bin",     fvNegZScoreROIPerFeat[p],   negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.bin",    fvNegMinMaxROIOverAll[p],   negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.bin",     fvNegZScoreROIOverAll[p],   negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.bin",    fvNegMinMaxROIPerFeat[p],   negClass, BINARY);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.bin",     fvNegZScoreROIPerFeat[p],   negClass, BINARY);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY*/
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM
-            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.data",   fvNegMinMaxROIOverAll[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.data",    fvNegZScoreROIOverAll[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.data",   fvNegMinMaxROIPerFeat[p],   negClass, LIBSVM);
-            ESVM::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.data",    fvNegZScoreROIPerFeat[p],   negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-minmax-overAll.data",   fvNegMinMaxROIOverAll[p],   negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-zcore-overAll.data",    fvNegZScoreROIOverAll[p],   negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-minmax-perFeat.data",   fvNegMinMaxROIPerFeat[p],   negClass, LIBSVM);
+            DataFile::writeSampleDataFile(fileStart + "-normROI-zcore-perFeat.data",    fvNegZScoreROIPerFeat[p],   negClass, LIBSVM);
         #endif/*PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM*/
 
         // free vectors not required anymore
@@ -408,6 +408,23 @@ int proc_createNegativesSampleFiles()
         fvNegZScoreROIPerFeat[p].clear();
         fvNegRaw[p].clear();
     }
+
+    // write normalization result files
+    std::vector<int> negAllROIOupput(1, ESVM_NEGATIVE_CLASS);
+    std::vector<int> negPatchOutputs(nPatches, ESVM_NEGATIVE_CLASS);
+    std::vector<FeatureVector> minAllROIPerFeatVec{ minAllROIPerFeat };
+    std::vector<FeatureVector> maxAllROIPerFeatVec{ maxAllROIPerFeat };
+    std::vector<FeatureVector> meanAllROIPerFeatVec{ meanAllROIPerFeat };
+    std::vector<FeatureVector> stdDevAllROIPerFeatVec{ stdDevAllROIPerFeat };
+    DataFile::writeSampleDataFile("negatives-MIN-normROI-minmax-perFeat.data",      minAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-MAX-normROI-minmax-perFeat.data",      maxAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-MEAN-normROI-zscore-perFeat.data",     meanAllROIPerFeatVec,   negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-STDDEV-normROI-zscore-perFeat.data",   stdDevAllROIPerFeatVec, negAllROIOupput, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-MIN-normPath-minmax-perFeat.data",     minPatchPerFeat,        negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-MAX-normPath-minmax-perFeat.data",     maxPatchPerFeat,        negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-MEAN-normPath-zscore-perFeat.data",    meanPatchPerFeat,       negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-STDDEV-normPath-zscore-perFeat.data",  stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
+
 
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
     for (size_t p = 0; p < nPatches; ++p) {
@@ -539,7 +556,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     logPrb << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     for (size_t p = 0; p < nPatches; ++p)
-        ESVM::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
+        DataFile::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", fvPositiveSamples[p], targetOutputs, BINARY);
 
     // ofstream outputFile;
     // outputFile.open ("example1.txt");

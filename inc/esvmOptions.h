@@ -42,6 +42,13 @@
         4: (Wp = 1, Wn = Np/Nn)     ratio of sample counts normalized for positives (Np/Nn = [N/Nn]/[N/Np])
 */
 #define ESVM_WEIGHTS_MODE 2
+/* Specify if random subspace method (RSM) for feature selection must be employed to generate the ensemble of eSVM
+        0: RSM is not employed (directly using the basic feature extraction methods)
+        #: other numeric int value, the specified value is the amount of RSS operations applied 
+*/
+#define ESVM_RANDOM_SUBSPACE_METHOD 20
+// Specifies the amount of features to be randomly selected when applying RSM
+#define ESVM_RANDOM_SUBSPACE_FEATURES 128
 /*
     ESVM_FEATURE_NORMALIZATION_MODE:
         0: no normalization
