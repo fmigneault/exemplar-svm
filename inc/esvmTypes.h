@@ -1,14 +1,14 @@
 #ifndef ESVM_TYPES_H
 #define ESVM_TYPES_H
 
-// Base SVM library include, types and functions
+// SVM implementation library include, types and functions
 #if defined(ESVM_USE_LIBSVM) && !defined(ESVM_USE_LIBLINEAR)    
     #include "svm.h"
     #define ESVM_BASE "LIBSVM"
     typedef struct svm_model        svmModel;
     typedef struct svm_parameter    svmParam;
     typedef struct svm_problem      svmProblem;
-    typedef struct svm_node         svmFeat;
+    typedef struct svm_node         svmFeature;
     #define svmTrain                svm_train
     #define svmPredict              svm_predict
     #define svmPredictProbability   svm_predict_probability

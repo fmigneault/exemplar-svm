@@ -51,17 +51,17 @@ endforeach()
 # include cmake subdirectory to find packages
 list(APPEND CMAKE_MODULE_PATH "${ESVM_ROOT_DIR}/cmake")
 
-# drop down list of base library
+# drop down list of SVM implementation library
 set(ESVM_LIBRARY_LIBSVM    "LIBSVM")
 set(ESVM_LIBRARY_LIBLINEAR "LIBLINEAR")
-set(ESVM_LIBRARY_BASE ${ESVM_LIBRARY_LIBSVM} CACHE STRING "Base SVM library to employ")
-set_property(CACHE ESVM_LIBRARY_BASE PROPERTY STRINGS ${ESVM_LIBRARY_LIBSVM} ${ESVM_LIBRARY_LIBLINEAR})
+set(ESVM_LIBRARY_IMPL ${ESVM_LIBRARY_LIBSVM} CACHE STRING "SVM implementation library to employ")
+set_property(CACHE ESVM_LIBRARY_IMPL PROPERTY STRINGS ${ESVM_LIBRARY_LIBSVM} ${ESVM_LIBRARY_LIBLINEAR})
 
 # ESVM options
 option(ESVM_USE_LBP         "Employ FeatureExtractorLBP (feLBP) for ESVM"   OFF)
 option(ESVM_BUILD_HOG       "Build FeatureExtractorHOG (feHOG) from source" OFF)
 option(ESVM_BUILD_TESTS     "Build executable for tests"                    OFF)
-if (${ESVM_LIBRARY_BASE} STREQUAL ${ESVM_LIBRARY_LIBSVM})
+if (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBSVM})
     if (MSVC)
         # under Windows, using LIBSVM library causes malloc/free errors
         # but building directly from the header/source is working
@@ -191,7 +191,7 @@ set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${OpenCV_INCLUDE_DIRS})
 set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${OpenCV_LIBRARIES})
 
 # find LIBSVM / LIBLINEAR
-if (${ESVM_LIBRARY_BASE} STREQUAL ${ESVM_LIBRARY_LIBSVM})
+if (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBSVM})
     find_package(LibSVM REQUIRED)
     if (${LIBSVM_FOUND})
         set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${LIBSVM_INCLUDE_DIRS})
@@ -212,7 +212,7 @@ if (${ESVM_LIBRARY_BASE} STREQUAL ${ESVM_LIBRARY_LIBSVM})
         endforeach()
         add_definitions(-DESVM_USE_LIBSVM)
     endif()
-elseif (${ESVM_LIBRARY_BASE} STREQUAL ${ESVM_LIBRARY_LIBLINEAR})
+elseif (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBLINEAR})
     find_package(LibLinear REQUIRED)
     if (${LIBLINEAR_FOUND})
         set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${LIBLINEAR_INCLUDE_DIRS})
@@ -225,7 +225,7 @@ elseif (${ESVM_LIBRARY_BASE} STREQUAL ${ESVM_LIBRARY_LIBLINEAR})
         add_definitions(-DESVM_USE_LIBLINEAR)
     endif()
 else()
-    message(FATAL_ERROR "Invalid base SVM library")
+    message(FATAL_ERROR "Invalid SVM implementation library")
 endif()
 
 # find mvector
