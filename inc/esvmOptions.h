@@ -46,7 +46,7 @@
         0: RSM is not employed (directly using the basic feature extraction methods)
         #: other numeric int value, the specified value is the amount of RSS operations applied 
 */
-#define ESVM_RANDOM_SUBSPACE_METHOD 20
+#define ESVM_RANDOM_SUBSPACE_METHOD 0
 // Specifies the amount of features to be randomly selected when applying RSM
 #define ESVM_RANDOM_SUBSPACE_FEATURES 128
 /*

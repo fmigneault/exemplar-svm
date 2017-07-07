@@ -44,7 +44,7 @@ private:
 
     /* --- Reference 'hardcoded' normalization values --- */
 
-    #if ESVM_FEATURE_NORMALIZATION_MODE == 1    // Min-Max features - overall normalization - across patches
+    #if   ESVM_FEATURE_NORMALIZATION_MODE == 1  // Min-Max features - overall normalization - across patches
     double hogRefMin;
     double hogRefMax;
     #elif ESVM_FEATURE_NORMALIZATION_MODE == 2  // Z-Score features - overall normalization - across patches

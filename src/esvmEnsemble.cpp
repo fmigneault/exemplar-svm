@@ -154,7 +154,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         #endif/*ESVM_FEATURE_NORMALIZATION_MODE*/
         
         std::vector<FeatureVector> negFileSamples;  // reset on each patch
-        DataFile::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat);        
+        DataFile::readSampleDataFile(negativesDir + negativeFileName, negFileSamples, sampleFileFormat, ESVM_BINARY_HEADER_SAMPLES);        
 
         for (size_t pos = 0; pos < nPositives; ++pos) {
             negSamples[p][pos].insert(negSamples[p][pos].end(), negFileSamples.begin(), negFileSamples.end());
