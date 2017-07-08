@@ -35,7 +35,7 @@
     #define svmFreeModel            free_model_content
     #define svmDestroyModel         free_and_destroy_model
 #else
-    #error "Invalid base SVM library"
+    #error "Invalid SVM implementation library"
 #endif/*Base SVM Library*/
 
 
