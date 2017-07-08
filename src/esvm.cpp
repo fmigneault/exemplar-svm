@@ -372,11 +372,11 @@ void ESVM::resetModel(svmModel* model, bool copy)
     esvmModel = copy ? deepCopyModel(model) : model;    // set requested model or 'null'
 }
 
-// Free SV status according to employed base SVM library
+// Free SV status according to employed SVM implementation library
 FreeModelState ESVM::getFreeSV(svmModel* model)
 {
     #if ESVM_USE_LIBSVM
-    return model->free_sv;
+    return (model->free_sv == 0 ? FreeModelState::PARAM : model->free_sv == 1 ? FreeModelState::MODEL : FreeModelState::MULTI);
     #elif ESVM_USE_LIBLINEAR
     return (model->w != nullptr ? FreeModelState::PARAM : FreeModelState::MODEL);
     #endif
@@ -755,7 +755,7 @@ void ESVM::saveModelFile_binary(string filePath) const
         ASSERT_THROW(nFeatures > 0, "Cannot save a model with support vectors not containing any feature");
 
         // write header and counts for later reading
-        string headerStr = ESVM_BINARY_HEADER_MODEL;
+        string headerStr = ESVM_BINARY_HEADER_MODEL_LIBSVM;
         const char *headerChar = headerStr.c_str();
         modelFile.write(headerChar, headerStr.size());
         modelFile.write(reinterpret_cast<const char*>(&esvmModel->rho[0]), sizeof(esvmModel->rho[0]));
@@ -769,7 +769,11 @@ void ESVM::saveModelFile_binary(string filePath) const
             modelFile.write(reinterpret_cast<const char*>(&esvmModel->SV[sv][0]), nFeatures * sizeof(esvmModel->SV[sv][0]));
         modelFile.close();
 
-        #endif/*ESVM_USE_LIBSVM*/
+        #elif ESVM_USE_LIBLINEAR
+
+        #error "LIBLINEAR not implemented"
+
+        #endif/*esvm impl*/
     }
     catch(exception& ex)
     {

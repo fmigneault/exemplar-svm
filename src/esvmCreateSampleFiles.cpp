@@ -332,14 +332,11 @@ int proc_createNegativesSampleFiles()
             fvNegMinMaxPatchPerFeat[p][neg] = normalizePerFeature(MIN_MAX, fvNegRaw[p][neg], minPatchPerFeat[p],  maxPatchPerFeat[p],    clip);
             fvNegZScorePatchPerFeat[p][neg] = normalizePerFeature(Z_SCORE, fvNegRaw[p][neg], meanPatchPerFeat[p], stdDevPatchPerFeat[p], clip);
         }
-        
-        #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
-        std::string h = ESVM_BINARY_HEADER_SAMPLES;
-        #endif
 
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string strPatch = "-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
+            std::string h = ESVM_BINARY_HEADER_SAMPLES;
             DataFile::writeSampleDataFile("negatives-raw"                      + strPatch + ".bin",  fvNegRaw[p],                negClass, BINARY, h);
             DataFile::writeSampleDataFile("negatives-normPatch-minmax-overAll" + strPatch + ".bin",  fvNegMinMaxPatchOverAll[p], negClass, BINARY, h);
             DataFile::writeSampleDataFile("negatives-normPatch-zcore-overAll"  + strPatch + ".bin",  fvNegZScorePatchOverAll[p], negClass, BINARY, h);
@@ -393,6 +390,7 @@ int proc_createNegativesSampleFiles()
         // write resulting sample files gradually (per patch) to distribute memory allocation
         std::string strPatch = "-patch" + std::to_string(p);
         #if PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY
+            std::string h = ESVM_BINARY_HEADER_SAMPLES;
             DataFile::writeSampleDataFile("negatives-normROI-minmax-overAll" + strPatch + ".bin",  fvNegMinMaxROIOverAll[p], negClass, BINARY, h);
             DataFile::writeSampleDataFile("negatives-normROI-zcore-overAll"  + strPatch + ".bin",  fvNegZScoreROIOverAll[p], negClass, BINARY, h);
             DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat" + strPatch + ".bin",  fvNegMinMaxROIPerFeat[p], negClass, BINARY, h);
