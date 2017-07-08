@@ -208,7 +208,11 @@ void displayOptions()
            << tab << tab << "ESVM_USE_PREDICT_PROBABILITY:                    " << ESVM_USE_PREDICT_PROBABILITY << std::endl
            << tab << tab << "ESVM_POSITIVE_CLASS:                             " << ESVM_POSITIVE_CLASS << std::endl
            << tab << tab << "ESVM_NEGATIVE_CLASS:                             " << ESVM_NEGATIVE_CLASS << std::endl
-           << tab << tab << "ESVM_BINARY_HEADER_MODEL:                        " << ESVM_BINARY_HEADER_MODEL << std::endl
+           #if   ESVM_USE_LIBSVM
+           << tab << tab << "ESVM_BINARY_HEADER_MODEL:                        " << ESVM_BINARY_HEADER_MODEL_LIBSVM << std::endl
+           #elif ESVM_USE_LIBLINEAR
+           << tab << tab << "ESVM_BINARY_HEADER_MODEL:                        " << ESVM_BINARY_HEADER_MODEL_LIBLINEAR << std::endl
+           #endif/*esvm impl*/
            << tab << tab << "ESVM_BINARY_HEADER_SAMPLES:                      " << ESVM_BINARY_HEADER_SAMPLES << std::endl
            << tab << tab << "ESVM_ROI_CROP_RATIO:                             " << ESVM_ROI_CROP_RATIO << std::endl
            << tab << tab << "ESVM_ROI_PREPROCESS_MODE:                        " << ESVM_ROI_PREPROCESS_MODE << std::endl

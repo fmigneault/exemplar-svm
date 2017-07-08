@@ -1,5 +1,5 @@
 #========================================
-# ExemplarSVM-LIBSVM (ESVM)
+# ExemplarSVM (ESVM)
 #========================================
 
 cmake_minimum_required(VERSION 2.8)
@@ -51,16 +51,24 @@ endforeach()
 # include cmake subdirectory to find packages
 list(APPEND CMAKE_MODULE_PATH "${ESVM_ROOT_DIR}/cmake")
 
+# drop down list of SVM implementation library
+set(ESVM_LIBRARY_LIBSVM    "LIBSVM")
+set(ESVM_LIBRARY_LIBLINEAR "LIBLINEAR")
+set(ESVM_LIBRARY_IMPL ${ESVM_LIBRARY_LIBSVM} CACHE STRING "SVM implementation library to employ")
+set_property(CACHE ESVM_LIBRARY_IMPL PROPERTY STRINGS ${ESVM_LIBRARY_LIBSVM} ${ESVM_LIBRARY_LIBLINEAR})
+
 # ESVM options
 option(ESVM_USE_LBP         "Employ FeatureExtractorLBP (feLBP) for ESVM"   OFF)
 option(ESVM_BUILD_HOG       "Build FeatureExtractorHOG (feHOG) from source" OFF)
 option(ESVM_BUILD_TESTS     "Build executable for tests"                    OFF)
-if (MSVC)
-    # under Windows, using LIBSVM library causes malloc/free errors
-    # but building directly from the header/source is working
-    option(ESVM_BUILD_LIBSVM    "Build LIBSVM from sources"                 OFF)
-else()
-    option(ESVM_BUILD_LIBSVM    "Build LIBSVM from sources"                 ON)
+if (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBSVM})
+    if (MSVC)
+        # under Windows, using LIBSVM library causes malloc/free errors
+        # but building directly from the header/source is working
+        option(ESVM_BUILD_LIBSVM    "Build LIBSVM from sources"             OFF)
+    else()
+        option(ESVM_BUILD_LIBSVM    "Build LIBSVM from sources"             ON)
+    endif()
 endif()
 
 # drop down list of library type
@@ -68,6 +76,7 @@ set(ESVM_LIBRARY_STATIC    "STATIC")
 set(ESVM_LIBRARY_SHARED    "SHARED")
 set(ESVM_LIBRARY_TYPE ${ESVM_LIBRARY_STATIC} CACHE STRING "Library type to generate")
 set_property(CACHE ESVM_LIBRARY_TYPE PROPERTY STRINGS ${ESVM_LIBRARY_STATIC} ${ESVM_LIBRARY_SHARED})
+
 # drop down list of building test mode
 if (${ESVM_BUILD_TESTS})
     set(ESVM_BUILD_LIBRARY "Build from ESVM library")
@@ -181,18 +190,42 @@ find_package(OpenCV 3 REQUIRED)
 set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${OpenCV_INCLUDE_DIRS})
 set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${OpenCV_LIBRARIES})
 
-# find LIBSVM
-find_package(LibSVM REQUIRED)
-set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${LIBSVM_INCLUDE_DIRS})
-if (${ESVM_BUILD_LIBSVM})
-    set(ESVM_SOURCE_FILES ${ESVM_SOURCE_FILES}  ${LIBSVM_SOURCE_FILE})
-    set(ESVM_HEADER_FILES ${ESVM_HEADER_FILES}  ${LIBSVM_HEADER_FILE})
-    if (${ESVM_BUILD_TESTS})
-        set(ESVM_SOURCE_TESTS ${ESVM_SOURCE_TESTS}  ${LIBSVM_SOURCE_FILE})
-        set(ESVM_HEADER_TESTS ${ESVM_HEADER_TESTS}  ${LIBSVM_HEADER_FILE})
+# find LIBSVM / LIBLINEAR
+if (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBSVM})
+    find_package(LibSVM REQUIRED)
+    if (${LIBSVM_FOUND})
+        set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${LIBSVM_INCLUDE_DIRS})
+        if (${ESVM_BUILD_LIBSVM})
+            set(ESVM_SOURCE_FILES ${ESVM_SOURCE_FILES}  ${LIBSVM_SOURCE_FILE})
+            set(ESVM_HEADER_FILES ${ESVM_HEADER_FILES}  ${LIBSVM_HEADER_FILE})
+            if (${ESVM_BUILD_TESTS})
+                set(ESVM_SOURCE_TESTS ${ESVM_SOURCE_TESTS}  ${LIBSVM_SOURCE_FILE})
+                set(ESVM_HEADER_TESTS ${ESVM_HEADER_TESTS}  ${LIBSVM_HEADER_FILE})
+            endif()
+        else()
+            set(ESVM_LIBRARIES    ${ESVM_LIBRARIES}     ${LIBSVM_LIBRARIES})
+        endif()
+        # hide LIBLINEAR related variables, show LIBSVM related variables
+        foreach(var FOUND INCLUDE_DIR INCLUDE_DIRS LIBRARY LIBRARIES ROOT_DIR)
+            mark_as_advanced(FORCE LIBLINEAR_${var})
+            mark_as_advanced(CLEAR LIBSVM_${var})
+        endforeach()
+        set(ESVM_LIBRARY_DEFINITION "-DESVM_USE_LIBSVM")        
+    endif()
+elseif (${ESVM_LIBRARY_IMPL} STREQUAL ${ESVM_LIBRARY_LIBLINEAR})
+    find_package(LibLinear REQUIRED)
+    if (${LIBLINEAR_FOUND})
+        set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${LIBLINEAR_INCLUDE_DIRS})
+        set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${LIBLINEAR_LIBRARIES})
+        # hide LIBSVM related variables, show LIBLINEAR related variables
+        foreach(var FOUND INCLUDE_DIR INCLUDE_DIRS LIBRARY LIBRARIES ROOT_DIR)
+            mark_as_advanced(FORCE LIBSVM_${var})
+            mark_as_advanced(CLEAR LIBLINEAR_${var})
+        endforeach()
+        set(ESVM_LIBRARY_DEFINITION "-DESVM_USE_LIBLINEAR")
     endif()
 else()
-    set(ESVM_LIBRARIES  ${ESVM_LIBRARIES}       ${LIBSVM_LIBRARIES})
+    message(FATAL_ERROR "Invalid SVM implementation library")
 endif()
 
 # find mvector
@@ -201,6 +234,7 @@ set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${MVECTOR_INCLUDE_DIR})
 
 # include/linking
 set(ESVM_LIBRARY_NAME ${ESVM_PROJECT})
+add_definitions(${ESVM_LIBRARY_DEFINITION})
 add_library(${ESVM_LIBRARY_NAME} ${ESVM_SOURCE_FILES} ${ESVM_HEADER_FILES})
 if(MSVC)
     set_target_properties(${ESVM_LIBRARY_NAME} PROPERTIES LINKER_LANGUAGE C++)
@@ -234,6 +268,7 @@ set(ESVM_CONFIG_BIN_DIR ${INSTALL_BINARY_DIR})
 set(ESVM_CONFIG_LIB_DIR ${INSTALL_LIBRARY_DIR})
 set(ESVM_CONFIG_LIB_DBG ${INSTALL_LIBRARY_DIR}/${ESVM_LIBRARY_DEBUG})
 set(ESVM_CONFIG_LIB_REL ${INSTALL_LIBRARY_DIR}/${ESVM_LIBRARY_RELEASE})
+set(ESVM_CONFIG_LIB_DEF ${ESVM_LIBRARY_DEFINITION})
 set(ESVM_CONFIG_CMK_DIR ${INSTALL_CMAKE_DIR})
 set(ESVM_CONFIG_FILE    ${ESVM_PROJECT}Config.cmake)
 if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})

@@ -3,7 +3,6 @@
 
 #include "esvm.h"
 #include "esvmTypes.h"
-#include "svm.h"
 #include "mvector.hpp"
 #include "feHOG.h"
 #include "esvmOptions.h"
