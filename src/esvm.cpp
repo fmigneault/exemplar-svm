@@ -49,7 +49,7 @@ ESVM::ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id)
 }
 
 /*
-    Initializes and trains an ESVM using a pre-generated file of feature vectors and correponding labels
+    Initializes and trains an ESVM using a pre-generated file of feature vectors and corresponding labels
     The file must be saved in the LIBSVM sample data format
 */
 ESVM::ESVM(string trainingSamplesFilePath, string id)
@@ -120,7 +120,7 @@ ESVM::ESVM(ESVM&& esvm)
     */
 }
 
-// Copy assigment
+// Copy assignment
 ESVM& ESVM::operator=(ESVM esvm)
 {
     ///TODO REMOVE
@@ -330,7 +330,7 @@ void ESVM::removeTrainedModelUnusedData(svmModel* model, svmProblem* problem)
 {
     #if ESVM_USE_LIBSVM
 
-    ASSERT_THROW(model != nullptr, "Missing model reference to remove unused sample vectors and training paramters");
+    ASSERT_THROW(model != nullptr, "Missing model reference to remove unused sample vectors and training parameters");
     ASSERT_THROW(model->sv_indices != nullptr, "Missing model 'sv_indices' reference to indicate which unused sample vectors to remove");
     ASSERT_THROW(model->free_sv == FreeModelState::PARAM, "Improper 'free_sv' mode to allow deallocation of unused sample vectors and parameters");
     ASSERT_THROW(problem != nullptr, "Missing problem reference to remove unused sample vectors");
@@ -346,7 +346,7 @@ void ESVM::removeTrainedModelUnusedData(svmModel* model, svmProblem* problem)
             free(problem->x[sv]);
     }
 
-    // remove unused training paramters
+    // remove unused training parameters
     if (model->param.probability) {
         free(model->param.weight);
         free(model->param.weight_label);
@@ -612,7 +612,8 @@ void ESVM::loadModelFile_libsvm(string filePath)
         modelFile.close();
     if (!isBinary)
     {
-        // load pre-trained model, returns NULL if failed, otherwise adress of trained model with 'free_sv' = 1
+        // loads a pre-trained model, returns NULL if failed, 
+        // otherwise returns the address of loaded model with 'free_sv' = 1
         svmModel *model = svmLoadModel(filePath.c_str());
         if (model && getFreeSV(model) != FreeModelState::PARAM)
         {
@@ -784,13 +785,13 @@ void ESVM::saveModelFile_binary(string filePath) const
 }
 
 /*
-    Trains the ESVM using the sample feature vectors and their corresponding target outpus
+    Trains the ESVM using the sample feature vectors and their corresponding target outputs
 */
 void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, vector<double> classWeights)
 {    
     ASSERT_THROW(samples.size() > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
     ASSERT_THROW(samples.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
-    ASSERT_THROW(classWeights.size() == 2, "Exemplar-SVM expects two weigths (positive, negative)");
+    ASSERT_THROW(classWeights.size() == 2, "Exemplar-SVM expects two weights (positive, negative)");
 
     logstream logger(LOGGER_FILE);
 

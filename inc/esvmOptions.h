@@ -14,9 +14,9 @@
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
-#define ESVM_BINARY_HEADER_MODEL_LIBSVM "ESVM bin model libsvm"
-#define ESVM_BINARY_HEADER_MODEL_LIBLINEAR "ESVM bin model liblinear"
-#define ESVM_BINARY_HEADER_SAMPLES "ESVM bin samples"
+#define ESVM_BINARY_HEADER_MODEL_LIBSVM "ESVM binary model libsvm"
+#define ESVM_BINARY_HEADER_MODEL_LIBLINEAR "ESVM binary model liblinear"
+#define ESVM_BINARY_HEADER_SAMPLES "ESVM binary samples"
 /*
     ESVM_DISPLAY_TRAIN_PARAMS:
         0: do not display obtained parameters after training
@@ -128,7 +128,7 @@
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
 // Test functionality of BINARY/LIBSVM samples file reading and parsing to feature vectors
-#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 0
+#define TEST_ESVM_READ_SAMPLES_FILE_PARSER_BINARY 1
 #define TEST_ESVM_READ_SAMPLES_FILE_PARSER_LIBSVM 0
 // Test functionality of samples file reading LIBSVM/BINARY format comparison
 #define TEST_ESVM_READ_SAMPLES_FILE_FORMAT_COMPARE 0
