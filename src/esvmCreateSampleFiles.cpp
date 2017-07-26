@@ -422,7 +422,7 @@ int proc_createNegativesSampleFiles()
     DataFile::writeSampleDataFile("negatives-normROI-minmax-perFeat-MAX.data",      maxAllROIPerFeatVec,    negAllROIOupput, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normROI-zscore-perFeat-MEAN.data",     meanAllROIPerFeatVec,   negAllROIOupput, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normROI-zscore-perFeat-STDDEV.data",   stdDevAllROIPerFeatVec, negAllROIOupput, LIBSVM);
-    DataFile::writeSampleDataFile("negatives-normPath-minmax-perFeat-MIN.data",     minPatchPerFeat,        negPatchOutputs, LIBSVM);
+    DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat-MIN.data",    minPatchPerFeat,        negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat-MAX.data",    maxPatchPerFeat,        negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-MEAN.data",   meanPatchPerFeat,       negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-STDDEV.data", stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
