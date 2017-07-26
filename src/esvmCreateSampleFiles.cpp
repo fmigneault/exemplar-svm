@@ -86,9 +86,9 @@ std::vector<std::string> getReplicationNegativeIDs()
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 4
         #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
-        { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0021", "0022", "0027" };
+        { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0022", "0027", "0029" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
-        { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0021", "0022", "0027", "0002", "0007", "0013", "0025", "0026" };
+        { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0022", "0027", "0029", "0002", "0007", "0013", "0025", "0026" };
         #else
         ();
         #endif
@@ -112,7 +112,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
         { "0001", "0004", "0005", "0010", "0011", "0017", "0020", "0022", "0023", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
-        { "0001", "0004", "0005", "0010", "0011", "0017", "0020", "0022", "0023", "0030", "0007", "0009", "0018", "0024", "0028" };
+        { "0001", "0004", "0005", "0010", "0011", "0017", "0020", "0022", "0023", "0030", "0002", "0007", "0018", "0024", "0028" };
         #else
         ();
         #endif
@@ -126,9 +126,9 @@ std::vector<std::string> getReplicationNegativeIDs()
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 9
         #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
-        { "0002", "0007", "0009", "0011", "0015", "0017", "0020", "0023", "0025", "0030" };
+        { "0002", "0007", "0009", "0011", "0015", "0020", "0025", "0028", "0029", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
-        { "0002", "0007", "0009", "0011", "0015", "0017", "0020", "0023", "0025", "0030", "0001", "0010", "0013", "0016", "0018" };
+        { "0002", "0007", "0009", "0011", "0015", "0020", "0025", "0028", "0029", "0030", "0001", "0010", "0013", "0016", "0018" };
         #else
         ();
         #endif
