@@ -397,3 +397,25 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
     }
     return classificationScores;
 }
+
+/*
+    Saves to file each positive/patch ESVM model with trained parameters and support vectors.
+*/
+bool esvmEnsemble::saveModels(const std::string& saveDirectory)
+{    
+    if (!bfs::is_directory(saveDirectory))
+        return false;
+
+    size_t nPositives = getPositiveCount();
+    size_t nPatches = getPatchCount();
+    if (nPositives > 0 && nPatches > 0) {
+        for (size_t pos = 0; pos < nPositives; ++pos) {
+            for (size_t p = 0; p < nPatches; ++p) {
+                bfs::path file = bfs::path(saveDirectory) / (EoESVM[p][pos].ID + ".model");
+                EoESVM[p][pos].saveModelFile(file.string(), FileFormat::BINARY);
+            }
+        }
+        return true;
+    }    
+    return false;
+}

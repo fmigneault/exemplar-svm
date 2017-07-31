@@ -48,7 +48,7 @@ public:
     double predict(FeatureVector probeSample) const;
     vector<double> predict(vector<FeatureVector> probeSamples) const;
     vector<double> predict(string probeSamplesFilePath, vector<int>* probeGroundTruths = nullptr) const;    
-    string targetID;
+    string ID;
 
     ESVM& operator=(ESVM esvm); // copy ctor
     ESVM(ESVM&& esvm);          // move ctor

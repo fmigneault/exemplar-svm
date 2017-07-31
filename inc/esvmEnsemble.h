@@ -18,6 +18,7 @@ public:
     esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROIs, const std::string negativesDir,
                  const std::vector<std::string>& positiveIDs = {}, const std::vector<std::vector<cv::Mat> >& additionalNegativeROIs = {});
     std::vector<double> predict(const cv::Mat& roi);
+    bool saveModels(const std::string& saveDirectory);
     inline size_t getPositiveCount() { return enrolledPositiveIDs.size(); }
     inline size_t getPatchCount() { return patchCounts.area(); }
     inline std::string getPositiveID(int positiveIndex);

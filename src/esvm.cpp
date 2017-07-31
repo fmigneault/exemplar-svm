@@ -12,7 +12,7 @@ namespace bfs = boost::filesystem;
     Initializes and trains an ESVM using list of positive and negative feature vectors
 */
 ESVM::ESVM(vector<FeatureVector> positives, vector<FeatureVector> negatives, string id)
-    : targetID(id), esvmModel(nullptr)
+    : ID(id), esvmModel(nullptr)
 {
     ASSERT_THROW(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
         
@@ -37,7 +37,7 @@ ESVM::ESVM(vector<FeatureVector> positives, vector<FeatureVector> negatives, str
     Initializes and trains an ESVM using a combined list of positive and negative feature vectors with corresponding labels    
 */
 ESVM::ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id)
-    : targetID(id), esvmModel(nullptr)
+    : ID(id), esvmModel(nullptr)
 {
     int Np = (int)count(targetOutputs.begin(), targetOutputs.end(), ESVM_POSITIVE_CLASS);
     int Nn = (int)count(targetOutputs.begin(), targetOutputs.end(), ESVM_NEGATIVE_CLASS);
@@ -53,7 +53,7 @@ ESVM::ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id)
     The file must be saved in the LIBSVM sample data format
 */
 ESVM::ESVM(string trainingSamplesFilePath, string id)
-    : targetID(id), esvmModel(nullptr)
+    : ID(id), esvmModel(nullptr)
 {
     // get samples
     vector<FeatureVector> samples;
@@ -62,7 +62,7 @@ ESVM::ESVM(string trainingSamplesFilePath, string id)
 
     int Np = (int)count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
     int Nn = (int)count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
-    targetID = id;
+    ID = id;
 
     // train using loaded samples
     vector<double> weights = calcClassWeightsFromMode(Np, Nn);
@@ -74,22 +74,22 @@ ESVM::ESVM(string trainingSamplesFilePath, string id)
     Model can be saved with 'saveModelFile' method in LIBSVM format and retrieved with 'svm_load_model'
 */
 ESVM::ESVM(svmModel* trainedModel, string id)
-    : targetID(id), esvmModel(nullptr)
+    : ID(id), esvmModel(nullptr)
 {
     checkModelParameters_assert(trainedModel);
     resetModel(trainedModel);
-    targetID = id;
+    ID = id;
 }
 
 // Default constructor
 ESVM::ESVM()
-    : targetID(""), esvmModel(nullptr)
+    : ID(""), esvmModel(nullptr)
 {}
 
 // Copy constructor
 ESVM::ESVM(const ESVM& esvm)
 {
-    targetID = esvm.targetID;
+    ID = esvm.ID;
     esvmModel = deepCopyModel(esvm.esvmModel);
 }
 
@@ -99,7 +99,7 @@ ESVM::ESVM(ESVM&& esvm)
     this->swap(*this, esvm);
     
     /*
-    targetID = esvm.targetID;
+    ID = esvm.ID;
     esvmModel = esvm.esvmModel; // copy parameters and memory references (move)
 
     // remove moved model references
@@ -131,7 +131,7 @@ ESVM& ESVM::operator=(ESVM esvm)
     //if (&esvm == this)
     //    return *this;
     //
-    //targetID = esvm.targetID;
+    //ID = esvm.ID;
     //esvmModel = deepCopyModel(esvm.esvmModel);
     //return *this;
 
@@ -391,7 +391,7 @@ ESVM::~ESVM()
 
 void ESVM::logModelParameters(bool displaySV) const
 {
-    logModelParameters(esvmModel, targetID, displaySV);
+    logModelParameters(esvmModel, ID, displaySV);
 }
 
 void ESVM::logModelParameters(svmModel *model, string id, bool displaySV)
@@ -405,7 +405,7 @@ void ESVM::logModelParameters(svmModel *model, string id, bool displaySV)
 
     logger << "ESVM model parameters:" << endl
            << "   base SVM:      " << ESVM_BASE << endl
-           << "   targetID:      " << id << endl
+           << "   ID:            " << id << endl
            << "   svm type:      " << svm_type_name(model) << endl
            << "   kernel type:   " << svm_kernel_name(model) << endl
            << "   C:             " << (getFreeSV(model) == FreeModelState::MODEL ? "n/a (pre-trained)" : to_string(model->param.C)) << endl
@@ -586,7 +586,7 @@ void ESVM::writeSampleDataFile(string filePath, vector<FeatureVector>& sampleFea
 */
 bool ESVM::loadModelFile(string modelFilePath, FileFormat format, string id)
 {
-    targetID = (id == "") ? modelFilePath : id;
+    ID = (id == "") ? modelFilePath : id;
 
     if (format == LIBSVM)
         loadModelFile_libsvm(modelFilePath);
@@ -880,7 +880,7 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     resetModel(trainedModel, false);
 
     #if ESVM_DISPLAY_TRAIN_PARAMS
-    logModelParameters(esvmModel, targetID, ESVM_DISPLAY_TRAIN_PARAMS == 2);
+    logModelParameters(esvmModel, ID, ESVM_DISPLAY_TRAIN_PARAMS == 2);
     #endif/*ESVM_DISPLAY_TRAIN_PARAMS*/
 }
 
