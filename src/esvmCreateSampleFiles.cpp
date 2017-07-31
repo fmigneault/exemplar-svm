@@ -24,7 +24,7 @@ xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string 
                 size_t neg = processedImagePatches.size();
                 processedImagePatches.push_back(xstd::mvector<1, cv::Mat>(nPatches));
                 std::vector<cv::Mat> patches = imPreprocess<cv::Mat>(itDir->path().string(), imageSize, patchCounts,
-                                                                     ESVM_USE_HISTOGRAM_EQUALIZATION, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
+                                                                     ESVM_USE_HIST_EQUAL, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
                 for (size_t p = 0; p < nPatches; ++p)
                     processedImagePatches[neg][p] = patches[p];
             }                  
@@ -271,7 +271,7 @@ int proc_createNegativesSampleFiles()
                             #endif/*ESVM_ROI_PREPROCESS_MODE*/
 
                             // feature extraction HOG and update sample counts/ids
-                            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HISTOGRAM_EQUALIZATION,
+                            std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HIST_EQUAL,
                                                                         windowNameROI, cv::IMREAD_GRAYSCALE);                            
                             for (size_t p = 0; p < nPatches; ++p)
                                 fvNegRaw[p].push_back(hog.compute(patches[p]));
@@ -303,7 +303,7 @@ int proc_createNegativesSampleFiles()
                                     fvNegZScorePatchPerFeat(dimsNegatives), fvNegZScoreROIPerFeat(dimsNegatives);
     std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
     
-    bool clip = ESVM_FEATURE_NORMALIZATION_CLIP;
+    bool clip = ESVM_FEATURE_NORM_CLIP;
     for (size_t p = 0; p < nPatches; ++p)
     {
         // find per patch normalization paramters
@@ -442,8 +442,8 @@ int proc_createNegativesSampleFiles()
                     << "nNegatives:       " << nNegatives << std::endl
                     << "perSessionNeg:    " << perSessionNegatives << std::endl
                     << "perSeqNeg         " << perSequenceNegatives << std::endl
-                    << "histEqual:        " << ESVM_USE_HISTOGRAM_EQUALIZATION << std::endl
-                    << "feat norm clip:   " << ESVM_FEATURE_NORMALIZATION_CLIP << std::endl
+                    << "histEqual:        " << ESVM_USE_HIST_EQUAL << std::endl
+                    << "feat norm clip:   " << ESVM_FEATURE_NORM_CLIP << std::endl
                     << "generation mode:  " << ESVM_ROI_PREPROCESS_MODE << std::endl
                     #if ESVM_ROI_PREPROCESS_MODE == 1                   // using LBP improved localized ROI refinement
                     << "scaleFactor:      " << scaleFactor << std::endl

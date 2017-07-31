@@ -10,7 +10,7 @@
 
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
-#define ESVM_USE_HISTOGRAM_EQUALIZATION 1
+#define ESVM_USE_HIST_EQUAL 1
 #define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
@@ -51,7 +51,7 @@
 // Specifies the amount of features to be randomly selected when applying RSM
 #define ESVM_RANDOM_SUBSPACE_FEATURES 128
 /*
-    ESVM_FEATURE_NORMALIZATION_MODE:
+    ESVM_FEATURE_NORM_MODE:
         0: no normalization
         1: normalization min-max overall, across patches
         2: normalization z-score overall, across patches
@@ -62,18 +62,22 @@
         7: normalization min-max per feature, for each patch
         8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORMALIZATION_MODE 7
+#define ESVM_FEATURE_NORM_MODE 1
 // Specify if normalized features need to be clipped if outside of [0,1]
-#define ESVM_FEATURE_NORMALIZATION_CLIP 1
+#define ESVM_FEATURE_NORM_CLIP 1
 /*
-    ESVM_SCORE_NORMALIZATION_MODE:
+    ESVM_SCORE_NORM_MODE:
         0: no normalization
-        1: normalization min-max
-        2: normalization z-score
+        1: normalization min-max after score fusion
+        2: normalization z-score after score fusion
+        3: normalization min-max before score fusion (on patches/subspaces)
+        4: normalization z-score before score fusion (on patches/subspaces)
+        5: normalization min-max before and after score fusion
+        6: normalization z-score before and after score fusion
 */
-#define ESVM_SCORE_NORMALIZATION_MODE 1
+#define ESVM_SCORE_NORM_MODE 3
 // Specify if normalized scores need to be clipped if outside of [0,1]
-#define ESVM_SCORE_NORMALIZATION_CLIP 0
+#define ESVM_SCORE_NORM_CLIP 0
 /*
     ESVM_PARSER_MODE:
         0: stringstream
@@ -101,13 +105,13 @@
 // Employ gallery positives samples other than the currently trained one as additional counter-examples in ESVM training
 #define TEST_USE_OTHER_POSITIVES_AS_NEGATIVES 0
 /*
-    TEST_FEATURES_NORMALIZATION_MODE:
+    TEST_FEATURES_NORM_MODE:
         0: no normalization applied
         1: normalization per corresponding features in all positive/negative/probe vectors, and separately for each patch and descriptor
         2: normalization per corresponding features in all positive/negative/probe vectors, and across all patches, separately for each descriptor
         3: normalization across all features and all positive/negative/probe vectors, and across all patches, seperately for each descriptor
 */
-#define TEST_FEATURES_NORMALIZATION_MODE 3
+#define TEST_FEATURES_NORM_MODE 3
 // Validates image paths found and with expected format
 #define TEST_PATHS 0
 // Test functionality of patch extraction procedures
