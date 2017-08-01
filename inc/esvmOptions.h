@@ -45,7 +45,7 @@
 #define ESVM_WEIGHTS_MODE 2
 /* Specify if random subspace method (RSM) for feature selection must be employed to generate the ensemble of eSVM
         0: RSM is not employed (directly using the basic feature extraction methods)
-        #: other numeric int value, the specified value is the amount of RSS operations applied 
+        #: other numeric int value, the specified value is the amount of RS operations applied 
 */
 #define ESVM_RANDOM_SUBSPACE_METHOD 0
 // Specifies the amount of features to be randomly selected when applying RSM
@@ -62,7 +62,7 @@
         7: normalization min-max per feature, for each patch
         8: normalization z-score per feature, for each patch
 */
-#define ESVM_FEATURE_NORM_MODE 1
+#define ESVM_FEATURE_NORM_MODE 7
 // Specify if normalized features need to be clipped if outside of [0,1]
 #define ESVM_FEATURE_NORM_CLIP 1
 /*

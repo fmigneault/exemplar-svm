@@ -24,7 +24,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         enrolledPositiveIDs = std::vector<std::string>(nPositives);
         for (size_t pos = 0; pos < nPositives; ++pos)
             enrolledPositiveIDs[pos] = std::to_string(pos);
-    }    
+    }
 
     // positive samples
     size_t dimsPositives[3]{ nPatches, nPositives, 0 };
@@ -256,26 +256,24 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
     /* --- Random Subspace Method for feature selection and compact pool generation --- */
 
     #if ESVM_RANDOM_SUBSPACE_METHOD
+        // read file containing indexes of features to employ from each corresponding random subspace
+        // zero-value features are ignored, others are taken as part of the random subspace
+        std::vector<FeatureVector> rsmIndexes;
+        DataFile::readSampleDataFile("rsm-indexes.data", rsmIndexes, LIBSVM);
+        ASSERT_THROW(rsmIndexes.size() == ESVM_RANDOM_SUBSPACE_METHOD, "Incorrect number of RSM subspaces");
 
-    // read file containing indexes of features to employ from each corresponding random subspace
-    // zero-value features are ignored, others are taken as part of the random subspace
-    std::vector<FeatureVector> rsmIndexes;
-    DataFile::readSampleDataFile("rsm-indexes.data", rsmIndexes, LIBSVM);
-    ASSERT_THROW(rsmIndexes.size() == ESVM_RANDOM_SUBSPACE_METHOD, "Incorrect number of RSM subspaces");
-
-    size_t dimsRSM[2]{ ESVM_RANDOM_SUBSPACE_METHOD, ESVM_RANDOM_SUBSPACE_FEATURES };
-    rsmFeatureIndexes = xstd::mvector<2, int>(dimsRSM, 0);
-    for (size_t rs = 0; rs < rsmIndexes.size(); ++rs) {
-        size_t iFeat = 0;
-        for (size_t f = 0; f < rsmIndexes[rs].size(); ++f) {
-            if (rsmIndexes[rs][f] != 0) {
-                rsmFeatureIndexes[rs][iFeat] = f;
-                ++iFeat;
+        size_t dimsRSM[2]{ ESVM_RANDOM_SUBSPACE_METHOD, ESVM_RANDOM_SUBSPACE_FEATURES };
+        rsmFeatureIndexes = xstd::mvector<2, int>(dimsRSM, 0);
+        for (size_t rs = 0; rs < rsmIndexes.size(); ++rs) {
+            size_t iFeat = 0;
+            for (size_t f = 0; f < rsmIndexes[rs].size(); ++f) {
+                if (rsmIndexes[rs][f] != 0) {
+                    rsmFeatureIndexes[rs][iFeat] = f;
+                    ++iFeat;
+                }
             }
+            ASSERT_THROW(iFeat == ESVM_RANDOM_SUBSPACE_FEATURES, "Incorrect number of RSM features");
         }
-        ASSERT_THROW(iFeat == ESVM_RANDOM_SUBSPACE_FEATURES, "Incorrect number of RSM features");
-    }
-    
     #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
 
     /* --- Score 'hardcoded' normalization values for on-line classification --- */
@@ -289,11 +287,11 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
         scoreMaxFusion = 0.156316;
 
         // found min/max using 'FullGenerationAndTestProcess' AFTER fix of patch split / data pointer access of patches for HOG
-        //      S1 - Min / Max: -4.03879 / 0.366612
+        //      S1 - Min / Max : -4.03879 / 0.366612
         //      S3 - Min / Max : -4.16766 / 0.200456
         //      EX - Min / Max : -4.28606 / 0.60522
         scoreMinFusion = -4.28606;
-        scoreMaxFusion = 0.60522;
+        scoreMaxFusion =  0.60522;
 
         // found min/max using FAST-DT live test
         ///scoreRefMin = 0.085;         // Testing
@@ -303,7 +301,7 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
         // values found using the LBP Improved run in 'live' and calculated over a large amount of samples
         /* found from test */
         //scoreRefMin = -4.69201;
-        //scoreRefMax = 1.46431;
+        //scoreRefMax =  1.46431;
         /* experimental adjustment */
         ///scoreRefMin = -2.929948;
         ///scoreRefMax = -0.731181;
@@ -319,11 +317,20 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
         // in this code, min-max across patches are applied globally, so we repeat the values here along the vector
         scoreMinSVM = { -2.3173, -2.3173, -2.3173, -2.3173, -2.3173, -2.3173, -2.3173, -2.3173, -2.3173 };
         scoreMaxSVM = {  0.3041,  0.3041,  0.3041,  0.3041,  0.3041,  0.3041,  0.3041,  0.3041,  0.3041 };
+        // found with live test using multiple samples while using OverAll [0,1] feat norm, apply globally by repeating the values along the vector
+        scoreMinSVM = { -7.452180, -7.452180, -7.452180, -7.452180, -7.452180, -7.452180, -7.452180, -7.452180, -7.452180 };
+        scoreMaxSVM = {  0.106344,  0.106344,  0.106344,  0.106344,  0.106344,  0.106344,  0.106344,  0.106344,  0.106344 };
+        // found with live test using multiple samples while using OverAll [0,1] feat norm, apply per-patch values
+        scoreMinSVM = { -7.56068, -7.39327, -7.12514, -6.41666, -6.88239, -5.35840, -4.91217, -7.09871, -5.09559 };
+        scoreMaxSVM = {  0.67624,  0.04454, -0.08241, -0.01146,  0.10634, -0.33685,  0.44945, -0.38734, -0.08821 };
+        // found with live test using multiple samples while using PerFeat+PerPatch norm, apply per-patch values
+        scoreMinSVM = { -6.807770, -6.909670, -7.877120, -6.726680, -7.312010, -6.640210, -4.512120, -7.31828, -5.050850 };
+        scoreMaxSVM = { -0.411032,  0.192947, -0.626578, -0.042603,  0.900917,  0.146266, -0.256226, -0.41460,  0.106787 };
     #elif ESVM_SCORE_NORM_MODE == 4    // Z-Score normalization only pre-fusion
         THROW("Not set reference normalization values (ESVM_SCORE_NORM_MODE == 4)");
     #elif ESVM_SCORE_NORM_MODE == 5    // Min-Max normalization both pre/post-fusion
-        scoreMinSVM ={};
-        scoreMaxSVM ={};
+        scoreMinSVM = {};
+        scoreMaxSVM = {};
         scoreMinFusion = 0;
         scoreMaxFusion = 0;
     #elif ESVM_SCORE_NORM_MODE == 6    // Z-Score normalization both pre/post-fusion
@@ -382,19 +389,19 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
 
     // prepare test samples    
     # if !ESVM_RANDOM_SUBSPACE_METHOD
-    size_t nESVM = nPatches;
-    std::vector<FeatureVector> probeSampleTest = probeSamples;
+        size_t nESVM = nPatches;
+        std::vector<FeatureVector> probeSampleTest = probeSamples;
     #else/*ESVM_RANDOM_SUBSPACE_METHOD*/
-    size_t nESVM = nPatches * ESVM_RANDOM_SUBSPACE_METHOD;
-    std::vector<FeatureVector> probeSampleTest(nESVM);
-    #pragma omp parallel for
-    for (long p = 0; p < nPatches; ++p)
-        for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
-            size_t iRS = p * ESVM_RANDOM_SUBSPACE_METHOD + rs;
-            probeSampleTest[iRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
-            for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f)
-                probeSampleTest[iRS][f] = probeSamples[p][rsmFeatureIndexes[rs][f]];
-        }
+        size_t nESVM = nPatches * ESVM_RANDOM_SUBSPACE_METHOD;
+        std::vector<FeatureVector> probeSampleTest(nESVM);
+        #pragma omp parallel for
+        for (long p = 0; p < nPatches; ++p)
+            for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+                size_t iRS = p * ESVM_RANDOM_SUBSPACE_METHOD + rs;
+                probeSampleTest[iRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
+                for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f)
+                    probeSampleTest[iRS][f] = probeSamples[p][rsmFeatureIndexes[rs][f]];
+            }
     #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
 
     // testing, score fusion, normalization

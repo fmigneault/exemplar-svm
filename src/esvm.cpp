@@ -62,7 +62,6 @@ ESVM::ESVM(string trainingSamplesFilePath, string id)
 
     int Np = (int)count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
     int Nn = (int)count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
-    ID = id;
 
     // train using loaded samples
     vector<double> weights = calcClassWeightsFromMode(Np, Nn);
@@ -78,7 +77,6 @@ ESVM::ESVM(svmModel* trainedModel, string id)
 {
     checkModelParameters_assert(trainedModel);
     resetModel(trainedModel);
-    ID = id;
 }
 
 // Default constructor
@@ -97,44 +95,11 @@ ESVM::ESVM(const ESVM& esvm)
 ESVM::ESVM(ESVM&& esvm)
 {
     this->swap(*this, esvm);
-    
-    /*
-    ID = esvm.ID;
-    esvmModel = esvm.esvmModel; // copy parameters and memory references (move)
-
-    // remove moved model references
-    if (esvm.isModelSet())
-    {
-        esvm.esvmModel->param.weight = nullptr;
-        esvm.esvmModel->param.weight_label = nullptr;
-        esvm.esvmModel->label = nullptr;
-        esvm.esvmModel->probA = nullptr;
-        esvm.esvmModel->probB = nullptr;
-        esvm.esvmModel->rho = nullptr;
-        esvm.esvmModel->nSV = nullptr;
-        esvm.esvmModel->SV = nullptr;
-        esvm.esvmModel->sv_coef = nullptr;
-        esvm.esvmModel->sv_indices = nullptr;
-        esvm.esvmModel = nullptr;
-    }
-    */
 }
 
 // Copy assignment
 ESVM& ESVM::operator=(ESVM esvm)
 {
-    ///TODO REMOVE
-    ///logstream logger(LOGGER_FILE);
-    ///logger << "EQUAL_CTOR!" << endl;
-
-    //// check for self-assignment
-    //if (&esvm == this)
-    //    return *this;
-    //
-    //ID = esvm.ID;
-    //esvmModel = deepCopyModel(esvm.esvmModel);
-    //return *this;
-
     swap(*this, esvm);
     return *this;
 }
@@ -586,7 +551,7 @@ void ESVM::writeSampleDataFile(string filePath, vector<FeatureVector>& sampleFea
 */
 bool ESVM::loadModelFile(string modelFilePath, FileFormat format, string id)
 {
-    ID = (id == "") ? modelFilePath : id;
+    ID = (id == "") ? bfs::path(modelFilePath).stem().string() : id;
 
     if (format == LIBSVM)
         loadModelFile_libsvm(modelFilePath);
