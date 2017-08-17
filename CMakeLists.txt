@@ -12,6 +12,7 @@ include(cmake/ESVMUtils.cmake)
 if(MSVC)
     set(CMAKE_USE_RELATIVE_PATHS ON CACHE INTERNAL "" FORCE)
     add_definitions("/EHsc")
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 else()
     set(CMAKE_CXX_COMPILER g++)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
@@ -157,14 +158,25 @@ if (${ESVM_USE_LBP})
     endif()
 endif()
 
+# find OpenMP
+find_package(OpenMP)
+if ("${OPENMP_FOUND}" OR "${OPENMP_C_FOUND}" OR "${OPENMP_CXX_FOUND}")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(WITH_OPENMP ON)
+endif()
+
 # find Common(C++)
 find_package(CommonCpp REQUIRED CONFIG
              NAMES "CommonCpp" "Common-Cpp" "Common_Cpp" "CommonC++" "Common-C++" "Common_C++"
              PATHS ${COMMON_CPP_ROOT_DIR} ${COMMON_CPP_ROOT_DIR}/cmake ${CommonCpp_DIR} ${CommonCpp_DIR}/cmake)
 if (${CommonCpp_FOUND})
+    if (${WITH_OPENMP})
+        add_definitions(-DCOMMON_CPP_HAS_OPENMP)
+    endif()
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${CommonCpp_INCLUDE_DIRS})
     set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       $<$<CONFIG:Debug>:${CommonCpp_LIBRARY_DEBUG}>$<$<CONFIG:Release>:${CommonCpp_LIBRARY_RELEASE}>)
-    set(ESVM_LIBRARY_DIRS   ${ESVM_LIBRARY_DIRS}    ${CommonCpp_LIBRARY_DIRS})
+    set(ESVM_LIBRARY_DIRS   ${ESVM_LIBRARY_DIRS}    ${CommonCpp_LIBRARY_DIRS})    
 endif()
 
 # find Boost
@@ -176,12 +188,6 @@ if (${Boost_FOUND})
     set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${Boost_INCLUDE_DIRS})
     set(ESVM_LIBRARIES      ${ESVM_LIBRARIES}       ${Boost_LIBRARIES})
     set(ESVM_LIBRARY_DIRS   ${ESVM_LIBRARY_DIRS}    ${Boost_LIBRARY_DIRS})
-endif()
-
-# find OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
 # find OpenCV

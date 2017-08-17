@@ -47,7 +47,7 @@
         0: RSM is not employed (directly using the basic feature extraction methods)
         #: other numeric int value, the specified value is the amount of RS operations applied 
 */
-#define ESVM_RANDOM_SUBSPACE_METHOD 0
+#define ESVM_RANDOM_SUBSPACE_METHOD 20
 // Specifies the amount of features to be randomly selected when applying RSM
 #define ESVM_RANDOM_SUBSPACE_FEATURES 128
 /*
@@ -75,7 +75,7 @@
         5: normalization min-max before and after score fusion
         6: normalization z-score before and after score fusion
 */
-#define ESVM_SCORE_NORM_MODE 3
+#define ESVM_SCORE_NORM_MODE 1
 // Specify if normalized scores need to be clipped if outside of [0,1]
 #define ESVM_SCORE_NORM_CLIP 0
 /*

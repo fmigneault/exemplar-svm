@@ -1,9 +1,7 @@
 #include "esvmEnsemble.h"
 #include "esvmOptions.h"
 
-#include "imgUtils.h"
-#include "logging.h"
-#include "norm.h"
+#include "CommonCpp.h"
 
 #include <fstream>
 #include <sstream>
@@ -171,7 +169,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             xstd::mvector<2, FeatureVector> posSamplesRS({ ESVM_RANDOM_SUBSPACE_METHOD, nPosRS });
             xstd::mvector<2, FeatureVector> negSamplesRS({ ESVM_RANDOM_SUBSPACE_METHOD, nNegRS });
             #pragma omp parallel for
-            for (long rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+            for (omp_size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
                 for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f) {
                     for (size_t iPosRS = 0; iPosRS < nPosRS; ++iPosRS)
                         posSamplesRS[rs][iPosRS][f] = posSamples[p][pos][iPosRS][rsmFeatureIndexes[rs][f]];
@@ -220,7 +218,7 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
         hogMin = 0;
         hogMax = 0.766903;
 
-        // found min/max using 'proc_createNegativesSampleFiles' (REP 0 & Sessions S1 to S4 + validated SAMAN-MATLAB code)
+        // found min/max using 'proc_createNegativesSampleFiles' (REP 0 & Sessions S1 to S4 + validated with SAMAN-MATLAB code)
         hogMin = 0.0;
         hogMax = 1.0;
 
@@ -259,7 +257,7 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
         // read file containing indexes of features to employ from each corresponding random subspace
         // zero-value features are ignored, others are taken as part of the random subspace
         std::vector<FeatureVector> rsmIndexes;
-        DataFile::readSampleDataFile("rsm-indexes.data", rsmIndexes, LIBSVM);
+        DataFile::readSampleDataFile(referenceFileDirectory + "rsm-indexes.data", rsmIndexes, LIBSVM);
         ASSERT_THROW(rsmIndexes.size() == ESVM_RANDOM_SUBSPACE_METHOD, "Incorrect number of RSM subspaces");
 
         size_t dimsRSM[2]{ ESVM_RANDOM_SUBSPACE_METHOD, ESVM_RANDOM_SUBSPACE_FEATURES };
@@ -268,7 +266,7 @@ void esvmEnsemble::setConstants(std::string referenceFileDirectory)
             size_t iFeat = 0;
             for (size_t f = 0; f < rsmIndexes[rs].size(); ++f) {
                 if (rsmIndexes[rs][f] != 0) {
-                    rsmFeatureIndexes[rs][iFeat] = f;
+                    rsmFeatureIndexes[rs][iFeat] = (int)f;
                     ++iFeat;
                 }
             }
@@ -395,7 +393,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
         size_t nESVM = nPatches * ESVM_RANDOM_SUBSPACE_METHOD;
         std::vector<FeatureVector> probeSampleTest(nESVM);
         #pragma omp parallel for
-        for (long p = 0; p < nPatches; ++p)
+        for (omp_size_t p = 0; p < nPatches; ++p)
             for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
                 size_t iRS = p * ESVM_RANDOM_SUBSPACE_METHOD + rs;
                 probeSampleTest[iRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
