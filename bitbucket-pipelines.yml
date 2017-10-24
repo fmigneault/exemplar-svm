@@ -3,12 +3,50 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: gcc:6.1
+image: hudl/opencv
+#image: gcc:6.1
 
 pipelines:
   default:
     - step:
+        name: unittests
         script: # Modify the commands below to build your repository.
-          - ./configure
+          # Print the Linux version.
+          - uname -a
+          # Print the gcc version.
+          - gcc --version
+          #  Install CMake
+          - apt-get update -qq
+          - apt-get install cmake -y
+          - cmake --version
+          # Get unzip
+          ##- apt-get install unzip
+          # Get git
+          - apt-get install git
+          - git --version
+          # Get and build libsvm
+          ##- wget "http://github.com/cjlin1/libsvm/achive/master.zip"
+          - git clone "http://github.com/cjlin1/libsvm" libsvm
+          ##- mkdir libsvm          
+          ##- unzip master.zip -d libsvm
+          - cd libsvm
+          - make lib
+          # Get and build Common(C++)
+          - git clone "http://bitbucket.org/TeamLIVIA/common-cpp" commoncpp
+          - cd commoncpp
+          - mkdir build
+          - cd build
+          - cmake -DCMAKE_INSTALL_PREFIX=./install ..
           - make
-          - make test
+          - make install  
+          # Build ESVM
+          - mkdir build
+          - cd build 
+          - cmake -DESVM_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=./install -DLIBSVM_ROOT_DIR=../libsvm -DCOMMON_CPP_ROOT_DIR=../commoncpp ..
+          # Build, install and run ESVM tests
+          - make
+          - make install
+          - ./install/bin/ESVM_Test
+          
+options:
+  docker: true
