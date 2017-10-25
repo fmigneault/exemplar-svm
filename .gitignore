@@ -33,9 +33,8 @@ Properties/
 [Rr]eleases/
 x64/
 x86/
-bld/
-bld-vc14-x64/
-lib-vc14-x64/
+bld*/
+lib*/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
