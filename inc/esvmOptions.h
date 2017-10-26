@@ -17,11 +17,17 @@
 #define ESVM_BINARY_HEADER_MODEL_LIBSVM "ESVM binary model libsvm"
 #define ESVM_BINARY_HEADER_MODEL_LIBLINEAR "ESVM binary model liblinear"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM binary samples"
+// Debug-specific configurations 
+#ifndef NDEBUG
+#define ESVM_DEBUG
+#endif
 /*
     ESVM_DISPLAY_TRAIN_PARAMS:
         0: do not display obtained parameters after training
         1: display abridged parameters after training (no SV)
         2: display complete parameters after training (all available according to model status, including SV)
+    
+    * Note: display after training is executed only in 'debug' mode, in 'release' it is disabled (ie: 0) to allow parallelism
 */
 #define ESVM_DISPLAY_TRAIN_PARAMS 1
 // Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
@@ -128,6 +134,8 @@
 #define TEST_ESVM_BASIC_FUNCTIONALITY 0
 // Test classification results with simple XOR data
 #define TEST_ESVM_BASIC_CLASSIFICATION 0
+// Test ESVM training and testing especially in the case where Random Subspace Method (RSM) are enabled
+#define TEST_ESVM_BASIC_TRAIN_TEST_RSM 1
 // Evaluate timing performance for writing/reading and parsing LIBSVM/BINARY samples file
 #define TEST_ESVM_WRITE_SAMPLES_FILE_TIMING 0
 #define TEST_ESVM_READ_SAMPLES_FILE_TIMING 0
