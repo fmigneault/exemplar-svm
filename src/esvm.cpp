@@ -766,8 +766,10 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     // convert and assign training vectors and corresponding target values for classification 
     prob.y = Malloc(double, prob.l);
     prob.x = Malloc(svmFeature*, prob.l);
-    /// ############################################# #pragma omp parallel for
-    for (int s = 0; s < prob.l; ++s)
+    #ifndef ESVM_DEBUG
+    #pragma omp parallel for
+    #endif
+    for (int s = 0; s < prob.l; ++s)    
     {
         prob.y[s] = targetOutputs[s];
         prob.x[s] = getFeatureNodes(samples[s]);
@@ -844,9 +846,9 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     removeTrainedModelUnusedData(trainedModel, &prob);
     resetModel(trainedModel, false);
 
-    #if ESVM_DISPLAY_TRAIN_PARAMS
+    #if ESVM_DISPLAY_TRAIN_PARAMS && !defined(ESVM_DEBUG)
     logModelParameters(esvmModel, ID, ESVM_DISPLAY_TRAIN_PARAMS == 2);
-    #endif/*ESVM_DISPLAY_TRAIN_PARAMS*/
+    #endif/*ESVM_DISPLAY_TRAIN_PARAMS && !ESVM_DEBUG*/
 }
 
 bool ESVM::isModelSet() const
@@ -894,7 +896,7 @@ vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesC
     double Wn = (double)Np / (double)Nn;
     #endif/*ESVM_WEIGHTS_MODE*/
 
-    /// ################################################ DEBUG
+    #ifdef ESVM_DEBUG
     logstream logger(LOGGER_FILE);
     logger << "ESVM weight initialization" << endl
            << "   N:  " << N  << endl
@@ -902,7 +904,7 @@ vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesC
            << "   Nn: " << Nn << endl
            << "   Wp: " << Wp << endl
            << "   Wn: " << Wn << endl;
-    /// ################################################ DEBUG
+    #endif/*ESVM_DEBUG*/
 
     return { Wp, Wn };
 }
@@ -990,8 +992,7 @@ svmFeature* ESVM::getFeatureNodes(FeatureVector features)
 */
 svmFeature* ESVM::getFeatureNodes(double* features, int featureCount)
 {
-    svmFeature* fv = Malloc(svmFeature, featureCount + 1);
-    /// ############################################# #pragma omp parallel for
+    svmFeature* fv = Malloc(svmFeature, featureCount + 1);    
     for (int f = 0; f < featureCount; ++f)
     {
         fv[f].index = f + 1;        // indexes should be one based

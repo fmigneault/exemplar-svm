@@ -156,7 +156,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
 
         for (size_t pos = 0; pos < nPositives; ++pos) {
             negSamples[p][pos].insert(negSamples[p][pos].end(), negFileSamples.begin(), negFileSamples.end());
-            std::string idESVM =  enrolledPositiveIDs[pos] + "-patch" + std::to_string(p);
+            std::string idESVM = enrolledPositiveIDs[pos] + "-patch" + std::to_string(p);
 
             #if ESVM_RANDOM_SUBSPACE_METHOD == 0
             EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p][pos], idESVM);
@@ -170,17 +170,26 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             xstd::mvector<2, FeatureVector> negSamplesRS({ ESVM_RANDOM_SUBSPACE_METHOD, nNegRS });
             #pragma omp parallel for
             for (omp_size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
-                for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f) {
-                    for (size_t iPosRS = 0; iPosRS < nPosRS; ++iPosRS)
+                for (size_t iPosRS = 0; iPosRS < nPosRS; ++iPosRS) {
+                    posSamplesRS[rs][iPosRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
+                    for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f)
                         posSamplesRS[rs][iPosRS][f] = posSamples[p][pos][iPosRS][rsmFeatureIndexes[rs][f]];
-                    for (size_t iNegRS = 0; iNegRS < nPosRS; ++iNegRS)
+                }
+                for (size_t iNegRS = 0; iNegRS < nNegRS; ++iNegRS) {
+                    negSamplesRS[rs][iNegRS] = FeatureVector(ESVM_RANDOM_SUBSPACE_FEATURES);
+                    for (size_t f = 0; f < ESVM_RANDOM_SUBSPACE_FEATURES; ++f)
                         negSamplesRS[rs][iNegRS][f] = negSamples[p][pos][iNegRS][rsmFeatureIndexes[rs][f]];
                 }
             }
 
             // train with random subspaces
+            #ifndef ESVM_DEBUG
+            #pragma omp parallel for
+            for (omp_size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
+            #else
             for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
-                idESVM += "-rs" + std::to_string(rs);
+            #endif/*ESVM_DEBUG*/
+                std::string idESVMrs = idESVM + "-rs" + std::to_string(rs);
                 EoESVM[p * ESVM_RANDOM_SUBSPACE_METHOD + rs][pos] = ESVM(posSamplesRS[rs], negSamplesRS[rs], idESVM);
             }
 

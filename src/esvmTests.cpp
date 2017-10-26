@@ -1167,6 +1167,30 @@ int test_ESVM_BasicClassification(void)
     return passThroughDisplayTestStatus(__func__, PASSED);
 }
 
+// // Test ESVM especially in the case where RSM are enabled
+// int test_ESVM_BasicTrainTestRSM(void)
+// {
+//     #if TEST_ESVM_BASIC_TRAIN_TEST_RSM     
+//     logstream logger(LOGGER_FILE);
+//     logger << "Running '" << __func__ << "' test..." << std::endl;
+//     #if ESVM_RANDOM_SUBSPACE_METHOD <= 0
+//     logger << "Warning: '" << __func__ << "' disabled because 'ESVM_RANDOM_SUBSPACE_METHOD' is not enabled..." << std::endl;
+//     #else/*ESVM_RANDOM_SUBSPACE_METHOD > 0*/
+
+//     size_t nSamples = 10;
+//     size_t nRSM = ESVM_RANDOM_SUBSPACE_METHOD;
+//     size_t nPatches = 2;
+//     size_t dimsSamplesRaw[2] { nSamples, nPatches };
+//     size_t dimsSamplesRSM[2] { nSamples, nRSM };
+//     xstd::mvector<2, FeatureVector> trainSamples(dimsSamplesRaw);
+
+//     #endif/*ESVM_RANDOM_SUBSPACE_METHOD <= 0*/
+//     #else/*TEST_ESVM_BASIC_TRAIN_TEST_RSM*/
+//     return passThroughDisplayTestStatus(__func__, SKIPPED);
+//     #endif/*TEST_ESVM_BASIC_TRAIN_TEST_RSM*/
+//     return passThroughDisplayTestStatus(__func__, PASSED);
+// }
+
 // Tests LIBSVM format sample file reading functionality of ESVM (index and value parsing)
 int test_ESVM_ReadSampleFile_libsvm()
 {
