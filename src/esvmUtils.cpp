@@ -22,7 +22,7 @@ cv::Mat esvmPreprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
     #elif ESVM_ROI_PREPROCESS_MODE == 2
     return imCropByRatio(roi, ESVM_ROI_CROP_RATIO, CENTER_MIDDLE);
 
-    #else
+    #else // unknown ROI preprocessing mode
     return cv::Mat();
 
     #endif/*ESVM_ROI_PREPROCESS_MODE*/
@@ -33,9 +33,9 @@ std::string svm_type_name(svmModel *model)
     if (model == nullptr) return "'null'";
     #if ESVM_USE_LIBSVM     
     return svm_type_name(model->param.svm_type);
-    #else ESVM_USE_LIBLINEAR
+    #elif ESVM_USE_LIBLINEAR
     return svm_type_name(model->param.solver_type);
-    #endif
+    #endif/*ESVM_USE_LIBSVM | ESVM_USE_LIBLINEAR*/
 }
 
 std::string svm_type_name(int type)
@@ -48,7 +48,7 @@ std::string svm_type_name(int type)
         case ONE_CLASS:     return "ONE_CLASS";
         case EPSILON_SVR:   return "EPSILON_SVR";
         case NU_SVR:        return "NU_SVR";
-        #else ESVM_USE_LIBLINEAR
+        #elif ESVM_USE_LIBLINEAR
         case L2R_LR:
         case L1R_LR:
         case L2R_LR_DUAL:
@@ -63,7 +63,7 @@ std::string svm_type_name(int type)
         case L2R_L2LOSS_SVR_DUAL:
         case L2R_L1LOSS_SVR_DUAL:
             return "L_SVR";
-        #endif
+        #endif/*ESVM_USE_LIBSVM | ESVM_USE_LIBLINEAR*/
         default:            return "UNDEFINED (" + std::to_string(type) + ")";
     }
 }
@@ -75,7 +75,7 @@ std::string svm_kernel_name(svmModel *model)
     return svm_kernel_name(model->param.kernel_type);
     #elif ESVM_USE_LIBLINEAR
     return "LINEAR";
-    #endif
+    #endif/*ESVM_USE_LIBSVM | ESVM_USE_LIBLINEAR*/
 }
 
 std::string svm_kernel_name(int type)
@@ -90,7 +90,7 @@ std::string svm_kernel_name(int type)
         case PRECOMPUTED:   return "PRECOMPUTED";
         #elif ESVM_USE_LIBLINEAR
         return "LINEAR";
-        #endif
+        #endif/*ESVM_USE_LIBSVM | ESVM_USE_LIBLINEAR*/
         default:            return "UNDEFINED (" + std::to_string(type) + ")";
     }
 }

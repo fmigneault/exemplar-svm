@@ -38,7 +38,6 @@
     #error "Invalid SVM implementation library"
 #endif/*Base SVM Library*/
 
-
 // Status to free model memory, matches libsvm for '0'/'1'
 enum FreeModelState { 
     PARAM = 0,
