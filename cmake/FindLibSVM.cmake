@@ -108,8 +108,8 @@ get_filename_component(LIBSVM_FOUND_FILE_NAME ${LIBSVM_LIBRARY} NAME)
 if (NOT (LIBSVM_FOUND_FILE_NAME AND LIBSVM_LIBRARY))
     if (UNIX)
         find_library(LIBSVM_LIBRARY
-                     NAMES  libsvm.so libsvm.so.2 
-                     PATHS  ${LIBSVM_ROOT_DIR}/windows
+                     NAMES  libsvm.so libsvm.so.2
+                     PATHS  ${LIBSVM_ROOT_DIR}
                      DOC    "LibSVM library location"
         )
     elseif (WIN32)
