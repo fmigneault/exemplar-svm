@@ -271,7 +271,7 @@ endif()
 
 # find mvector
 find_package(mvector REQUIRED)
-set(ESVM_INCLUDE_DIRS   ${ESVM_INCLUDE_DIRS}    ${MVECTOR_INCLUDE_DIR})
+set(ESVM_INCLUDE_DIRS ${ESVM_INCLUDE_DIRS} ${mvector_INCLUDE_DIR})
 
 # include/linking
 set(ESVM_LIBRARY_NAME ${ESVM_PROJECT})
