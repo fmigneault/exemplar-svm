@@ -6,7 +6,16 @@
 
 Implementation of C++ Exemplar-SVM using either [LIBSVM](https://github.com/cjlin1/libsvm) or [LIBLINEAR](https://github.com/cjlin1/liblinear) library.
 
-### Additional details
+---
+
+## Dependencies
+
+* Boost [link](http://www.boost.org/)
+* Common(C++) [BitBucket](https://bitbucket.org/TeamLIVIA/common-cpp)
+* libsvm [GitHub](https://github.com/cjlin1/libsvm) | liblinear [GitHub](https://github.com/cjlin1/liblinear) | see other implementations in *Additional Details*
+* mvector [GitHub](https://github.com/carlobaldassi/mvector) or [GitHub](https://github.com/fmigneault/mvector)
+
+### Additional Details
 
 Alternative libsvm implementations can be employed to include some variations or improvements: 
 
@@ -23,3 +32,4 @@ Original data is generated for testing purposes using [ChokePoint](http://arma.s
 If testing operations, methods and functions are to be run to validate operational modes, code or features, please download files from [ExemplarSVM-LIBSVM-Data](https://drive.google.com/drive/folders/0Bw9khIGD6JbbRzFfVDJ3cFNTM3c?usp=sharing) and place them under the root *ExemplarSVM-LIBSVM* repository directory.
 
 If using only the `ESVM` and `ensembleESVM` classes, above data is not mandatory, but you will need to generate your own instead for other classification tasks.
+
