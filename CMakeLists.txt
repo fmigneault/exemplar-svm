@@ -26,15 +26,20 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 endif()
 
 # Offer the user the choice of overriding the installation directories
-set(INSTALL_LIBRARY_DIR lib CACHE PATH "Installation directory for libraries")
-set(INSTALL_BINARY_DIR  bin CACHE PATH "Installation directory for executables")
-set(INSTALL_INCLUDE_DIR inc CACHE PATH "Installation directory for header files")
+set(DEFAULT_INSTALL_LIBRARY_DIR lib)
+set(DEFAULT_INSTALL_BINARY_DIR  bin)
 if(WIN32 AND NOT CYGWIN)
-    set(DEF_INSTALL_CMAKE_DIR cmake)
+  set(DEFAULT_INSTALL_INCLUDE_DIR include)  
+  set(DEFAULT_INSTALL_CMAKE_DIR   cmake)
 else()
-    set(DEF_INSTALL_CMAKE_DIR lib/CMake/${ESVM_PROJECT})
+  set(DEFAULT_INSTALL_INCLUDE_DIR include/${feHOG_PROJECT})
+  set(DEFAULT_INSTALL_CMAKE_DIR   lib/cmake/${feHOG_PROJECT})
 endif()
-set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH "Installation directory for CMake files")
+set(INSTALL_LIBRARY_DIR ${DEFAULT_INSTALL_LIBRARY_DIR} CACHE PATH "Installation directory for libraries")
+set(INSTALL_BINARY_DIR  ${DEFAULT_INSTALL_BINARY_DIR}  CACHE PATH "Installation directory for executables")
+set(INSTALL_INCLUDE_DIR ${DEFAULT_INSTALL_INCLUDE_DIR} CACHE PATH "Installation directory for header files")
+set(INSTALL_CMAKE_DIR   ${DEFAULT_INSTALL_CMAKE_DIR}   CACHE PATH "Installation directory for CMake files")
+set(INSTALL_IMGTEST_DIR img) # force
 
 # set ESVM paths
 set(ESVM_ROOT_DIR           "${CMAKE_CURRENT_LIST_DIR}")
