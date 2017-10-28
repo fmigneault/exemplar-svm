@@ -190,7 +190,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             for (size_t rs = 0; rs < ESVM_RANDOM_SUBSPACE_METHOD; ++rs) {
             #endif/*ESVM_DEBUG*/
                 std::string idESVMrs = idESVM + "-rs" + std::to_string(rs);
-                EoESVM[p * ESVM_RANDOM_SUBSPACE_METHOD + rs][pos] = ESVM(posSamplesRS[rs], negSamplesRS[rs], idESVM);
+                EoESVM[p * ESVM_RANDOM_SUBSPACE_METHOD + rs][pos] = ESVM(posSamplesRS[rs], negSamplesRS[rs], idESVMrs);
             }
 
             #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/

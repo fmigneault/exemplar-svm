@@ -832,7 +832,9 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
         throw ex;
     }
 
+    #ifdef ESVM_DEBUG
     logger << "ESVM training..." << endl;
+    #endif
     try
     {
         trainedModel = svmTrain(&prob, &param);
@@ -846,7 +848,7 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     removeTrainedModelUnusedData(trainedModel, &prob);
     resetModel(trainedModel, false);
 
-    #if ESVM_DISPLAY_TRAIN_PARAMS && !defined(ESVM_DEBUG)
+    #if ESVM_DISPLAY_TRAIN_PARAMS && defined(ESVM_DEBUG)
     logModelParameters(esvmModel, ID, ESVM_DISPLAY_TRAIN_PARAMS == 2);
     #endif/*ESVM_DISPLAY_TRAIN_PARAMS && !ESVM_DEBUG*/
 }
