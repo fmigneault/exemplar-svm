@@ -32,7 +32,11 @@ pipelines:
           - cd libsvm
           - make lib
           # Get and build Common(C++)
-          - git clone "http://bitbucket.org/TeamLIVIA/common-cpp" commoncpp
+          - mkdir ~/.ssh
+          - echo $COMMONCPP_SSH_KEY &gt; ~/.ssh/id_rsa.tmp
+          - base64 -d ~/.ssh/id_rsa.tmp &gt; ~/.ssh/id_rsa
+          - chmod 600 ~/.ssh/id_rsa
+          - git clone http://bitbucket.org:TeamLIVIA/common-cpp.git commoncpp
           - cd commoncpp
           - mkdir build
           - cd build
