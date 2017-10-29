@@ -19,42 +19,34 @@ pipelines:
           - apt-get update -qq
           - apt-get install cmake -y
           - cmake --version
-          # Get unzip
-          ##- apt-get install unzip
           # Get git
           - apt-get install git
           - git --version
           # Get and build libsvm
-          ##- wget "http://github.com/cjlin1/libsvm/achive/master.zip"
           - git clone "http://github.com/cjlin1/libsvm" libsvm
-          ##- mkdir libsvm          
-          ##- unzip master.zip -d libsvm
           - cd libsvm
           - make lib
-          # Get and build Common(C++)
-          # - echo $COMMONCPP_SSH_KEY_TMP
-          # - ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
-          # - echo $COMMONCPP_SSH_KEY > ~/.ssh/id_rsa
-          #- echo $COMMONCPP_SSH_KEY > ~/.ssh/id_rsa.tmp
-          #- echo $COMMONCPP_SSH_KEY
-          #- cat ~/.ssh/id_rsa.tmp 
-          #- base64 -d ~/.ssh/id_rsa.tmp > ~/.ssh/id_rsa
-          # - chmod 600 ~/.ssh/id_rsa
+          - cd ..
+          # Get and build Common(C++
           - git clone git@bitbucket.org:TeamLIVIA/common-cpp.git commoncpp
           - cd commoncpp
           - mkdir build
           - cd build
-          - cmake -DCMAKE_INSTALL_PREFIX=./install ..
-          - make
+          - cmake -DCMAKE_INSTALL_PREFIX=../install ..
+          - make -j4
           - make install  
+          - cd ..
+          - cd ..
           # Build ESVM
           - mkdir build
           - cd build 
-          - cmake -DESVM_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=./install -DLIBSVM_ROOT_DIR=../libsvm -DCOMMON_CPP_ROOT_DIR=../commoncpp ..
+          - cmake -DESVM_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=../install -DLIBSVM_ROOT_DIR=../libsvm -DCOMMON_CPP_ROOT_DIR=../commoncpp/install ..
           # Build, install and run ESVM tests
-          - make
+          - make -j4
           - make install
+          - cd ..
           - ./install/bin/ESVM_Test
           
 options:
   docker: true
+
