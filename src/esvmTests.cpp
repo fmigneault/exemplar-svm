@@ -281,36 +281,6 @@ int test_paths()
     logger << "Running '" << __func__ << "' test..." << std::endl;
     using namespace esvm::path;
 
-    try{
-    logger << "FORCING A 'THROW'" << std::endl;
-
-    logger << "OK1" << std::endl;
-    logger << "OK2" << std::endl;
-    //ASSERT_LOG(bfs::is_directory(p), "NOPE1");
-    logger << "OK3" << std::endl;
-    logger << roiVideoImagesPath << std::endl;
-    logger << "-----" << std::endl;
-    bfs::path p(roiVideoImagesPath.c_str());
-    logger << "....." << std::endl;
-    logger << p.string() << std::endl;
-    logger << "=====" << std::endl;
-    ASSERT_LOG(bfs::is_directory(p), "NOPE2");
-    logger << "OK4" << std::endl;
-    ASSERT_LOG(1, "11");
-    ASSERT_LOG(bfs::exists(roiVideoImagesPath), "Cannot find ROI directory");
-    logger << "OKO" << std::endl;
-    boost::system::error_code ec;
-    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath, ec), "Cannot find ROI directory");
-    ASSERT_LOG(0, "13");
-    ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
-    THROW("22");
-    logger << "OK" << std::endl;
-    }
-    catch (std::exception& ex)
-    {
-        logger << "THE HELL?? [" << ex.what() << "]" << std::endl;
-    }
-
     // ESVM build/test paths
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
     ASSERT_LOG(bfs::is_directory(refStillImagesPath), "Cannot find REF directory");
