@@ -27,26 +27,35 @@ pipelines:
           - cd libsvm
           - make lib
           - cd ..
-          # Get and build Common(C++
+          # Get and build Common(C++)
           - git clone git@bitbucket.org:TeamLIVIA/common-cpp.git commoncpp
           - cd commoncpp
           - mkdir build
           - cd build
-          - cmake -DCMAKE_INSTALL_PREFIX=../install ..
+          - cmake ..
           - make -j4
-          - make install  
+          - make install
+          - cd ..
+          - cd ..
+          # Get and build FeatureExtractorHOG (feHOG)
+          - git clone git@bitbucket.org:TeamLIVIA/FeatureExtractorHOG.git feHOG
+          - cd feHOG
+          - mkdir build
+          - cd build
+          - cmake ..
+          - make -j4
+          - make install
           - cd ..
           - cd ..
           # Build ESVM
           - mkdir build
-          - cd build 
-          - cmake -DESVM_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=../install -DLIBSVM_ROOT_DIR=../libsvm -DCOMMON_CPP_ROOT_DIR=../commoncpp/install ..
+          - cd build
+          - cmake -DESVM_BUILD_TESTS=ON -DLIBSVM_ROOT_DIR=../libsvm -DCMAKE_INSTALL_PREFIX=../install ..
           # Build, install and run ESVM tests
           - make -j4
           - make install
           - cd ..
           - ./install/bin/ESVM_Test
-          
+
 options:
   docker: true
-
