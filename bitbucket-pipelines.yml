@@ -47,10 +47,12 @@ pipelines:
           - make install
           - cd ..
           - cd ..
+          # Get mvector
+          - git clone https://github.com/fmigneault/mvector
           # Build ESVM
           - mkdir build
           - cd build
-          - cmake -DESVM_BUILD_TESTS=ON -DLIBSVM_ROOT_DIR=../libsvm -DCMAKE_INSTALL_PREFIX=../install ..
+          - cmake -DESVM_BUILD_TESTS=ON -DLIBSVM_ROOT_DIR=../libsvm -DCMAKE_INSTALL_PREFIX=../install -Dmvector_INCLUDE_DIR=../mvector ..
           # Build, install and run ESVM tests
           - make -j4
           - make install
