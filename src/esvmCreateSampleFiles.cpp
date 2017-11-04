@@ -1,6 +1,9 @@
 #include "esvmCreateSampleFiles.h"
 
+#include "feHOG.h"
+
 #include "datasetChokePoint.h"
+#include "logging.h"
 #include "testing.h"
 
 #include "boost/filesystem.hpp"
