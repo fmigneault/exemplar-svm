@@ -11,6 +11,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+namespace esvm {
+
 class esvmEnsemble
 {
 public:
@@ -72,7 +74,7 @@ private:
 
     /* --- Feature indexes to generate ramdom subspaces --- */
 
-    #if ESVM_RANDOM_SUBSPACE_METHOD > 0    
+    #if ESVM_RANDOM_SUBSPACE_METHOD > 0
     xstd::mvector<2, int> rsmFeatureIndexes;
     #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
 
@@ -102,5 +104,7 @@ private:
     double scoreStdDevFusion;
     #endif/*ESVM_SCORE_NORM_MODE*/
 };
+
+} // namespace esvm
 
 #endif/*ESVM_ENSEMBLE_H*/

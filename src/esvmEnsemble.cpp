@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 
+namespace esvm {
+
 /*
     Initializes an Ensemble of ESVM (EoESVM)
 */
@@ -28,7 +30,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
     size_t dimsPositives[3]{ nPatches, nPositives, 0 };
     xstd::mvector<3, FeatureVector> posSamples(dimsPositives);          // [patch][positives][representation](FeatureVector)
 
-    // additional negative samples    
+    // additional negative samples
     size_t dimsNegatives[3]{ nPatches, nPositives, 0 };
     xstd::mvector<3, FeatureVector> negSamples(dimsNegatives);          // [patch][positives][negatives](FeatureVector)
     size_t nAdditionalNegatives = additionalNegativeROIs.size();
@@ -129,7 +131,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
                 we re-assign the negative samples per patch individually and sequentially clear them as loading them all
                 simultaneously can sometimes be hard on the available memory if a LOT of negatives are employed
         */
-        
+
         // load negative samples from pre-generated files for training (samples in files are pre-normalized)
         #if   ESVM_FEATURE_NORM_MODE == 0
         std::string negativeFileName = "negatives-raw-patch"                      + std::to_string(p) + sampleFileExt;
@@ -150,7 +152,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
         #elif ESVM_FEATURE_NORM_MODE == 8
         std::string negativeFileName = "negatives-normPatch-zscore-perFeat-patch" + std::to_string(p) + sampleFileExt;
         #endif/*ESVM_FEATURE_NORM_MODE*/
-        
+
         std::vector<FeatureVector> negFileSamples;  // reset on each patch
         DataFile::readSampleDataFile(referenceFileDirectory + negativeFileName, negFileSamples, sampleFileFormat, ESVM_BINARY_HEADER_SAMPLES);
 
@@ -160,9 +162,9 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
 
             #if ESVM_RANDOM_SUBSPACE_METHOD == 0
             EoESVM[p][pos] = ESVM(posSamples[p][pos], negSamples[p][pos], idESVM);
-            
+
             #else/*ESVM_RANDOM_SUBSPACE_METHOD*/
-            
+
             // transfer features from random selection
             size_t nPosRS = posSamples[p][pos].size();
             size_t nNegRS = negSamples[p][pos].size();
@@ -194,7 +196,7 @@ esvmEnsemble::esvmEnsemble(const std::vector<std::vector<cv::Mat> >& positiveROI
             }
 
             #endif/*ESVM_RANDOM_SUBSPACE_METHOD*/
-            
+
             negSamples[p][pos].clear();
         }
         negSamples[p].clear();
@@ -394,7 +396,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
         #endif/*ESVM_FEATURE_NORM_MODE*/
     }
 
-    // prepare test samples    
+    // prepare test samples
     # if !ESVM_RANDOM_SUBSPACE_METHOD
         size_t nESVM = nPatches;
         std::vector<FeatureVector> probeSampleTest = probeSamples;
@@ -424,7 +426,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
             scores[svm][pos] = normalize(Z_SCORE, scores[svm][pos], scoreMeanSVM[svm], scoreStdDevSVM[svm], ESVM_SCORE_NORM_CLIP);
             #endif
             classificationScores[pos] += scores[svm][pos];  // score accumulation for fusion
-        }        
+        }
         classificationScores[pos] /= (double)nESVM;         // average score fusion and normalization post-fusion
         #if   ESVM_SCORE_NORM_MODE == 1 || ESVM_SCORE_NORM_MODE == 5
         classificationScores[pos] = normalize(MIN_MAX, classificationScores[pos], scoreMinFusion,  scoreMaxFusion,    ESVM_SCORE_NORM_CLIP);
@@ -439,7 +441,7 @@ std::vector<double> esvmEnsemble::predict(const cv::Mat& roi)
     Saves to file each positive/patch ESVM model with trained parameters and support vectors.
 */
 bool esvmEnsemble::saveModels(const std::string& saveDirectory)
-{    
+{
     if (!bfs::is_directory(saveDirectory))
         return false;
 
@@ -453,6 +455,8 @@ bool esvmEnsemble::saveModels(const std::string& saveDirectory)
             }
         }
         return true;
-    }    
+    }
     return false;
 }
+
+} // namespace esvm

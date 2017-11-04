@@ -16,39 +16,37 @@
 #include <string>
 #include <sys/stat.h>
 #include <vector>
-#include <vector>
-using namespace std;
 
-/* ESVM */
+namespace esvm {
 
 class ESVM
 {
-public:    
+public:
     ~ESVM();
     ESVM();
     ESVM(const ESVM& esvm);
-    /*ESVM(ESVM&& esvm);*/        
-    ESVM(vector<FeatureVector> positives, vector<FeatureVector> negatives, string id = "");
-    ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id = "");
-    ESVM(string trainingSamplesFilePath, string id = "");
-    ESVM(svmModel* trainedModel, string id = "");
+    /*ESVM(ESVM&& esvm);*/
+    ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id = "");
+    ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id = "");
+    ESVM(std::string trainingSamplesFilePath, std::string id = "");
+    ESVM(svmModel* trainedModel, std::string id = "");
     static svmModel* makeEmptyModel();
     static void destroyModel(svmModel** model);
     bool isModelSet() const;
     bool isModelTrained() const;
     void logModelParameters(bool displaySV = false) const;
     static bool checkModelParameters(svmModel* model);
-    static void readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, 
-                                   vector<int>& targetOutputs, FileFormat format = LIBSVM);
-    static void readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
-    static void writeSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors,
-                                    vector<int>& targetOutputs, FileFormat format = LIBSVM);
-    bool loadModelFile(string modelFilePath, FileFormat format = LIBSVM, string id = "");    
-    bool saveModelFile(string modelFilePath, FileFormat format = LIBSVM) const;
+    static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                                   std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
+    static void readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format = LIBSVM);
+    static void writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                                    std::vector<int>& targetOutputs, FileFormat format = LIBSVM);
+    bool loadModelFile(std::string modelFilePath, FileFormat format = LIBSVM, std::string id = "");
+    bool saveModelFile(std::string modelFilePath, FileFormat format = LIBSVM) const;
     double predict(FeatureVector probeSample) const;
-    vector<double> predict(vector<FeatureVector> probeSamples) const;
-    vector<double> predict(string probeSamplesFilePath, vector<int>* probeGroundTruths = nullptr) const;    
-    string ID;
+    std::vector<double> predict(std::vector<FeatureVector> probeSamples) const;
+    std::vector<double> predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths = nullptr) const;
+    std::string ID;
 
     ESVM& operator=(ESVM esvm); // copy ctor
     ESVM(ESVM&& esvm);          // move ctor
@@ -59,13 +57,13 @@ public:
     }
 
 private:
-    static void logModelParameters(svmModel* model, string id = "", bool displaySV = false);    
+    static void logModelParameters(svmModel* model, std::string id = "", bool displaySV = false);
     static void checkModelParameters_assert(svmModel* model);
-    static vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
-    void trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, vector<double> classWeights);
-    void loadModelFile_libsvm(string filePath);
-    void loadModelFile_binary(string filePath);
-    void saveModelFile_binary(string filePath) const;
+    static std::vector<double> calcClassWeightsFromMode(int positivesCount, int negativesCount);
+    void trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights);
+    void loadModelFile_libsvm(std::string filePath);
+    void loadModelFile_binary(std::string filePath);
+    void saveModelFile_binary(std::string filePath) const;
     static FeatureVector getFeatureVector(svmFeature* features);
     static svmFeature* getFeatureNodes(FeatureVector features);
     static svmFeature* getFeatureNodes(double* features, int featureCount);
@@ -74,7 +72,9 @@ private:
     void resetModel(svmModel* model = nullptr, bool copy = true);
     static FreeModelState getFreeSV(svmModel* model);
     svmModel *esvmModel = nullptr;
-    /*unique_ptr<svmModel> esvmModel = nullptr;*/    
+    /*unique_ptr<svmModel> esvmModel = nullptr;*/
 };
+
+} // namespace esvm
 
 #endif/*ESVM_LIBSVM_H*/

@@ -1,3 +1,4 @@
+#ifdef ESVM_HAS_TESTS
 /* MAIN */
 
 // ESVM
@@ -16,6 +17,9 @@ namespace bfs = boost::filesystem;
 
 int main(int argc, char* argv[])
 {
+    using namespace esvm;
+    using namespace esvm::test;
+
     logstream logger(LOGGER_FILE);
     displayHeader();
     displayOptions();
@@ -71,3 +75,5 @@ int main(int argc, char* argv[])
     logger << "All tests completed. " << currentTimeStamp() << std::endl;
     return 0;
 }
+
+#endif/*ESVM_HAS_TESTS*/

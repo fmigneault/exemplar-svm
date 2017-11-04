@@ -1,12 +1,17 @@
 #ifndef ESVM_TESTS_H
 #define ESVM_TESTS_H
 
+#ifdef ESVM_HAS_TESTS
+
 #include "esvm.h"
 #include "esvmTypes.h"
 
 #include "opencv2/opencv.hpp"
 #include "types.h"
 #include "mvector.hpp"
+
+namespace esvm {
+namespace test {
 
 /* Test utilities */
 svm_model* buildDummyExemplarSvmModel(FreeModelState free_sv = MODEL);
@@ -52,9 +57,13 @@ int proc_runSingleSamplePerPersonStillToVideo_FullGenerationAndTestProcess();
 
 /* Performance Evaluation */
 void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths);
-void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths, 
+void eval_PerformanceClassificationScores(std::vector<double> normScores, std::vector<int> probeGroundTruths,
                                           std::vector<double>& FPR, std::vector<double>& TPR, std::vector<double>& PPV);
 void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
                                            xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 
+} // namespace test
+} // namespace esvm
+
+#endif/*ESVM_HAS_TESTS*/
 #endif/*ESVM_TESTS_H*/

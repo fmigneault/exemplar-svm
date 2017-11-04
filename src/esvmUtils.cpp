@@ -4,12 +4,13 @@
 
 #include <assert.h>
 
+namespace esvm {
 
-cv::Mat esvmPreprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
+cv::Mat preprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
 {
     #if ESVM_ROI_PREPROCESS_MODE == 0
     return roi;
-    
+
     #elif ESVM_ROI_PREPROCESS_MODE == 1
     ASSERT_LOG(ccLocalSearch.empty(), "CascadeClassifier must be loaded for preprocessing with 'ESVM_ROI_PREPROCESS_MODE == 1'");
     double scaleFactor = 1.1;
@@ -31,7 +32,7 @@ cv::Mat esvmPreprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
 std::string svm_type_name(svmModel *model)
 {
     if (model == nullptr) return "'null'";
-    #if ESVM_USE_LIBSVM     
+    #if ESVM_USE_LIBSVM
     return svm_type_name(model->param.svm_type);
     #elif ESVM_USE_LIBLINEAR
     return svm_type_name(model->param.solver_type);
@@ -94,3 +95,5 @@ std::string svm_kernel_name(int type)
         default:            return "UNDEFINED (" + std::to_string(type) + ")";
     }
 }
+
+} // namespace esvm

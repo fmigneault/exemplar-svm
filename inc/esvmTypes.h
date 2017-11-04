@@ -1,8 +1,10 @@
 #ifndef ESVM_TYPES_H
 #define ESVM_TYPES_H
 
+namespace esvm {
+
 // SVM implementation library include, types and functions
-#if defined(ESVM_USE_LIBSVM) && !defined(ESVM_USE_LIBLINEAR)    
+#if defined(ESVM_USE_LIBSVM) && !defined(ESVM_USE_LIBLINEAR)
     #include "svm.h"
     #define ESVM_BASE "LIBSVM"
     typedef struct svm_model        svmModel;
@@ -39,10 +41,12 @@
 #endif/*Base SVM Library*/
 
 // Status to free model memory, matches libsvm for '0'/'1'
-enum FreeModelState { 
+enum FreeModelState {
     PARAM = 0,
     MODEL = 1,
     MULTI = 2   // only for testing purposes, model shouldn't have both in 'live' operation
 };
+
+} // namespace esvm
 
 #endif/*ESVM_TYPES_H*/

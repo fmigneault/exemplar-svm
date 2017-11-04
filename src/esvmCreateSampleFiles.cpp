@@ -5,7 +5,8 @@
 
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
-using namespace std;
+
+namespace esvm {
 
 xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension)
 {
@@ -27,7 +28,7 @@ xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string 
                                                                      ESVM_USE_HIST_EQUAL, "WINDOW_NAME", cv::IMREAD_GRAYSCALE);
                 for (size_t p = 0; p < nPatches; ++p)
                     processedImagePatches[neg][p] = patches[p];
-            }                  
+            }
         }
     }
     return processedImagePatches;
@@ -50,26 +51,26 @@ int proc_generateConvertedImageTypes()
 }
 
 std::vector<std::string> getReplicationNegativeIDs()
-{    
+{
     return std::vector<std::string>
-    #if !defined(PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION) || PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 0        
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+    #if !defined(PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION) || PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 0
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018" };
-        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15 
-        { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0025" }; 
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
+        { "0001", "0002", "0007", "0009", "0011", "0013", "0014", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0025" };
         #else
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 1
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0001", "0004", "0005", "0012", "0014", "0016", "0018", "0019", "0023", "0027" };
-        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15 
+        #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0001", "0004", "0005", "0012", "0014", "0016", "0018", "0019", "0023", "0027", "0002", "0003", "0006", "0007", "0013" };
         #else
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 2
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0004", "0007", "0009", "0011", "0016", "0021", "0024", "0026", "0027", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0004", "0007", "0009", "0011", "0016", "0021", "0024", "0026", "0027", "0030", "0002", "0010", "0012", "0014", "0017" };
@@ -77,7 +78,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 3
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0006", "0007", "0013", "0014", "0020", "0021", "0022", "0023", "0026", "0027" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0006", "0007", "0013", "0014", "0020", "0021", "0022", "0023", "0026", "0027", "0001", "0002", "0009", "0010", "0016" };
@@ -85,7 +86,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 4
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0022", "0027", "0029" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0003", "0005", "0006", "0009", "0010", "0011", "0017", "0022", "0027", "0029", "0002", "0007", "0013", "0025", "0026" };
@@ -93,7 +94,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 5
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0002", "0005", "0011", "0016", "0018", "0019", "0021", "0023", "0027", "0029" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0002", "0005", "0011", "0016", "0018", "0019", "0021", "0023", "0027", "0029", "0001", "0006", "0010", "0025", "0028" };
@@ -101,7 +102,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 6
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0002", "0007", "0009", "0010", "0012", "0013", "0014", "0017", "0029", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0002", "0007", "0009", "0010", "0012", "0013", "0014", "0017", "0029", "0030", "0004", "0011", "0022", "0024", "0028" };
@@ -109,7 +110,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 7
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0001", "0004", "0005", "0010", "0011", "0017", "0020", "0022", "0023", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0001", "0004", "0005", "0010", "0011", "0017", "0020", "0022", "0023", "0030", "0002", "0007", "0018", "0024", "0028" };
@@ -117,7 +118,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 8
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0001", "0003", "0004", "0006", "0007", "0010", "0011", "0012", "0019", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0001", "0003", "0004", "0006", "0007", "0010", "0011", "0012", "0019", "0030", "0017", "0023", "0026", "0027", "0029" };
@@ -125,7 +126,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 9
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0002", "0007", "0009", "0011", "0015", "0020", "0025", "0028", "0029", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0002", "0007", "0009", "0011", "0015", "0020", "0025", "0028", "0029", "0030", "0001", "0010", "0013", "0016", "0018" };
@@ -133,7 +134,7 @@ std::vector<std::string> getReplicationNegativeIDs()
         ();
         #endif
     #elif PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION == 10
-        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10 
+        #if     PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 10
         { "0001", "0003", "0016", "0017", "0018", "0025", "0023", "0028", "0029", "0030" };
         #elif   PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT == 15
         { "0001", "0003", "0016", "0017", "0018", "0025", "0023", "0028", "0029", "0030", "0013", "0014", "0015", "0019", "0026" };
@@ -159,11 +160,11 @@ int proc_createNegativesSampleFiles()
     std::string windowNameROI = "WINDOW_ROI";               // display localized ROIs from LBP improved (if activated)
     int delayShowROI = 1;                                   // [ms] - show found LBP improved ROIs with a delay (for visual inspection)
     bool keepAllFoundROI = false;                           // keep all the found ROIs (if applicable), or only the first one (if applicable)
-    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY || PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM, 
+    ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY || PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM,
                "Either 'PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY' or 'PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM' must be enabled for file generation");
     ASSERT_LOG(delayShowROI > 0, "Delay to display ROI during file generation must be greater than zero");
     ASSERT_LOG(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION >= 0 && PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION <= cp.SESSION_QUANTITY,
-               "Undefined value '" + std::to_string(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION) + 
+               "Undefined value '" + std::to_string(PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION) +
                "' specified for 'PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION', must be in range [0" + std::to_string(cp.SESSION_QUANTITY) + "]");
 
     // Negatives to employ
@@ -171,7 +172,7 @@ int proc_createNegativesSampleFiles()
     ASSERT_LOG(negativesID.size() > 0, "Negative IDs cannot be empty");
     logNeg << "Using negative IDs: " << negativesID << std::endl;
 
-    // general parameters    
+    // general parameters
     size_t nPatches = 9;
     cv::Size patchCounts = cv::Size(3, 3);
     cv::Size imageSize = cv::Size(48, 48);
@@ -198,15 +199,15 @@ int proc_createNegativesSampleFiles()
     // init containers / classes with parameters
     size_t nNegatives = 0;
     size_t dimsNegatives[2] = { nPatches, nNegatives };         // [patch][negative]
-    xstd::mvector<2, FeatureVector> fvNegRaw(dimsNegatives);    // [patch][negative](FeatureVector)    
-    std::vector<std::string> negativeSamplesID;                 // [negative](string)    
+    xstd::mvector<2, FeatureVector> fvNegRaw(dimsNegatives);    // [patch][negative](FeatureVector)
+    std::vector<std::string> negativeSamplesID;                 // [negative](string)
 
     // Loop for all ChokePoint cropped faces
     int totalSeq = PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0 ? cp.TOTAL_SEQUENCES : cp.TOTAL_SEQUENCES / cp.SESSION_QUANTITY;
     std::vector<int> perSessionNegatives(cp.SESSION_QUANTITY, 0);
     std::vector<int> perSequenceNegatives(totalSeq, 0);
     int seqIdx = 0;
-    
+
     std::vector<ChokePoint::PortalType> types = { ChokePoint::PortalType::ENTER, ChokePoint::PortalType::LEAVE };
     bfs::directory_iterator endDir;
     #if PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION == 0
@@ -217,10 +218,10 @@ int proc_createNegativesSampleFiles()
     for (int pn = 1; pn <= cp.PORTAL_QUANTITY; ++pn) {             // portal number
     for (auto pt = types.begin(); pt != types.end(); ++pt) {    // portal type
     for (int cn = 1; cn <= cp.CAMERA_QUANTITY; ++cn)            // camera number
-    {       
-        string seq = cp.getSequenceString(pn, *pt, sn, cn);
+    {
+        std::string seq = cp.getSequenceString(pn, *pt, sn, cn);
 
-        // Add ROI to corresponding sample vectors according to individual IDs            
+        // Add ROI to corresponding sample vectors according to individual IDs
         for (int id = 1; id <= cp.INDIVIDUAL_QUANTITY; ++id)
         {
             std::string strID = cp.getIndividualID(id);
@@ -243,7 +244,7 @@ int proc_createNegativesSampleFiles()
 
                             #if ESVM_ROI_PREPROCESS_MODE == 0           // directly use 'cropped_faces'
                                 roi = img;
-                            #elif ESVM_ROI_PREPROCESS_MODE == 1         // LBP improved localized ROI refinement                                
+                            #elif ESVM_ROI_PREPROCESS_MODE == 1         // LBP improved localized ROI refinement
                                 cv::imshow(windowNameOriginal, img);
                                 cv::waitKey(1);
                                 faceCascade.detectMultiScale(img, faces, scaleFactor, nmsThreshold, cv::CASCADE_SCALE_IMAGE, minSize, maxSize);
@@ -272,14 +273,14 @@ int proc_createNegativesSampleFiles()
 
                             // feature extraction HOG and update sample counts/ids
                             std::vector<cv::Mat> patches = imPreprocess(roi, imageSize, patchCounts, ESVM_USE_HIST_EQUAL,
-                                                                        windowNameROI, cv::IMREAD_GRAYSCALE);                            
+                                                                        windowNameROI, cv::IMREAD_GRAYSCALE);
                             for (size_t p = 0; p < nPatches; ++p)
                                 fvNegRaw[p].push_back(hog.compute(patches[p]));
 
                             negativeSamplesID.push_back(strID);
                             perSessionNegatives[sn-1]++;
                             perSequenceNegatives[seqIdx]++;
-                            nNegatives++;        
+                            nNegatives++;
         } } } } } // end get samples only from negative individual images
         seqIdx++;
     } } } } // end ChokePoint loops
@@ -291,9 +292,9 @@ int proc_createNegativesSampleFiles()
     double minAllROIOverAll = DBL_MAX, maxAllROIOverAll = -DBL_MAX, meanAllROIOverAll = -DBL_MAX, stdDevAllROIOverAll = -DBL_MAX;
     FeatureVector minAllROIPerFeat(hogFeatCount, DBL_MAX), maxAllROIPerFeat(hogFeatCount, -DBL_MAX),
                   meanAllROIPerFeat(hogFeatCount, -DBL_MAX), stdDevAllROIPerFeat(hogFeatCount, -DBL_MAX);
-    std::vector<double> minPatchOverAll(nPatches, DBL_MAX), maxPatchOverAll(nPatches, -DBL_MAX), 
+    std::vector<double> minPatchOverAll(nPatches, DBL_MAX), maxPatchOverAll(nPatches, -DBL_MAX),
                         meanPatchOverAll(nPatches, -DBL_MAX), stdDevPatchOverAll(nPatches, -DBL_MAX);
-    std::vector<FeatureVector> minPatchPerFeat(nPatches, FeatureVector(hogFeatCount, DBL_MAX)), 
+    std::vector<FeatureVector> minPatchPerFeat(nPatches, FeatureVector(hogFeatCount, DBL_MAX)),
                                maxPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
                                meanPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX)),
                                stdDevPatchPerFeat(nPatches, FeatureVector(hogFeatCount, -DBL_MAX));
@@ -302,7 +303,7 @@ int proc_createNegativesSampleFiles()
                                     fvNegMinMaxPatchPerFeat(dimsNegatives), fvNegMinMaxROIPerFeat(dimsNegatives),
                                     fvNegZScorePatchPerFeat(dimsNegatives), fvNegZScoreROIPerFeat(dimsNegatives);
     std::vector<int> negClass(nNegatives, ESVM_NEGATIVE_CLASS);
-    
+
     bool clip = ESVM_FEATURE_NORM_CLIP;
     for (size_t p = 0; p < nPatches; ++p)
     {
@@ -426,7 +427,7 @@ int proc_createNegativesSampleFiles()
     DataFile::writeSampleDataFile("negatives-normPatch-minmax-perFeat-MAX.data",    maxPatchPerFeat,        negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-MEAN.data",   meanPatchPerFeat,       negPatchOutputs, LIBSVM);
     DataFile::writeSampleDataFile("negatives-normPatch-zscore-perFeat-STDDEV.data", stdDevPatchPerFeat,     negPatchOutputs, LIBSVM);
-    
+
     // prepare list of feature vector normalization values
     std::string str_minPatchPerFeat, str_maxPatchPerFeat, str_meanPatchPerFeat, str_stdDevPatchPerFeat;
     for (size_t p = 0; p < nPatches; ++p) {
@@ -460,7 +461,7 @@ int proc_createNegativesSampleFiles()
                     << "blockSize:        " << blockSize << std::endl
                     << "blockStride:      " << blockStride << std::endl
                     << "cellSize:         " << cellSize << std::endl
-                    << "nBins:            " << nBins << std::endl 
+                    << "nBins:            " << nBins << std::endl
                     << "nFeatures:        " << hogFeatCount << std::endl
                     << "BINARY fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_BINARY << std::endl
                     << "LIBSVM fmt?:      " << PROC_ESVM_GENERATE_SAMPLE_FILES_LIBSVM << std::endl
@@ -518,7 +519,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 
     // ChokePoint Path
     std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";         // ChokePoint dataset root
-    std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos 
+    std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";           // Path of extracted 96x96 ROI from all videos
 
     // Add ROI to corresponding sample vectors according to individual IDs
     logPrb << "Loading probe images from '" << positivesImageDirPath << "'...: " << std::endl;
@@ -558,7 +559,7 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     logPrb << "Size check - pos: " << targetOutputs.size() << " neg: " << targetOutputsNeg.size() << std::endl;
 
     for (size_t p = 0; p < nPatches; ++p)
-        DataFile::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin", 
+        DataFile::writeSampleDataFile("ID0003-probes-hog-patch" + std::to_string(p) + ".bin",
                                       fvPositiveSamples[p], targetOutputs, BINARY, ESVM_BINARY_HEADER_SAMPLES);
 
     // ofstream outputFile;
@@ -577,3 +578,5 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 
     return 0;
 }
+
+} // namespace esvm

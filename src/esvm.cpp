@@ -8,43 +8,45 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
+namespace esvm {
+
 /*
     Initializes and trains an ESVM using list of positive and negative feature vectors
 */
-ESVM::ESVM(vector<FeatureVector> positives, vector<FeatureVector> negatives, string id)
+ESVM::ESVM(std::vector<FeatureVector> positives, std::vector<FeatureVector> negatives, std::string id)
     : ID(id), esvmModel(nullptr)
 {
     ASSERT_THROW(positives.size() > 0 && negatives.size() > 0, "Exemplar-SVM cannot train without both positive and negative feature vectors");
-        
+
     int posSamples = (int)positives.size();
     int negSamples = (int)negatives.size();
 
-    vector<int> targets(posSamples + negSamples, ESVM_NEGATIVE_CLASS);
+    std::vector<int> targets(posSamples + negSamples, ESVM_NEGATIVE_CLASS);
     for (int s = 0; s < posSamples; ++s)
         targets[s] = ESVM_POSITIVE_CLASS;
 
-    vector<FeatureVector> samples;
+    std::vector<FeatureVector> samples;
     samples.insert(samples.end(), positives.begin(), positives.end());
     samples.insert(samples.end(), negatives.begin(), negatives.end());
 
     // train with penalty weights according to specified mode
-    // greater penalty attributed to incorrectly classifying a positive vs the many negatives 
-    vector<double> weights = calcClassWeightsFromMode(posSamples, negSamples);
-    trainModel(samples, targets, weights);    
+    // greater penalty attributed to incorrectly classifying a positive vs the many negatives
+    std::vector<double> weights = calcClassWeightsFromMode(posSamples, negSamples);
+    trainModel(samples, targets, weights);
 }
 
 /*
-    Initializes and trains an ESVM using a combined list of positive and negative feature vectors with corresponding labels    
+    Initializes and trains an ESVM using a combined list of positive and negative feature vectors with corresponding labels
 */
-ESVM::ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id)
+ESVM::ESVM(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::string id)
     : ID(id), esvmModel(nullptr)
 {
     int Np = (int)count(targetOutputs.begin(), targetOutputs.end(), ESVM_POSITIVE_CLASS);
     int Nn = (int)count(targetOutputs.begin(), targetOutputs.end(), ESVM_NEGATIVE_CLASS);
 
     // train with penalty weights according to specified mode
-    // greater penalty attributed to incorrectly classifying a positive vs the many negatives 
-    vector<double> weights = calcClassWeightsFromMode(Np, Nn);
+    // greater penalty attributed to incorrectly classifying a positive vs the many negatives
+    std::vector<double> weights = calcClassWeightsFromMode(Np, Nn);
     trainModel(samples, targetOutputs, weights);
 }
 
@@ -52,27 +54,27 @@ ESVM::ESVM(vector<FeatureVector> samples, vector<int> targetOutputs, string id)
     Initializes and trains an ESVM using a pre-generated file of feature vectors and corresponding labels
     The file must be saved in the LIBSVM sample data format
 */
-ESVM::ESVM(string trainingSamplesFilePath, string id)
+ESVM::ESVM(std::string trainingSamplesFilePath, std::string id)
     : ID(id), esvmModel(nullptr)
 {
     // get samples
-    vector<FeatureVector> samples;
-    vector<int> targets;
+    std::vector<FeatureVector> samples;
+    std::vector<int> targets;
     readSampleDataFile(trainingSamplesFilePath, samples, targets);
 
     int Np = (int)count(targets.begin(), targets.end(), ESVM_POSITIVE_CLASS);
     int Nn = (int)count(targets.begin(), targets.end(), ESVM_NEGATIVE_CLASS);
 
     // train using loaded samples
-    vector<double> weights = calcClassWeightsFromMode(Np, Nn);
-    trainModel(samples, targets, weights);    
+    std::vector<double> weights = calcClassWeightsFromMode(Np, Nn);
+    trainModel(samples, targets, weights);
 }
 
-/* 
+/*
     Initializes and trains an ESVM using a pre-loaded and pre-trained SVM model
     Model can be saved with 'saveModelFile' method in LIBSVM format and retrieved with 'svm_load_model'
 */
-ESVM::ESVM(svmModel* trainedModel, string id)
+ESVM::ESVM(svmModel* trainedModel, std::string id)
     : ID(id), esvmModel(nullptr)
 {
     checkModelParameters_assert(trainedModel);
@@ -108,15 +110,15 @@ ESVM& ESVM::operator=(ESVM esvm)
 svmModel* ESVM::makeEmptyModel()
 {
     svmModel* model = Malloc(svmModel, 1);
-    
+
     model->nr_class = 0;
     model->label = nullptr;
 
     #if ESVM_USE_LIBSVM
 
     model->free_sv = 0;
-    model->l = 0;    
-    model->param.probability = ESVM_USE_PREDICT_PROBABILITY;    
+    model->l = 0;
+    model->param.probability = ESVM_USE_PREDICT_PROBABILITY;
     model->nSV = nullptr;
     model->probA = nullptr;
     model->probB = nullptr;
@@ -146,7 +148,7 @@ svmModel* ESVM::makeEmptyModel()
 svmModel* ESVM::deepCopyModel(svmModel* model)
 {
     if (!model) return nullptr;
-    
+
     // deep copy of memory
     svmModel* newModel = makeEmptyModel();
     newModel->param = model->param;
@@ -154,7 +156,7 @@ svmModel* ESVM::deepCopyModel(svmModel* model)
     newModel->label = Malloc(int, newModel->nr_class);
     for (int c = 0; c < newModel->nr_class; ++c)
         newModel->label[c] = model->label[c];
-    
+
     if (getFreeSV(model) == FreeModelState::PARAM) {
         if (!model->param.weight)
             newModel->param.weight = nullptr;
@@ -169,7 +171,7 @@ svmModel* ESVM::deepCopyModel(svmModel* model)
     }
 
     #if ESVM_USE_LIBSVM
-    
+
     newModel->free_sv = model->free_sv;
     newModel->l = model->l;
 
@@ -245,7 +247,7 @@ void ESVM::destroyModel(svmModel** model)
 
         bool freeParam = getFreeSV(pModel) == FreeModelState::PARAM || getFreeSV(pModel) == FreeModelState::MULTI;
         bool freeModel = getFreeSV(pModel) == FreeModelState::MODEL || getFreeSV(pModel) == FreeModelState::MULTI;
-        
+
         if (freeParam) {
             FreeNull(pModel->param.weight);
             FreeNull(pModel->param.weight_label);
@@ -359,72 +361,72 @@ void ESVM::logModelParameters(bool displaySV) const
     logModelParameters(esvmModel, ID, displaySV);
 }
 
-void ESVM::logModelParameters(svmModel *model, string id, bool displaySV)
+void ESVM::logModelParameters(svmModel *model, std::string id, bool displaySV)
 {
     logstream logger(LOGGER_FILE);
     if (!model)
     {
-        logger << "ESVM model is 'null'" << endl;
+        logger << "ESVM model is 'null'" << std::endl;
         return;
     }
 
-    logger << "ESVM model parameters:" << endl
-           << "   base SVM:      " << ESVM_BASE << endl
-           << "   ID:            " << id << endl
-           << "   svm type:      " << svm_type_name(model) << endl
-           << "   kernel type:   " << svm_kernel_name(model) << endl
-           << "   C:             " << (getFreeSV(model) == FreeModelState::MODEL ? "n/a (pre-trained)" : to_string(model->param.C)) << endl
-           << "   eps:           " << (getFreeSV(model) == FreeModelState::MODEL ? "n/a (pre-trained)" : to_string(model->param.eps)) << endl
-           << "   nr class:      " << model->nr_class << endl
-           << "   pos label:     " << model->label[0] << endl
-           << "   neg label:     " << model->label[1] << endl
-           << "   W mode:        " << ESVM_WEIGHTS_MODE << endl;
-    if (getFreeSV(model) != FreeModelState::MODEL) {  // when using a pre-trained model, 'rho' is used instead of weights (they are not set)           
+    logger << "ESVM model parameters:" << std::endl
+           << "   base SVM:    " << ESVM_BASE << std::endl
+           << "   ID:          " << id << std::endl
+           << "   svm type:    " << svm_type_name(model) << std::endl
+           << "   kernel type: " << svm_kernel_name(model) << std::endl
+           << "   C:           " << (getFreeSV(model) == FreeModelState::MODEL ? "n/a (pre-trained)" : std::to_string(model->param.C)) << std::endl
+           << "   eps:         " << (getFreeSV(model) == FreeModelState::MODEL ? "n/a (pre-trained)" : std::to_string(model->param.eps)) << std::endl
+           << "   nr class:    " << model->nr_class << std::endl
+           << "   pos label:   " << model->label[0] << std::endl
+           << "   neg label:   " << model->label[1] << std::endl
+           << "   W mode:      " << ESVM_WEIGHTS_MODE << std::endl;
+    if (getFreeSV(model) != FreeModelState::MODEL) {  // when using a pre-trained model, 'rho' is used instead of weights (they are not set)
     #if ESVM_WEIGHTS_MODE
-    logger << "   nr W:          " << model->param.nr_weight << endl
-           << "   W pos:         " << model->param.weight[0] << endl
-           << "   W neg:         " << model->param.weight[1] << endl
-           << "   W pos label:   " << model->param.weight_label[0] << endl
-           << "   W neg label:   " << model->param.weight_label[1] << endl;
+    logger << "   nr W:        " << model->param.nr_weight << std::endl
+           << "   W pos:       " << model->param.weight[0] << std::endl
+           << "   W neg:       " << model->param.weight[1] << std::endl
+           << "   W pos label: " << model->param.weight_label[0] << std::endl
+           << "   W neg label: " << model->param.weight_label[1] << std::endl;
     #endif/*ESVM_WEIGHTS_MODE*/
     } // end if
 
     #if ESVM_USE_LIBSVM
 
-    vector<double> svCoefVector;
+    std::vector<double> svCoefVector;
     if (model->sv_coef)
-        svCoefVector = vector<double>(model->sv_coef[0], model->sv_coef[0] + model->l);
-    logger << "   free sv:       " << model->free_sv << endl
-           << "   shrinking:     " << (model->free_sv == FreeModelState::MODEL ? "n/a" : to_string(model->param.shrinking)) << endl
-           << "   probability:   " << (model->free_sv == FreeModelState::MODEL ? "n/a" : to_string(model->param.probability)) << endl;
+        svCoefVector = std::vector<double>(model->sv_coef[0], model->sv_coef[0] + model->l);
+    logger << "   free sv:     " << model->free_sv << std::endl
+           << "   shrinking:   " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.shrinking)) << std::endl
+           << "   probability: " << (model->free_sv == FreeModelState::MODEL ? "n/a" : std::to_string(model->param.probability)) << std::endl;
     if (model->param.probability) {
-    logger << "   probA:         " << (model->probA == nullptr ? "'null'" : to_string(model->probA[0])) << endl
-           << "   probB:         " << (model->probB == nullptr ? "'null'" : to_string(model->probB[0])) << endl; 
+    logger << "   probA:       " << (model->probA == nullptr ? "'null'" : std::to_string(model->probA[0])) << std::endl
+           << "   probB:       " << (model->probB == nullptr ? "'null'" : std::to_string(model->probB[0])) << std::endl;
     } // end if
-    if (model->free_sv != FreeModelState::PARAM) {  
-    logger << "   rho:           " << (model->rho ? to_string(model->rho[0]) : "'null'") << endl
-           << "   pos SV:        " << model->nSV[0] << endl
-           << "   neg SV:        " << model->nSV[1] << endl
-           << "   total SV:      " << model->l << endl
-           << "   SV coef:       " << featuresToVectorString(svCoefVector) << endl
-           << "   SV:            " << (displaySV ? model->SV ? "" : "'null'" : "'displaySV=false'") << endl;
+    if (model->free_sv != FreeModelState::PARAM) {
+    logger << "   rho:         " << (model->rho ? std::to_string(model->rho[0]) : "'null'") << std::endl
+           << "   pos SV:      " << model->nSV[0] << std::endl
+           << "   neg SV:      " << model->nSV[1] << std::endl
+           << "   total SV:    " << model->l << std::endl
+           << "   SV coef:     " << featuresToVectorString(svCoefVector) << std::endl
+           << "   SV:          " << (displaySV ? model->SV ? "" : "'null'" : "'displaySV=false'") << std::endl;
     } // end if
     if (displaySV && model->SV) {
     for (int sv = 0; sv < model->l; ++sv) {
-    logger << "      " << featuresToVectorString(getFeatureVector(model->SV[sv])) << endl;
-    } // end for 
+    logger << "      " << featuresToVectorString(getFeatureVector(model->SV[sv])) << std::endl;
+    } // end for
     } // end if
 
     #elif ESVM_USE_LIBLINEAR
-    
-    logger << "   bias:          " << model->bias << endl
-           << "   nr features:   " << model->nr_feature << endl
-           << "   W:             " << (displaySV ? model->w != nullptr ? "" : "'null'" : "'displaySV=false'") << endl;
+
+    logger << "   bias:        " << model->bias << std::endl
+           << "   nr features: " << model->nr_feature << std::endl
+           << "   W:           " << (displaySV ? model->w != nullptr ? "" : "'null'" : "'displaySV=false'") << std::endl;
     if (displaySV && model->w != nullptr) {
         int nw = (model->nr_feature + model->bias) * model->nr_class;
         FeatureVector fv(nw);
         fv.assign(model->w, model->w + nw);
-        logger << "      " << featuresToVectorString(fv) << endl;
+        logger << "      " << featuresToVectorString(fv) << std::endl;
     }
 
     #endif
@@ -434,7 +436,7 @@ void ESVM::logModelParameters(svmModel *model, string id, bool displaySV)
     Verifies that the specified 'svmModel' parameters are adequately set to be employed by the ESVM class
 */
 bool ESVM::checkModelParameters(svmModel* model)
-{ 
+{
     try { checkModelParameters_assert(model); }
     catch (...) { return false; }
     return true;
@@ -447,12 +449,12 @@ bool ESVM::checkModelParameters(svmModel* model)
 void ESVM::checkModelParameters_assert(svmModel* model)
 {
     ASSERT_THROW(model != nullptr, "No SVM model reference specified");
-    ASSERT_THROW(model->nr_class == 2, "ESVM model must have two classes (positives, negatives)");    
+    ASSERT_THROW(model->nr_class == 2, "ESVM model must have two classes (positives, negatives)");
     ASSERT_THROW(model->label != nullptr, "ESVM model label container should be specified");
     ASSERT_THROW((model->label[0] == ESVM_POSITIVE_CLASS && model->label[1] == ESVM_NEGATIVE_CLASS) ||
                  (model->label[1] == ESVM_POSITIVE_CLASS && model->label[0] == ESVM_NEGATIVE_CLASS),
                  "ESVM model labels must be set to expected distinct positive and negative class values");
-    
+
     # if ESVM_USE_LIBSVM
 
     ASSERT_THROW(model->param.svm_type == C_SVC, "ESVM model must be a C-SVM classifier");
@@ -490,7 +492,7 @@ void ESVM::checkModelParameters_assert(svmModel* model)
             ASSERT_THROW(model->param.weight_label[1] == model->label[1], "ESVM model weight label [1] must match label [1]");
         }
     }
-    if (checkModel) 
+    if (checkModel)
     {
         #if ESVM_USE_LIBSVM
 
@@ -518,27 +520,29 @@ void ESVM::checkModelParameters_assert(svmModel* model)
 /*
     Reads feature vectors and corresponding target output class from the specified formatted data sample file
 */
-void ESVM::readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, vector<int>& targetOutputs, FileFormat format)
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                              std::vector<int>& targetOutputs, FileFormat format)
 {
     DataFile::readSampleDataFile(filePath, sampleFeatureVectors, targetOutputs, format, format == LIBSVM ? "" : ESVM_BINARY_HEADER_SAMPLES);
     for (size_t t = 0; t < targetOutputs.size(); ++t)
-        ASSERT_THROW(targetOutputs[t] == ESVM_POSITIVE_CLASS || targetOutputs[t] == ESVM_NEGATIVE_CLASS, 
+        ASSERT_THROW(targetOutputs[t] == ESVM_POSITIVE_CLASS || targetOutputs[t] == ESVM_NEGATIVE_CLASS,
                      "Invalid class label specified in file for ESVM");
 }
 
 /*
     Reads feature vectors and corresponding target output class from the specified formatted data sample file
 */
-void ESVM::readSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, FileFormat format)
+void ESVM::readSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors, FileFormat format)
 {
-    vector<int> dummyOutputTargets;
+    std::vector<int> dummyOutputTargets;
     ESVM::readSampleDataFile(filePath, sampleFeatureVectors, dummyOutputTargets, format);
 }
 
 /*
     Writes feature vectors and corresponding target output class to a data sample file
 */
-void ESVM::writeSampleDataFile(string filePath, vector<FeatureVector>& sampleFeatureVectors, vector<int>& targetOutputs, FileFormat format)
+void ESVM::writeSampleDataFile(std::string filePath, std::vector<FeatureVector>& sampleFeatureVectors,
+                               std::vector<int>& targetOutputs, FileFormat format)
 {
     for (size_t t = 0; t < targetOutputs.size(); ++t)
         ASSERT_THROW(targetOutputs[t] == ESVM_POSITIVE_CLASS || targetOutputs[t] == ESVM_NEGATIVE_CLASS,
@@ -549,7 +553,7 @@ void ESVM::writeSampleDataFile(string filePath, vector<FeatureVector>& sampleFea
 /*
     Loads an ESVM model file form the specified model format
 */
-bool ESVM::loadModelFile(string modelFilePath, FileFormat format, string id)
+bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::string id)
 {
     ID = (id == "") ? bfs::path(modelFilePath).stem().string() : id;
 
@@ -568,16 +572,16 @@ bool ESVM::loadModelFile(string modelFilePath, FileFormat format, string id)
     This function can easily break if the model doesn't meet all requirements.
     Calling the 'checkModelParameters' method is suggested before calling to limit potential errors.
 */
-void ESVM::loadModelFile_libsvm(string filePath)
+void ESVM::loadModelFile_libsvm(std::string filePath)
 {
     ifstream modelFile(filePath, ios::in | ios::binary);
     bool isBinary = DataFile::checkBinaryHeader(modelFile, ESVM_BINARY_HEADER_MODEL_LIBSVM) ||
                     DataFile::checkBinaryHeader(modelFile, ESVM_BINARY_HEADER_MODEL_LIBLINEAR);
-    if (modelFile.is_open()) 
+    if (modelFile.is_open())
         modelFile.close();
     if (!isBinary)
     {
-        // loads a pre-trained model, returns NULL if failed, 
+        // loads a pre-trained model, returns NULL if failed,
         // otherwise returns the address of loaded model with 'free_sv' = 1
         svmModel *model = svmLoadModel(filePath.c_str());
         if (model && getFreeSV(model) != FreeModelState::PARAM)
@@ -593,7 +597,7 @@ void ESVM::loadModelFile_libsvm(string filePath)
     Reads and updates the ESVM from a pre-trained BINARY model file
     (see writing function for expected format)
 */
-void ESVM::loadModelFile_binary(string filePath)
+void ESVM::loadModelFile_binary(std::string filePath)
 {
     // check for opened file
     ifstream modelFile(filePath, ios::in | ios::binary);
@@ -613,7 +617,7 @@ void ESVM::loadModelFile_binary(string filePath)
         param.kernel_type = LINEAR;
         model = makeEmptyModel();
         model->param = param;
-        model->nr_class = 2;        
+        model->nr_class = 2;
         model->rho = Malloc(double, 1);             // 1 decision function parameter
         model->sv_coef = Malloc(double*, 1);        // 1 x N sv coefficients for 1 decision function
         model->label = Malloc(int, model->nr_class);
@@ -637,7 +641,7 @@ void ESVM::loadModelFile_binary(string filePath)
         ASSERT_THROW(nFeatures > 0, "Read number of features should be greater than zero");
 
         // read support vectors and decision function coefficients
-        vector<FeatureVector> sampleSV(model->l);
+        std::vector<FeatureVector> sampleSV(model->l);
         model->sv_coef[0] = Malloc(double, model->l);
         modelFile.read(reinterpret_cast<char*>(&model->sv_coef[0][0]), model->l * sizeof(model->sv_coef[0][0]));
         model->SV = Malloc(svmFeature*, model->l);
@@ -667,20 +671,20 @@ void ESVM::loadModelFile_binary(string filePath)
         if (model)
             svmFreeModel(model);
         throw ex;
-    }    
+    }
 }
 
 /*
     Saves the ESVM model file in the specified model format
 */
-bool ESVM::saveModelFile(string modelFilePath, FileFormat format) const
+bool ESVM::saveModelFile(std::string modelFilePath, FileFormat format) const
 {
     ASSERT_THROW(isModelSet(), "Cannot save an unset model");
 
     if (format == LIBSVM)
         return svmSaveModel(modelFilePath.c_str(), esvmModel) == 0;     // 0 if success, -1 otherwise
     else if (format == BINARY)
-    {        
+    {
         saveModelFile_binary(modelFilePath);
         struct stat buffer;
         return stat(modelFilePath.c_str(), &buffer) != 1;   // quickly checks if a file exists
@@ -692,7 +696,7 @@ bool ESVM::saveModelFile(string modelFilePath, FileFormat format) const
 /*
     Writes the ESVM model to a BINARY model file
 */
-void ESVM::saveModelFile_binary(string filePath) const
+void ESVM::saveModelFile_binary(std::string filePath) const
 {
     /*
     Expected data format and order:    <all reinterpreted as char*>
@@ -701,7 +705,7 @@ void ESVM::saveModelFile_binary(string filePath) const
         ========================================
         (char)      | len(header)           | 'ESVM_BINARY_HEADER_MODEL'
         (double)    | 1                     | rho (constant in decision function - only one since 2 classes)
-        (int)       | 2                     | class labels (corresponding to following support vectors order)      
+        (int)       | 2                     | class labels (corresponding to following support vectors order)
         (int)       | 2                     | nSV (number of support vectors per corresponding class label)
         (int)       | 1                     | nFeatures (number of features forming support vectors)
         (double)    | sum(nSV)              | coefficients of decision function for corresponding support vectors
@@ -721,7 +725,7 @@ void ESVM::saveModelFile_binary(string filePath) const
         ASSERT_THROW(nFeatures > 0, "Cannot save a model with support vectors not containing any feature");
 
         // write header and counts for later reading
-        string headerStr = ESVM_BINARY_HEADER_MODEL_LIBSVM;
+        std::string headerStr = ESVM_BINARY_HEADER_MODEL_LIBSVM;
         const char *headerChar = headerStr.c_str();
         modelFile.write(headerChar, headerStr.size());
         modelFile.write(reinterpret_cast<const char*>(&esvmModel->rho[0]), sizeof(esvmModel->rho[0]));
@@ -729,7 +733,7 @@ void ESVM::saveModelFile_binary(string filePath) const
         modelFile.write(reinterpret_cast<const char*>(&esvmModel->nSV[0]), esvmModel->nr_class * sizeof(esvmModel->nSV[0]));
         modelFile.write(reinterpret_cast<const char*>(&nFeatures), sizeof(nFeatures));
 
-        // write support vectors and decision function coefficients    
+        // write support vectors and decision function coefficients
         modelFile.write(reinterpret_cast<const char*>(&esvmModel->sv_coef[0][0]), esvmModel->l * sizeof(esvmModel->sv_coef[0][0]));
         for (int sv = 0; sv < esvmModel->l; ++sv)
             modelFile.write(reinterpret_cast<const char*>(&esvmModel->SV[sv][0]), nFeatures * sizeof(esvmModel->SV[sv][0]));
@@ -752,8 +756,8 @@ void ESVM::saveModelFile_binary(string filePath) const
 /*
     Trains the ESVM using the sample feature vectors and their corresponding target outputs
 */
-void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, vector<double> classWeights)
-{    
+void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targetOutputs, std::vector<double> classWeights)
+{
     ASSERT_THROW(samples.size() > 1, "Number of samples must be greater than one (at least 1 positive and 1 negative)");
     ASSERT_THROW(samples.size() == targetOutputs.size(), "Number of samples must match number of corresponding target outputs");
     ASSERT_THROW(classWeights.size() == 2, "Exemplar-SVM expects two weights (positive, negative)");
@@ -761,29 +765,29 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     logstream logger(LOGGER_FILE);
 
     svmProblem prob;
-    prob.l = (int)samples.size();   // number of training data        
-    
-    // convert and assign training vectors and corresponding target values for classification 
+    prob.l = (int)samples.size();   // number of training data
+
+    // convert and assign training vectors and corresponding target values for classification
     prob.y = Malloc(double, prob.l);
     prob.x = Malloc(svmFeature*, prob.l);
     #ifndef ESVM_DEBUG
     #pragma omp parallel for
     #endif
-    for (int s = 0; s < prob.l; ++s)    
+    for (int s = 0; s < prob.l; ++s)
     {
         prob.y[s] = targetOutputs[s];
         prob.x[s] = getFeatureNodes(samples[s]);
     }
 
-    // set training parameters    
+    // set training parameters
     svmParam param;
     param.C = 1;                // cost constraint violation used for w*C
     param.eps = 0.001;          // stopping optimization criterion
 
     #if ESVM_USE_LIBSVM
-    
+
     param.svm_type = C_SVC;     // cost classifier SVM
-    param.kernel_type = LINEAR; // linear kernel    
+    param.kernel_type = LINEAR; // linear kernel
     param.probability = 0;      // possibility to use probability outputs instead of (+1,-1) classes (adds extra training time)
     param.shrinking = 1;        // use problem shrinking heuristics
     param.cache_size = 100;     // size in MB
@@ -793,10 +797,10 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
           these parameters are not employed by the current SVM/kernel types, simply set valid values to avoid random errors
     */
     param.coef0 = 0;            // coefficient of { POLY, SIGMOID } kernels
-    param.degree = 0;           // degree of POLY kernel 
+    param.degree = 0;           // degree of POLY kernel
     param.gamma = 0;            // gamma of { POLY, RBF, SIGMOID } kernels
     param.nu = 0;               // nu for { NU_SVC, ONE_CLASS, NU_SVR } SVMs
-    
+
     #elif ESVM_USE_LIBLINEAR
 
     param.solver_type = L2R_L2LOSS_SVC;
@@ -816,7 +820,7 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     param.weight[1] = classWeights[1];
     param.weight_label = Malloc(int, 2);    // class labels
     param.weight_label[0] = ESVM_POSITIVE_CLASS;
-    param.weight_label[1] = ESVM_NEGATIVE_CLASS;        
+    param.weight_label[1] = ESVM_NEGATIVE_CLASS;
     #endif/*ESVM_WEIGHTS_MODE*/
 
     // validate parameters and train models
@@ -824,16 +828,16 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     try
     {
         const char* msg = svmCheckParam(&prob, &param);
-        ASSERT_THROW(msg == nullptr, "Failure message from 'svm_check_parameter': " + string(msg) + "\n");
+        ASSERT_THROW(msg == nullptr, "Failure message from 'svm_check_parameter': " + std::string(msg) + "\n");
     }
-    catch(exception& ex)
+    catch(std::exception& ex)
     {
-        logger << "Exception occurred during parameter check: [" << ex.what() << "]" << endl;
+        logger << "Exception occurred during parameter check: [" << ex.what() << "]" << std::endl;
         throw ex;
     }
 
     #ifdef ESVM_DEBUG
-    logger << "ESVM training..." << endl;
+    logger << "ESVM training..." << std::endl;
     #endif
     try
     {
@@ -841,7 +845,7 @@ void ESVM::trainModel(vector<FeatureVector> samples, vector<int> targetOutputs, 
     }
     catch (exception& ex)
     {
-        logger << "Exception occurred during ESVM training: [" << ex.what() << "]" << endl;
+        logger << "Exception occurred during ESVM training: [" << ex.what() << "]" << std::endl;
         throw ex;
     }
 
@@ -873,7 +877,7 @@ bool ESVM::isModelTrained() const
         3: (Wp = N/Np, Wn = N/Nn)   ratio of sample counts
         4: (Wp = 1, Wn = Np/Nn)     ratio of sample counts normalized for positives (Np/Nn = [N/Nn]/[N/Np])
 */
-vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesCount)
+std::vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesCount)
 {
     int Np = positivesCount;
     int Nn = negativesCount;
@@ -900,12 +904,12 @@ vector<double> ESVM::calcClassWeightsFromMode(int positivesCount, int negativesC
 
     #ifdef ESVM_DEBUG
     logstream logger(LOGGER_FILE);
-    logger << "ESVM weight initialization" << endl
-           << "   N:  " << N  << endl
-           << "   Np: " << Np << endl
-           << "   Nn: " << Nn << endl
-           << "   Wp: " << Wp << endl
-           << "   Wn: " << Wn << endl;
+    logger << "ESVM weight initialization" << std::endl
+           << "   N:  " << N  << std::endl
+           << "   Np: " << Np << std::endl
+           << "   Nn: " << Nn << std::endl
+           << "   Wp: " << Wp << std::endl
+           << "   Wn: " << Wn << std::endl;
     #endif/*ESVM_DEBUG*/
 
     return { Wp, Wn };
@@ -933,8 +937,8 @@ double ESVM::predict(FeatureVector probeSample) const
 
     // Obtain decision values directly (instead of predicted label/probability from 'svm_predict'/'svm_predict_probability')
     // Since the number of decision values of each class combination is calculated with [ nr_class*(nr_class-1)/2 ],
-    // and that we have only 2 classes, we have only one decision value (positive vs. negative)    
-    double* decisionValues = new double[esvmModel->nr_class * (esvmModel->nr_class - 1) / 2]; 
+    // and that we have only 2 classes, we have only one decision value (positive vs. negative)
+    double* decisionValues = new double[esvmModel->nr_class * (esvmModel->nr_class - 1) / 2];
     svmPredictValues(esvmModel, getFeatureNodes(probeSample), decisionValues);
     double decision = decisionValues[0];
     delete[] decisionValues;
@@ -944,10 +948,10 @@ double ESVM::predict(FeatureVector probeSample) const
 /*
     Predicts the classification values for the specified list of feature vector samples using the trained ESVM model.
 */
-vector<double> ESVM::predict(vector<FeatureVector> probeSamples) const
+std::vector<double> ESVM::predict(std::vector<FeatureVector> probeSamples) const
 {
     size_t nPredictions = probeSamples.size();
-    vector<double> outputs(nPredictions);
+    std::vector<double> outputs(nPredictions);
     for (size_t p = 0; p < nPredictions; ++p)
         outputs[p] = this->predict(probeSamples[p]);
     return outputs;
@@ -956,12 +960,12 @@ vector<double> ESVM::predict(vector<FeatureVector> probeSamples) const
 /*
     Predicts all classification values for each of the feature vector samples within the file using the trained ESVM model.
     The file must be saved in the LIBSVM sample data format.
-    Ground truth class read from the file are returned using 'probeGroundTruths' if specified. 
+    Ground truth class read from the file are returned using 'probeGroundTruths' if specified.
 */
-vector<double> ESVM::predict(string probeSamplesFilePath, vector<int>* probeGroundTruths) const
+std::vector<double> ESVM::predict(std::string probeSamplesFilePath, std::vector<int>* probeGroundTruths) const
 {
-    vector<int> classGroundTruths;
-    vector<FeatureVector> samples;
+    std::vector<int> classGroundTruths;
+    std::vector<FeatureVector> samples;
     readSampleDataFile(probeSamplesFilePath, samples, classGroundTruths);
     if (probeGroundTruths != nullptr)
         *probeGroundTruths = classGroundTruths;
@@ -976,7 +980,7 @@ FeatureVector ESVM::getFeatureVector(svmFeature* features)
 {
     FeatureVector fv;
     int f = 0;
-    while (features[f].index != -1)    
+    while (features[f].index != -1)
         fv.push_back(features[f++].value);
     return fv;
 }
@@ -994,7 +998,7 @@ svmFeature* ESVM::getFeatureNodes(FeatureVector features)
 */
 svmFeature* ESVM::getFeatureNodes(double* features, int featureCount)
 {
-    svmFeature* fv = Malloc(svmFeature, featureCount + 1);    
+    svmFeature* fv = Malloc(svmFeature, featureCount + 1);
     for (int f = 0; f < featureCount; ++f)
     {
         fv[f].index = f + 1;        // indexes should be one based
@@ -1003,3 +1007,5 @@ svmFeature* ESVM::getFeatureNodes(double* features, int featureCount)
     fv[featureCount].index = -1;    // Additional feature value must be (-1,?) to end the vector (see LIBSVM README)
     return fv;
 }
+
+} // namespace esvm
