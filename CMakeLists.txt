@@ -84,9 +84,9 @@ set(ESVM_LIBRARY_TYPE ${ESVM_LIBRARY_STATIC} CACHE STRING "Library type to gener
 set_property(CACHE ESVM_LIBRARY_TYPE PROPERTY STRINGS ${ESVM_LIBRARY_STATIC} ${ESVM_LIBRARY_SHARED})
 
 # drop down list of building test mode
-toggle_display_variable(${ESVM_BUILD_TESTS} ESVM_BUILD_TESTS_LIB)
-toggle_display_variable(${ESVM_BUILD_TESTS} ESVM_BUILD_TESTS_SRC)
-toggle_display_variable(${ESVM_BUILD_TESTS} ESVM_BUILD_TESTS_MODE)
+toggle_display_variable(ESVM_BUILD_TESTS_LIB  ${ESVM_BUILD_TESTS})
+toggle_display_variable(ESVM_BUILD_TESTS_SRC  ${ESVM_BUILD_TESTS})
+toggle_display_variable(ESVM_BUILD_TESTS_MODE ${ESVM_BUILD_TESTS})
 if (${ESVM_BUILD_TESTS})
     set(ESVM_BUILD_TESTS_LIB        "Build from ESVM library")
     set(ESVM_BUILD_TESTS_SRC        "Build from ESVM sources")
