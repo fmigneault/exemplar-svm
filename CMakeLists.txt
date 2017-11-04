@@ -6,9 +6,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # project
 set(ESVM_PROJECT "ESVM")
-project(${ESVM_PROJECT}
-        LANGUAGES CXX
-        DESCRIPTION "Implementation of C++ Exemplar-SVM using either LIBSVM or LIBLINEAR library.")
+project(${ESVM_PROJECT})
 include(cmake/ESVMUtils.cmake)
 
 if(MSVC)
