@@ -17,7 +17,7 @@
 #define ESVM_BINARY_HEADER_MODEL_LIBSVM "ESVM binary model libsvm"
 #define ESVM_BINARY_HEADER_MODEL_LIBLINEAR "ESVM binary model liblinear"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM binary samples"
-// Debug-specific configurations 
+// Debug-specific configurations
 #ifndef NDEBUG
 #define ESVM_DEBUG
 #endif
@@ -26,20 +26,20 @@
         0: do not display obtained parameters after training
         1: display abridged parameters after training (no SV)
         2: display complete parameters after training (all available according to model status, including SV)
-    
+
     * Note: display after training is executed only in 'debug' mode, in 'release' it is disabled (ie: 0) to allow parallelism
 */
 #define ESVM_DISPLAY_TRAIN_PARAMS 1
-// Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
-#define ESVM_ROI_CROP_RATIO 0.80
 /* Employ specific ROI pre-processing operation before further feature extraction operations
-    
+
     ESVM_ROI_PREPROCESS_MODE:
         0: 'normal' procedure without additional ROI pre-processing (using ChokePoint 'cropped_faces')
         1: apply localized face ROI refinement within 'cropped_faces' using LBP improved CascadeClassifier
         2: apply specific pre-cropping of 'cropped_faces' ROI with ROI ratio defined by 'ESVM_ROI_CROP_RATIO'
 */
 #define ESVM_ROI_PREPROCESS_MODE 2
+// Ratio to employ when running 'ESVM_ROI_PREPROCESS_MODE == 2'
+#define ESVM_ROI_CROP_RATIO 0.80
 /*
     ESVM_WEIGHTS_MODE:
         0: (Wp = 0, Wn = 0)         unused
@@ -51,7 +51,7 @@
 #define ESVM_WEIGHTS_MODE 2
 /* Specify if random subspace method (RSM) for feature selection must be employed to generate the ensemble of eSVM
         0: RSM is not employed (directly using the basic feature extraction methods)
-        #: other numeric int value, the specified value is the amount of RS operations applied 
+        #: other numeric int value, the specified value is the amount of RS operations applied
 */
 #define ESVM_RANDOM_SUBSPACE_METHOD 20
 // Specifies the amount of features to be randomly selected when applying RSM
@@ -98,10 +98,10 @@
 
 /*
   Specify how the training samples are regrouped into training sequences
-    
-    TEST_CHOKEPOINT_SEQUENCES_MODE:    
+
+    TEST_CHOKEPOINT_SEQUENCES_MODE:
         0: use all cameras in a corresponding session as a common list of training samples (ie: 4 session = 4 sequences)
-        1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences) 
+        1: use each scene as an independant list of training samples (ie: 2 portals x 2 types x 4 sessions x 3 cameras = 48 sequences)
 */
 #define TEST_CHOKEPOINT_SEQUENCES_MODE 0
 // Employ synthetic image generation to increase the positive samples quantity for ESVM training
@@ -160,10 +160,10 @@
     Process options - Enable/Disable a specific procedure execution
 ------------------------------------------------------------------- */
 
-/*   
+/*
     PROC_READ_DATA_FILES:
-        (0)   0b00000000:   no test 
-        (1)   0b00000001:   images + extract features (whole-image) 
+        (0)   0b00000000:   no test
+        (1)   0b00000001:   images + extract features (whole-image)
         (2)   0b00000010:   images + extract features (patch-based)
         (4)   0b00000100:   pre-generated samples files (whole-image)
         (8)   0b00001000:   pre-generated samples files (feature+patch-based)
@@ -203,7 +203,7 @@
 #define PROC_ESVM_SIMPLIFIED_WORKING 0
 /*
     Generate from scratch multiple training/testing samples and evaluate them
-    
+
     PROC_ESVM_FULL_GENERATION_TESTING:
         0: not run
         1: run 3 different and independent sessions (S1, S3, FastDT)
@@ -226,47 +226,12 @@
 
     PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION:
         0:      generate negative sample files that employ negative individuals from all 4 sessions of ChokePoint (all available negative images)
-        [1-4]:  generate negative sample files that employ negative individuals only from the specified session number of ChokePoint        
+        [1-4]:  generate negative sample files that employ negative individuals only from the specified session number of ChokePoint
 */
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_SESSION 0
 // Specify which replication individuals to employ for negative sample files generation
 // see corresponding ID values in 'getReplicationNegativeIDs' in 'createSampleFiles'
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION 0
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT 10
-
-/* ------------------------------------------------------------
-   Image paths
------------------------------------------------------------- */
-
-#ifdef ESVM_ROOT_PATH
-const std::string refPath = ESVM_ROOT_PATH;
-#else
-const std::string refPath = "..";
-#endif
-
-// Local
-const std::string roiVideoImagesPath = refPath + "/img/roi/";                           // Person ROI tracks obtained from face detection + tracking
-const std::string refStillImagesPath = refPath + "/img/ref/";                           // Reference high quality still ROIs for enrollment in SSPP
-const std::string negativeSamplesDir = refPath + "/data/negatives/";                    // Pre-generated ChokePoint negative samples files
-const std::string testingSamplesDir  = refPath + "/data/testing/";                      // Pre-generated ChokePoint probe samples files
-// OpenCV
-const std::string sourcesOpenCV = std::string(std::getenv("OPENCV_SOURCES")) + "/";             // OpenCV's root directory (ie: Git level)
-// ChokePoint
-const std::string rootChokePointPath = std::string(std::getenv("CHOKEPOINT_ROOT")) + "/";       // ChokePoint dataset root
-const std::string roiChokePointCroppedFacePath = rootChokePointPath + "cropped_faces/";         // Path of extracted 96x96 ROI from all videos 
-const std::string roiChokePointFastDTTrackPath = rootChokePointPath + "results/fast-dt/";       // Path of person track ROIs found with FAST-DT
-const std::string roiChokePointEnrollStillPath = rootChokePointPath + "enroll/";                // Path of enroll still images for ChokePoint
-// TITAN Unit
-const std::string rootTitanUnitPath = std::string(std::getenv("TITAN_UNIT_ROOT")) + "/";        // TITAN Unit dataset root 
-const std::string roiTitanUnitResultTrackPath = rootTitanUnitPath + "Results/";                 // Result's path on TITAN Unit of various algorithms
-const std::string roiTitanUnitFastDTTrackPath = roiTitanUnitResultTrackPath +                   // Path of person track ROIs found with:
-                                                "FAST-DT-compressive-3cascades/";               //   FAST-DT + CompressiveTracking + 3 HaarCascades
-const std::string roiTitanUnitEnrollStillPath = rootTitanUnitPath + "Enroll Stills/";           // Path of enroll still images for TITAN Unit
-// COX-S2V
-const std::string rootCOXS2VPath = std::string(std::getenv("COX_S2V_ROOT")) + "/";              // COX-S2V dataset root
-const std::string roiCOXS2VTestingVideoPath = rootCOXS2VPath + "COX-S2V-Video/";                // Path of enroll still images for COX-S2V
-const std::string roiCOXS2VAllImgsStillPath = rootCOXS2VPath + "COX-S2V-Still/";                // Path of every individual's still for COX-S2V
-const std::string roiCOXS2VEnrollStillsPath = rootCOXS2VPath + "Persons-for-Publication/";      // Path of pre-selected gallery stills
-const std::string roiCOXS2VEyeLocaltionPath = rootCOXS2VPath + "Eye_location/";                 // Path of eye location ground truths
 
 #endif/*ESVM_OPTIONS_H*/
