@@ -10,8 +10,8 @@
 #include "types.h"
 #include "mvector.hpp"
 
-namespace esvm {
-namespace test {
+//namespace esvm {
+//namespace test {
 
 /* Test utilities */
 svm_model* buildDummyExemplarSvmModel(FreeModelState free_sv = MODEL);
@@ -62,8 +62,8 @@ void eval_PerformanceClassificationScores(std::vector<double> normScores, std::v
 void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
                                            xstd::mvector<2, double> normScores, xstd::mvector<2, int> probeGroundTruths);
 
-} // namespace test
-} // namespace esvm
+//} // namespace test
+//} // namespace esvm
 
 #endif/*ESVM_HAS_TESTS*/
 #endif/*ESVM_TESTS_H*/

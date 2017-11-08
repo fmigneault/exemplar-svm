@@ -9,7 +9,7 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
-namespace esvm {
+//namespace esvm {
 
 xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension)
 {
@@ -582,4 +582,4 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
     return 0;
 }
 
-} // namespace esvm
+//} // namespace esvm

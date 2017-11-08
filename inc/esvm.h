@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace esvm {
+//namespace esvm {
 
 class ESVM
 {
@@ -76,6 +76,6 @@ private:
     /*unique_ptr<svmModel> esvmModel = nullptr;*/
 };
 
-} // namespace esvm
+//} // namespace esvm
 
 #endif/*ESVM_LIBSVM_H*/

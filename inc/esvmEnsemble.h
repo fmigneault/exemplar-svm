@@ -11,7 +11,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-namespace esvm {
+//namespace esvm {
 
 class esvmEnsemble
 {
@@ -105,6 +105,6 @@ private:
     #endif/*ESVM_SCORE_NORM_MODE*/
 };
 
-} // namespace esvm
+//} // namespace esvm
 
 #endif/*ESVM_ENSEMBLE_H*/

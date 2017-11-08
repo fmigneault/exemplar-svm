@@ -1,7 +1,7 @@
 #ifndef ESVM_TYPES_H
 #define ESVM_TYPES_H
 
-namespace esvm {
+//namespace esvm {
 
 // SVM implementation library include, types and functions
 #if defined(ESVM_USE_LIBSVM) && !defined(ESVM_USE_LIBLINEAR)
@@ -47,6 +47,6 @@ enum FreeModelState {
     MULTI = 2   // only for testing purposes, model shouldn't have both in 'live' operation
 };
 
-} // namespace esvm
+//} // namespace esvm
 
 #endif/*ESVM_TYPES_H*/

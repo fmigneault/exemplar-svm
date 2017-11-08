@@ -8,8 +8,8 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
-namespace esvm {
-namespace path {
+//namespace esvm {
+//namespace path {
 
 // helper function to avoid nullptr string initialization (error) if the environment variable was not set
 // gets the environment variable value, test it for a valid value and adds the directory separator at end
@@ -82,5 +82,5 @@ conststr roiTitanUnitEnrollStillPath = rootTitanUnitPath + "Enroll Stills/";    
 
 #endif/*ESVM_HAS_TESTS*/
 
-} // namespace path
-} // namespace esvm
+//} // namespace path
+//} // namespace esvm

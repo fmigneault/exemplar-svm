@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace esvm {
+//namespace esvm {
 
 /* generic utilities / repetitive procedures */
 
@@ -34,6 +34,6 @@ std::string svm_type_name(int /*svm_type*/);
 std::string svm_kernel_name(svmModel*);
 std::string svm_kernel_name(int /*kernel_type*/);
 
-} // namespace esvm
+//} // namespace esvm
 
 #endif/*ESVM_UTILS_H*/

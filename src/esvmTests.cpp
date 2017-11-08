@@ -17,8 +17,8 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
-namespace esvm {
-namespace test {
+//namespace esvm {
+//namespace test {
 
 /* ======================
     UTILITY FUNCTIONS
@@ -279,6 +279,7 @@ int test_paths()
     #if TEST_PATHS
     logstream logger(LOGGER_FILE);
     logger << "Running '" << __func__ << "' test..." << std::endl;
+    //using namespace esvm::path;
 
     // ESVM build/test paths
     ASSERT_LOG(bfs::is_directory(roiVideoImagesPath), "Cannot find ROI directory");
@@ -2369,6 +2370,7 @@ int proc_runSingleSamplePerPersonStillToVideo(cv::Size patchCounts)
     #if PROC_ESVM_BASIC_STILL2VIDEO
     logstream logger(LOGGER_FILE);
     logger << "Running '" << __func__ << "' test..." << std::endl;
+    //using namespace esvm::path;
 
     // ------------------------------------------------------------------------------------------------------------------------
     // window to display loaded images and initialization
@@ -5147,7 +5149,7 @@ void eval_PerformanceClassificationSummary(std::vector<std::string> positivesID,
     }
 }
 
-} // namespace test
-} // namespace esvm
+//} // namespace test
+//} // namespace esvm
 
 #endif/*ESVM_HAS_TESTS*/

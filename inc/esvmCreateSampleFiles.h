@@ -16,7 +16,7 @@
 #include <fstream>
 #include "esvmOptions.h"
 
-namespace esvm {
+//namespace esvm {
 
 /* Processes */
 int proc_generateConvertedImageTypes();
@@ -26,6 +26,6 @@ int proc_createProbesSampleFiles(std::string positivesImageDirPath, std::string 
 /* Utilities */
 xstd::mvector<2, cv::Mat> loadAndProcessImages(std::string dirPath, std::string imageExtension);
 
-} // namespace esvm
+//} // namespace esvm
 
 #endif/*ESVM_CREATE_NEGATIVES_H*/

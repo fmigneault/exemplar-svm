@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace esvm {
+//namespace esvm {
 
 /*
     Initializes an Ensemble of ESVM (EoESVM)
@@ -459,4 +459,4 @@ bool esvmEnsemble::saveModels(const std::string& saveDirectory)
     return false;
 }
 
-} // namespace esvm
+//} // namespace esvm

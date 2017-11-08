@@ -10,7 +10,7 @@
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
-namespace esvm {
+//namespace esvm {
 
 /*
     Initializes and trains an ESVM using list of positive and negative feature vectors
@@ -1017,4 +1017,4 @@ svmFeature* ESVM::getFeatureNodes(double* features, int featureCount)
     return fv;
 }
 
-} // namespace esvm
+//} // namespace esvm

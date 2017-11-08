@@ -6,8 +6,8 @@
 
 #define conststr extern const std::string
 
-namespace esvm {
-namespace path {
+//namespace esvm {
+//namespace path {
 
 /* -------------------------------------------
    OpenCV Cascade files for preprocessing
@@ -57,8 +57,8 @@ conststr roiTitanUnitFastDTTrackPath;   // = roiTitanUnitResultTrackPath + "..."
 conststr roiTitanUnitEnrollStillPath;   // = rootTitanUnitPath + "Enroll Stills/"           Path of enroll still images for TITAN Unit
 #endif/*ESVM_HAS_TITAN_UNIT*/
 
-} // namespace path
-} // namespace esvm
+//} // namespace path
+//} // namespace esvm
 
 #endif/*ESVM_HAS_TESTS*/
 #endif/*ESVM_PATHS_H*/

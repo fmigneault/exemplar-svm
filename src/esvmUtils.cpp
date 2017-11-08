@@ -4,7 +4,7 @@
 
 #include <assert.h>
 
-namespace esvm {
+//namespace esvm {
 
 cv::Mat preprocessFromMode(cv::Mat roi, cv::CascadeClassifier ccLocalSearch)
 {
@@ -96,4 +96,4 @@ std::string svm_kernel_name(int type)
     }
 }
 
-} // namespace esvm
+//} // namespace esvm
