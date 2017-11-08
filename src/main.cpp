@@ -17,6 +17,10 @@ namespace bfs = boost::filesystem;
 
 int main(int argc, char* argv[])
 {
+    using namespace esvm;
+    using namespace esvm::path;
+    using namespace esvm::test;
+
     logstream logger(LOGGER_FILE);
     displayHeader();
     displayOptions();
