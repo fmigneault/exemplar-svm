@@ -1,9 +1,6 @@
 #ifndef ESVM_OPTIONS_H
 #define ESVM_OPTIONS_H
 
-#include <string>
-#include <stdlib.h>
-
 /* ------------------------------------------------------------
    ESVM options
 ------------------------------------------------------------ */

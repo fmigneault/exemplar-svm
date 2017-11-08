@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <sys/stat.h>
+#include <utility>
 #include <vector>
 
 namespace esvm {
@@ -32,11 +32,7 @@ public:
     ESVM(svmModel* trainedModel, std::string id = "");
     ESVM& operator=(ESVM esvm); // copy ctor
     ESVM(ESVM&& esvm);          // move ctor
-    void swap(ESVM& esvm1, ESVM& esvm2)
-    {
-        std::swap(esvm1.esvmModel, esvm2.esvmModel);
-        std::swap(esvm1.ID, esvm2.ID);
-    }
+    void swap(ESVM& esvm1, ESVM& esvm2);
     // instance methods
     bool isModelSet() const;
     bool isModelTrained() const;

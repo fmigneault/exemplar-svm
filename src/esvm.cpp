@@ -5,6 +5,8 @@
 #include "datafile.h"
 #include "testing.h"
 
+#include <sys/stat.h>
+
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
@@ -102,8 +104,15 @@ ESVM::ESVM(ESVM&& esvm)
 // Copy assignment
 ESVM& ESVM::operator=(ESVM esvm)
 {
-    swap(*this, esvm);
+    this->swap(*this, esvm);
     return *this;
+}
+
+// Swap for copy, move, etc. assigments
+void ESVM::swap(ESVM& esvm1, ESVM& esvm2)
+{
+    std::swap(esvm1.esvmModel, esvm2.esvmModel);
+    std::swap(esvm1.ID, esvm2.ID);
 }
 
 // Builds an 'empty' model ensuring all 'null' references
@@ -574,7 +583,7 @@ bool ESVM::loadModelFile(std::string modelFilePath, FileFormat format, std::stri
 */
 void ESVM::loadModelFile_libsvm(std::string filePath)
 {
-    ifstream modelFile(filePath, ios::in | ios::binary);
+    std::ifstream modelFile(filePath, std::ios::in | std::ios::binary);
     bool isBinary = DataFile::checkBinaryHeader(modelFile, ESVM_BINARY_HEADER_MODEL_LIBSVM) ||
                     DataFile::checkBinaryHeader(modelFile, ESVM_BINARY_HEADER_MODEL_LIBLINEAR);
     if (modelFile.is_open())
@@ -600,7 +609,7 @@ void ESVM::loadModelFile_libsvm(std::string filePath)
 void ESVM::loadModelFile_binary(std::string filePath)
 {
     // check for opened file
-    ifstream modelFile(filePath, ios::in | ios::binary);
+    std::ifstream modelFile(filePath, std::ios::in | std::ios::binary);
     ASSERT_THROW(modelFile.is_open(), "Failed to open the specified model BINARY file: '" + filePath + "'");
 
     svmModel* model;
@@ -664,7 +673,7 @@ void ESVM::loadModelFile_binary(std::string filePath)
 
         #endif/*ESVM_USE_LIBSVM*/
     }
-    catch (exception& ex)
+    catch (std::exception& ex)
     {
         if (modelFile.is_open())
             modelFile.close();
@@ -712,7 +721,7 @@ void ESVM::saveModelFile_binary(std::string filePath) const
         (double)    | sum(nSV) * nFeatures  | support vector features
     */
 
-    ofstream modelFile(filePath, ios::out | ios::binary);
+    std::ofstream modelFile(filePath, std::ios::out | std::ios::binary);
     ASSERT_THROW(modelFile.is_open(), "Failed to open the specified model BINARY file: '" + filePath + "'");
 
     try
@@ -745,7 +754,7 @@ void ESVM::saveModelFile_binary(std::string filePath) const
 
         #endif/*esvm impl*/
     }
-    catch(exception& ex)
+    catch(std::exception& ex)
     {
         if (modelFile.is_open())
             modelFile.close();
@@ -843,7 +852,7 @@ void ESVM::trainModel(std::vector<FeatureVector> samples, std::vector<int> targe
     {
         trainedModel = svmTrain(&prob, &param);
     }
-    catch (exception& ex)
+    catch (std::exception& ex)
     {
         logger << "Exception occurred during ESVM training: [" << ex.what() << "]" << std::endl;
         throw ex;

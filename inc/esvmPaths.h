@@ -2,6 +2,7 @@
 #define ESVM_PATHS_H
 
 #include "esvmOptions.h"
+#include <string>
 
 #define conststr extern const std::string
 

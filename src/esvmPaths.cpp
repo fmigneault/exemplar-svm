@@ -1,6 +1,10 @@
 #include "esvmPaths.h"
 #include "CommonCpp.h"
 
+#include <string>
+#include <vector>
+#include <stdlib.h> // getenv
+
 #include "boost/filesystem.hpp"
 namespace bfs = boost::filesystem;
 
@@ -72,7 +76,7 @@ conststr roiCOXS2VEyeLocaltionPath = rootCOXS2VPath + "Eye_location/";          
 conststr rootTitanUnitPath = getValidEnvVar("TITAN_UNIT_ROOT");                     // TITAN Unit dataset root
 conststr roiTitanUnitResultTrackPath = rootTitanUnitPath + "Results/";              // Result's path on TITAN Unit of various algorithms
 conststr roiTitanUnitFastDTTrackPath = roiTitanUnitResultTrackPath +                // Path of person track ROIs found with:
-                                                "FAST-DT-compressive-3cascades/";   //   FAST-DT + CompressiveTracking + 3 HaarCascades
+                                       "FAST-DT-compressive-3cascades/";            //   FAST-DT + CompressiveTracking + 3 HaarCascades
 conststr roiTitanUnitEnrollStillPath = rootTitanUnitPath + "Enroll Stills/";        // Path of enroll still images for TITAN Unit
 #endif/*ESVM_HAS_TITAN_UNIT*/
 
