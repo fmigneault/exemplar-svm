@@ -8,16 +8,19 @@
 #define ESVM_USE_HOG 1
 #define ESVM_USE_LBP 0
 #define ESVM_USE_HIST_EQUAL 1
-#define ESVM_USE_PREDICT_PROBABILITY 0
 #define ESVM_POSITIVE_CLASS +1
 #define ESVM_NEGATIVE_CLASS -1
 #define ESVM_BINARY_HEADER_MODEL_LIBSVM "ESVM binary model libsvm"
 #define ESVM_BINARY_HEADER_MODEL_LIBLINEAR "ESVM binary model liblinear"
 #define ESVM_BINARY_HEADER_SAMPLES "ESVM binary samples"
-// Debug-specific configurations
-#ifndef NDEBUG
-#define ESVM_DEBUG
-#endif
+/*
+    ESVM_PREDICT_MODE:
+        0: predict using raw values  => function `predictValues`
+        1: predict using class       => function `predict`
+        2: predict using probability => function `predictProbability`
+*/
+#define ESVM_PREDICT_MODE 1
+#define ESVM_USE_PREDICT_PROBABILITY ESVM_PREDICT_MODE == 2
 /*
     ESVM_DISPLAY_TRAIN_PARAMS:
         0: do not display obtained parameters after training
@@ -230,5 +233,14 @@
 // see corresponding ID values in 'getReplicationNegativeIDs' in 'createSampleFiles'
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_REPLICATION 0
 #define PROC_ESVM_GENERATE_SAMPLE_FILES_NEGATIVE_COUNT 10
+
+/* ------------------------------------------------------------
+   Compile configuration options
+------------------------------------------------------------ */
+
+// Debug-specific configurations
+#ifndef NDEBUG
+#define ESVM_DEBUG
+#endif
 
 #endif/*ESVM_OPTIONS_H*/

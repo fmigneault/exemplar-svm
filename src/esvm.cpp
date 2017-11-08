@@ -390,15 +390,15 @@ void ESVM::logModelParameters(svmModel *model, std::string id, bool displaySV)
            << "   pos label:   " << model->label[0] << std::endl
            << "   neg label:   " << model->label[1] << std::endl
            << "   W mode:      " << ESVM_WEIGHTS_MODE << std::endl;
-    if (getFreeSV(model) != FreeModelState::MODEL) {  // when using a pre-trained model, 'rho' is used instead of weights (they are not set)
     #if ESVM_WEIGHTS_MODE
+    if (getFreeSV(model) != FreeModelState::MODEL) {  // when using a pre-trained model, 'rho' is used instead of weights (they are not set)    
     logger << "   nr W:        " << model->param.nr_weight << std::endl
            << "   W pos:       " << model->param.weight[0] << std::endl
            << "   W neg:       " << model->param.weight[1] << std::endl
            << "   W pos label: " << model->param.weight_label[0] << std::endl
-           << "   W neg label: " << model->param.weight_label[1] << std::endl;
-    #endif/*ESVM_WEIGHTS_MODE*/
+           << "   W neg label: " << model->param.weight_label[1] << std::endl;    
     } // end if
+    #endif/*ESVM_WEIGHTS_MODE*/
 
     #if ESVM_USE_LIBSVM
 
@@ -931,18 +931,7 @@ double ESVM::predict(FeatureVector probeSample) const
 {
     ASSERT_THROW(isModelTrained(), "Cannot predict with untrained ESVM model");
 
-    #if ESVM_USE_PREDICT_PROBABILITY
-    if (model->param.probability)
-    {
-        /*
-        double* probEstimates = (double *)malloc(model->nr_class * sizeof(double)); // = new double[model->nr_class];
-        double p = svm_predict_probability(model, getFeatureVector(probeSample), probEstimates);
-        */
-        double* probEstimates = Malloc(double, model->nr_class);
-        svmPredictProbability(model, getFeatureVector(probeSample), probEstimates);
-        return probEstimates[0];
-    }
-    #endif/*ESVM_USE_PREDICT_PROBABILITY*/
+    #if   ESVM_PREDICT_MODE == 0    // predict values
 
     // Obtain decision values directly (instead of predicted label/probability from 'svm_predict'/'svm_predict_probability')
     // Since the number of decision values of each class combination is calculated with [ nr_class*(nr_class-1)/2 ],
@@ -952,6 +941,26 @@ double ESVM::predict(FeatureVector probeSample) const
     double decision = decisionValues[0];
     delete[] decisionValues;
     return decision;
+
+    #elif ESVM_PREDICT_MODE == 1    // predict
+    
+    // Obtain predicted class
+    return svmPredict(esvmModel, getFeatureNodes(probeSample));
+
+    #elif ESVM_PREDICT_MODE == 2    // predict probability
+    
+    ASSERT_THROW(model->param.probability, "Cannot predict probability with SVM model without probability option");
+    /*
+    double* probEstimates = (double *)malloc(model->nr_class * sizeof(double)); // = new double[model->nr_class];
+    double p = svm_predict_probability(model, getFeatureVector(probeSample), probEstimates);
+    */
+    double* probEstimates = Malloc(double, model->nr_class);
+    svmPredictProbability(model, getFeatureVector(probeSample), probEstimates);
+    double probability = probEstimates[0];
+    FreeNull(probEstimates);
+    return probability;
+
+    #endif/*ESVM_PREDICT_MODE*/
 }
 
 /*
